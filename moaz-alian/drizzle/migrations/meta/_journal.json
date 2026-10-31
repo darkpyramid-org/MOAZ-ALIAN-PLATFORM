@@ -85,6 +85,13 @@
       "when": 1793412190884,
       "tag": "0011_probe_target",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793420000000,
+      "tag": "0012_remove_first_user_auto_admin",
+      "breakpoints": true
     }
   ]
 }
