@@ -33,9 +33,7 @@ jobs:
         run: bun run lint
 
       - name: Format check
-        # Soft until a full Prettier tree is committed (large style-only diff).
         run: bun run format:check
-        continue-on-error: true
 
       - name: Unit tests
         run: bun run test
@@ -72,10 +70,12 @@ jobs:
           path: moaz-alian/dist
           retention-days: 7
 
-  # Trivy SARIF disabled: org may block security-events. Re-enable when allowed.
+  # Trivy SARIF upload requires organization/repository security-events permissions.
+  # Keep this scan disabled until the owner enables those permissions; do not claim SARIF is uploaded.
   dependency-audit:
     name: Dependency audit (Bun)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: moaz-alian
@@ -89,5 +89,4 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
       - name: Audit dependencies
-        run: bun pm audit --json || bun audit || true
-        continue-on-error: true
+        run: bun pm audit
