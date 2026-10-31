@@ -21,9 +21,7 @@ export type ChatValidationErr = {
   status: 400;
 };
 
-export type BoundedBodyReadResult =
-  | { ok: true; text: string }
-  | { ok: false; reason: "too_large" | "invalid_encoding" };
+export type BoundedBodyReadResult = { ok: true; text: string } | { ok: false; reason: "too_large" | "invalid_encoding" };
 
 const ALLOWED_MESSAGE_ROLES = new Set(["user", "assistant"]);
 
@@ -123,11 +121,7 @@ function isUIMessage(value: unknown): value is UIMessage {
     return false;
   }
 
-  return (
-    Array.isArray(value.parts) &&
-    value.parts.length > 0 &&
-    value.parts.every(isMessagePart)
-  );
+  return Array.isArray(value.parts) && value.parts.length > 0 && value.parts.every(isMessagePart);
 }
 
 export function validateChatRequestBody(
