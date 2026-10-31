@@ -10,7 +10,10 @@ import {
   verifyThreadOwnership,
 } from "@/lib/chat/chat.server";
 import { withLovableAiGatewayRunIdHeader } from "@/lib/chat/run-id";
-import { validateChatRequestBody } from "@/lib/chat/request-validation";
+import {
+  readBoundedRequestBody,
+  validateChatRequestBody,
+} from "@/lib/chat/request-validation";
 
 export const Route = createFileRoute("/api/chat")({
   server: {
@@ -27,11 +30,14 @@ export const Route = createFileRoute("/api/chat")({
 
         let body: unknown;
         try {
-          const rawBody = await request.text();
-          if (new TextEncoder().encode(rawBody).byteLength > MAX_REQUEST_BYTES) {
-            return Response.json({ error: "request_too_large" }, { status: 413 });
+          const bodyRead = await readBoundedRequestBody(request, MAX_REQUEST_BYTES);
+          if (!bodyRead.ok) {
+            if (bodyRead.reason === "too_large") {
+              return Response.json({ error: "request_too_large" }, { status: 413 });
+            }
+            return Response.json({ error: "invalid_json" }, { status: 400 });
           }
-          body = JSON.parse(rawBody);
+          body = JSON.parse(bodyRead.text);
         } catch {
           return Response.json({ error: "invalid_json" }, { status: 400 });
         }
