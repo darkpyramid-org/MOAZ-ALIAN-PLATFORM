@@ -21,10 +21,26 @@ export type ChatValidationErr = {
   status: 400;
 };
 
-const ALLOWED_MESSAGE_ROLES = new Set(["user", "assistant", "system"]);
+const ALLOWED_MESSAGE_ROLES = new Set(["user", "assistant"]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isMessagePart(value: unknown): boolean {
+  if (!isRecord(value) || typeof value.type !== "string") {
+    return false;
+  }
+
+  if (value.type === "text" || value.type === "reasoning") {
+    return typeof value.text === "string";
+  }
+
+  if (value.type === "file") {
+    return typeof value.mediaType === "string" && typeof value.url === "string";
+  }
+
+  return true;
 }
 
 function isUIMessage(value: unknown): value is UIMessage {
@@ -32,11 +48,7 @@ function isUIMessage(value: unknown): value is UIMessage {
     return false;
   }
 
-  if (!Array.isArray(value.parts)) {
-    return false;
-  }
-
-  return value.parts.every((part) => isRecord(part) && typeof part.type === "string");
+  return Array.isArray(value.parts) && value.parts.every(isMessagePart);
 }
 
 export function validateChatRequestBody(body: ChatRequestBody): ChatValidationOk | ChatValidationErr {
@@ -45,12 +57,10 @@ export function validateChatRequestBody(body: ChatRequestBody): ChatValidationOk
     return { ok: false, error: "missing_thread", status: 400 };
   }
 
-  const rawMessages = Array.isArray(body.messages) ? body.messages : [];
-  const messages = rawMessages.filter(isUIMessage).slice(-MAX_CHAT_MESSAGES);
-
-  if (messages.length === 0) {
+  if (!Array.isArray(body.messages) || body.messages.length === 0 || !body.messages.every(isUIMessage)) {
     return { ok: false, error: "missing_messages", status: 400 };
   }
 
+  const messages = body.messages.slice(-MAX_CHAT_MESSAGES);
   return { ok: true, threadId, messages, trigger: body.trigger };
 }
