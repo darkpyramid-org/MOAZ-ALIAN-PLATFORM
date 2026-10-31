@@ -19,9 +19,19 @@ export const Route = createFileRoute("/api/chat")({
         const user = await requireRouteUser(request);
         if (user instanceof Response) return user;
 
+        const MAX_REQUEST_BYTES = 1_000_000;
+        const contentLength = Number(request.headers.get("content-length") ?? 0);
+        if (contentLength > MAX_REQUEST_BYTES) {
+          return Response.json({ error: "request_too_large" }, { status: 413 });
+        }
+
         let body: unknown;
         try {
-          body = await request.json();
+          const rawBody = await request.text();
+          if (new TextEncoder().encode(rawBody).byteLength > MAX_REQUEST_BYTES) {
+            return Response.json({ error: "request_too_large" }, { status: 413 });
+          }
+          body = JSON.parse(rawBody);
         } catch {
           return Response.json({ error: "invalid_json" }, { status: 400 });
         }
