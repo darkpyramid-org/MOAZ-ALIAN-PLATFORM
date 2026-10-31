@@ -48,25 +48,29 @@ bun run build
 |----------|----------|-------------|
 | `SUPABASE_URL` | Yes | Same project URL for SSR/server routes |
 | `SUPABASE_PUBLISHABLE_KEY` | Yes | Publishable key for user-scoped server clients |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes* | Service role for privileged server operations |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes* | Service role for privileged server operations; server-only |
 | `LOVABLE_API_KEY` | For chat | Lovable AI gateway |
 | `LOVABLE_DB_MIGRATION_URL` | Optional | Postgres URL for Drizzle migrations |
-| `LOVABLE_CRON_SECRET` | Optional | Cron authentication |
+| `LOVABLE_CRON_SECRET` | Optional | Current secret for cron endpoint authentication |
+| `LOVABLE_CRON_SECRET_PREVIOUS` | Optional | Previous cron secret during a controlled rotation window |
 
-\*Required for routes/integrations that use the service-role client.
+*Required only for routes/integrations that instantiate the service-role client. Never expose this key to browser code or commit its value.
 
 ## Notes
 
 - There is **no** `api-server/` package. HTTP handlers live under `src/routes/api/`.
 - Database schema and migrations live under `moaz-alian/drizzle/`.
+- Keep real credentials in an untracked local environment file or the deployment secret store. The example file must contain placeholders only.
 
 ## Admin bootstrap
 
-New signups only create a `profiles` row. They are **not** auto-promoted to admin (migration `0012_remove_first_user_auto_admin`).
+New signups create a `profiles` row but are **not** auto-promoted to admin (migration `0012_remove_first_user_auto_admin`).
 
-To grant the first admin after deploy, run as a privileged operator (service role / SQL editor), for example:
+To grant the first admin after deploy, run as a trusted privileged operator (for example, through the Supabase SQL editor):
 
 ```sql
 insert into public.user_roles (user_id, role)
 values ('<auth-user-uuid>', 'admin');
 ```
+
+Use the UUID of the intended account, verify the account owner independently, and do not expose this operation through public signup or client-controlled metadata.
