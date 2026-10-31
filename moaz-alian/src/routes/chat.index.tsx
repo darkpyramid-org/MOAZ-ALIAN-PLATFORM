@@ -38,7 +38,8 @@ function ChatIndex() {
       try {
         const existing = threads.data?.[0];
         const thread = existing ?? (await threads.createThread());
-        if (!cancelled) void navigate({ to: "/chat/$threadId", params: { threadId: thread.id }, replace: true });
+        if (!cancelled)
+          void navigate({ to: "/chat/$threadId", params: { threadId: thread.id }, replace: true });
       } catch {
         if (!cancelled) setFailed(true);
       }

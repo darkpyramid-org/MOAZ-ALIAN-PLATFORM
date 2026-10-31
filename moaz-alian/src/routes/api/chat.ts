@@ -38,7 +38,9 @@ export const Route = createFileRoute("/api/chat")({
 
         const rawMessages = Array.isArray(body.messages) ? body.messages : [];
         const messages = rawMessages
-          .filter((m): m is UIMessage => !!m && typeof m === "object" && "role" in m && "parts" in m)
+          .filter(
+            (m): m is UIMessage => !!m && typeof m === "object" && "role" in m && "parts" in m,
+          )
           .slice(-MAX_MESSAGES);
         if (messages.length === 0) {
           return Response.json({ error: "missing_messages" }, { status: 400 });

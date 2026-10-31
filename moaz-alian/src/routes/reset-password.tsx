@@ -30,20 +30,36 @@ function ResetPassword() {
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password: pw });
     setBusy(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("تم تحديث كلمة المرور");
     navigate({ to: "/dashboard" });
   }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-deep px-4">
-      <form onSubmit={submit} className="w-full max-w-md space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-float sm:p-8">
+      <form
+        onSubmit={submit}
+        className="w-full max-w-md space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-float sm:p-8"
+      >
         <h1 className="text-2xl font-bold">كلمة مرور جديدة</h1>
         <div className="space-y-1.5">
           <Label htmlFor="pw">كلمة المرور الجديدة</Label>
-          <Input id="pw" type="password" dir="ltr" minLength={6} required value={pw} onChange={(e) => setPw(e.target.value)} />
+          <Input
+            id="pw"
+            type="password"
+            dir="ltr"
+            minLength={6}
+            required
+            value={pw}
+            onChange={(e) => setPw(e.target.value)}
+          />
         </div>
-        <button disabled={busy} className="btn-gold w-full justify-center">حفظ</button>
+        <button disabled={busy} className="btn-gold w-full justify-center">
+          حفظ
+        </button>
       </form>
     </div>
   );

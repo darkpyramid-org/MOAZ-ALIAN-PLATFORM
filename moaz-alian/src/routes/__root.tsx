@@ -37,7 +37,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "theme-color", content: "#101820" },
       { title: "معاذ عليان — مكتبة معرفية في مقارنة الأديان" },
-      { name: "description", content: "مكتبة عربية مستقلة تجمع فيديوهات وكتب ومقالات وأبحاث معاذ عليان في مقارنة الأديان." },
+      {
+        name: "description",
+        content:
+          "مكتبة عربية مستقلة تجمع فيديوهات وكتب ومقالات وأبحاث معاذ عليان في مقارنة الأديان.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -93,7 +97,10 @@ function RootComponent() {
   hydrateLibrary(library);
   const router = useRouter();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isApp = pathname.startsWith("/dashboard") || pathname.startsWith("/auth") || pathname.startsWith("/reset-password");
+  const isApp =
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/reset-password");
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
@@ -115,7 +122,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-50 btn-gold">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-50 btn-gold"
+      >
         تخطَّ إلى المحتوى
       </a>
       <Header />

@@ -62,7 +62,12 @@ function ChatThreadPage() {
           </Button>
         </div>
         {threadMessages.isSuccess ? (
-          <ChatPanel key={threadId} threadId={threadId} initialMessages={threadMessages.data} className="h-full" />
+          <ChatPanel
+            key={threadId}
+            threadId={threadId}
+            initialMessages={threadMessages.data}
+            className="h-full"
+          />
         ) : (
           <div className="flex flex-1 items-center justify-center">
             <Shimmer className="text-sm text-muted-foreground">جارٍ استرجاع المحادثة…</Shimmer>

@@ -27,7 +27,11 @@ export function ShareButton({ title }: { title: string }) {
 
   return (
     <button type="button" onClick={share} className="btn-outline text-sm">
-      {copied ? <Check className="size-4" aria-hidden /> : <Share2 className="size-4" aria-hidden />}
+      {copied ? (
+        <Check className="size-4" aria-hidden />
+      ) : (
+        <Share2 className="size-4" aria-hidden />
+      )}
       {copied ? "تم النسخ" : "مشاركة"}
     </button>
   );

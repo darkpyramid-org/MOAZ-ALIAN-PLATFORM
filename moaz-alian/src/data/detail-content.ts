@@ -1,6 +1,9 @@
 /** Heading IDs and navigation are derived from the stored Markdown, never separate seed text. */
 export function slugifyHeading(text: string, index: number) {
-  return `h-${index}-${text.replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "").slice(0, 40)}`;
+  return `h-${index}-${text
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 40)}`;
 }
 
 export interface TocEntry {
@@ -24,7 +27,11 @@ export function tableOfContents(body: string): TocEntry[] {
     const raw = match?.[2];
     if (!raw) continue;
     const text = raw.replace(/\[([^\]]+)\]\([^)]*\)/g, "$1").replace(/[*_`]/g, "");
-    headings.push({ id: slugifyHeading(text, headings.length), text, level: match?.[1]?.length === 3 ? 3 : 2 });
+    headings.push({
+      id: slugifyHeading(text, headings.length),
+      text,
+      level: match?.[1]?.length === 3 ? 3 : 2,
+    });
   }
   return headings;
 }

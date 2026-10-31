@@ -73,7 +73,8 @@ function AuthPage() {
       if (mode === "in") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
-          if (error.code === "email_not_confirmed" || /not (yet )?confirmed/i.test(error.message)) setUnconfirmed(true);
+          if (error.code === "email_not_confirmed" || /not (yet )?confirmed/i.test(error.message))
+            setUnconfirmed(true);
           throw error;
         }
         setUnconfirmed(false);
@@ -107,8 +108,13 @@ function AuthPage() {
 
   async function google() {
     sessionStorage.setItem("post_auth", target);
-    const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (r.error) { toast.error("تعذّر الدخول عبر Google"); return; }
+    const r = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (r.error) {
+      toast.error("تعذّر الدخول عبر Google");
+      return;
+    }
     if (r.redirected) return;
     navigate({ to: target as "/dashboard" });
   }
@@ -129,31 +135,61 @@ function AuthPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-deep px-4 py-10">
       <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-float sm:p-8">
-        <Link to="/" className="text-sm text-muted-foreground hover:text-primary">← العودة إلى المكتبة</Link>
+        <Link to="/" className="text-sm text-muted-foreground hover:text-primary">
+          ← العودة إلى المكتبة
+        </Link>
         <h1 className="mt-4 text-2xl font-bold">{titles[mode]}</h1>
         <p className="mt-1 text-sm text-muted-foreground">لوحة إدارة المكتبة — للفريق فقط.</p>
 
         <form onSubmit={submit} className="mt-6 space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="email">البريد الإلكتروني</Label>
-            <Input id="email" type="email" dir="ltr" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input
+              id="email"
+              type="email"
+              dir="ltr"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
           {mode !== "forgot" && (
             <div className="space-y-1.5">
               <Label htmlFor="pw">كلمة المرور</Label>
-              <Input id="pw" type="password" dir="ltr" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input
+                id="pw"
+                type="password"
+                dir="ltr"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
           )}
           <button type="submit" disabled={busy} className="btn-gold w-full justify-center">
-            {busy ? "جارٍ..." : mode === "in" ? "دخول" : mode === "up" ? "إنشاء الحساب" : "إرسال الرابط"}
+            {busy
+              ? "جارٍ..."
+              : mode === "in"
+                ? "دخول"
+                : mode === "up"
+                  ? "إنشاء الحساب"
+                  : "إرسال الرابط"}
           </button>
         </form>
 
         {unconfirmed && (
           <div className="mt-4 rounded-xl border border-border bg-muted/50 p-4 text-sm">
             <p className="font-medium">لم يصلك رابط التأكيد؟</p>
-            <p className="mt-1 text-muted-foreground">تفقّد مجلد الرسائل غير المرغوبة (Spam)، ثم أعد الإرسال من هنا.</p>
-            <button type="button" onClick={resend} disabled={busy || !email || resent} className="btn-outline mt-3 px-4 py-1.5 text-sm">
+            <p className="mt-1 text-muted-foreground">
+              تفقّد مجلد الرسائل غير المرغوبة (Spam)، ثم أعد الإرسال من هنا.
+            </p>
+            <button
+              type="button"
+              onClick={resend}
+              disabled={busy || !email || resent}
+              className="btn-outline mt-3 px-4 py-1.5 text-sm"
+            >
               {resent ? "تم الإرسال ✓" : busy ? "جارٍ الإرسال…" : "إعادة إرسال رابط التأكيد"}
             </button>
           </div>
@@ -162,7 +198,9 @@ function AuthPage() {
         {mode !== "forgot" && (
           <>
             <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="h-px flex-1 bg-border" />أو<span className="h-px flex-1 bg-border" />
+              <span className="h-px flex-1 bg-border" />
+              أو
+              <span className="h-px flex-1 bg-border" />
             </div>
             <button type="button" onClick={google} className="btn-outline w-full justify-center">
               المتابعة عبر Google
@@ -173,11 +211,20 @@ function AuthPage() {
         <div className="mt-6 flex flex-wrap justify-between gap-2 text-sm">
           {mode === "in" ? (
             <>
-              <button className="text-primary hover:underline" onClick={() => setMode("up")}>إنشاء حساب</button>
-              <button className="text-muted-foreground hover:text-primary" onClick={() => setMode("forgot")}>نسيت كلمة المرور؟</button>
+              <button className="text-primary hover:underline" onClick={() => setMode("up")}>
+                إنشاء حساب
+              </button>
+              <button
+                className="text-muted-foreground hover:text-primary"
+                onClick={() => setMode("forgot")}
+              >
+                نسيت كلمة المرور؟
+              </button>
             </>
           ) : (
-            <button className="text-primary hover:underline" onClick={() => setMode("in")}>لديك حساب؟ سجّل الدخول</button>
+            <button className="text-primary hover:underline" onClick={() => setMode("in")}>
+              لديك حساب؟ سجّل الدخول
+            </button>
           )}
         </div>
       </div>

@@ -2,7 +2,17 @@
  * Drizzle schema mirroring applied SQL migrations under drizzle/migrations/.
  * Keep aligned when adding migrations. Auth users live in auth.users (Supabase).
  */
-import { date, integer, jsonb, pgEnum, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import {
+  date,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  unique,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 export const appRoleEnum = pgEnum("app_role", ["admin", "editor"]);
 

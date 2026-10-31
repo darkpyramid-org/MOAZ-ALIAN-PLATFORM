@@ -8,7 +8,9 @@ import { normalizeArabic } from "@/lib/content";
  * glyphs are what the reader sees.
  */
 export function Highlight({ text, query }: { text: string; query: string }) {
-  const tokens = normalizeArabic(query).split(" ").filter((t) => t.length > 1);
+  const tokens = normalizeArabic(query)
+    .split(" ")
+    .filter((t) => t.length > 1);
   if (!tokens.length) return <>{text}</>;
 
   // Build a normalized string with a map back to original indices.

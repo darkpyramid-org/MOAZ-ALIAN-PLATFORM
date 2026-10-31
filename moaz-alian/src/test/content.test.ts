@@ -13,7 +13,9 @@ describe("Arabic search", () => {
   it("finds real seed items and returns nothing for gibberish", () => {
     const hits = searchItems("مريم");
     expect(hits.length).toBeGreaterThan(0);
-    expect(hits.every((h) => /مريم/.test(h.item.title + h.item.description + h.item.tags.join(" ")))).toBe(true);
+    expect(
+      hits.every((h) => /مريم/.test(h.item.title + h.item.description + h.item.tags.join(" "))),
+    ).toBe(true);
     expect(searchItems("zzqqxx")).toHaveLength(0);
   });
 });
@@ -52,22 +54,36 @@ describe("Listing filters", () => {
 
   it("drops invalid URL params", () => {
     expect(parseListingSearch({ sort: "bogus", page: "0", q: " " })).toEqual({
-      q: undefined, cat: undefined, series: undefined, sort: undefined, page: undefined,
+      q: undefined,
+      cat: undefined,
+      series: undefined,
+      sort: undefined,
+      page: undefined,
     });
-    expect(parseListingSearch({ page: "3", sort: "title" })).toMatchObject({ page: 3, sort: "title" });
+    expect(parseListingSearch({ page: "3", sort: "title" })).toMatchObject({
+      page: 3,
+      sort: "title",
+    });
   });
 });
 
 describe("Article table of contents", () => {
   it("lists ## and ### headings", () => {
     const toc = tableOfContents("مقدمة\n\n## أولًا\n\nنص\n\n### فرع");
-    expect(toc.map((t) => [t.text, t.level])).toEqual([["أولًا", 2], ["فرع", 3]]);
+    expect(toc.map((t) => [t.text, t.level])).toEqual([
+      ["أولًا", 2],
+      ["فرع", 3],
+    ]);
   });
 
   it("keeps every heading without requiring blank lines and excludes fenced code", () => {
-    const toc = tableOfContents("## المقدمة\nنص\n### **التفاصيل**\n```md\n## مثال برمجي\n```\n## المراجع");
+    const toc = tableOfContents(
+      "## المقدمة\nنص\n### **التفاصيل**\n```md\n## مثال برمجي\n```\n## المراجع",
+    );
     expect(toc.map((entry) => [entry.text, entry.level])).toEqual([
-      ["المقدمة", 2], ["التفاصيل", 3], ["المراجع", 2],
+      ["المقدمة", 2],
+      ["التفاصيل", 3],
+      ["المراجع", 2],
     ]);
     expect(new Set(toc.map((entry) => entry.id)).size).toBe(3);
   });

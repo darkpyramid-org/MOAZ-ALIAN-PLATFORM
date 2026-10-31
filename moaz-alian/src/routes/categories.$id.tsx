@@ -30,7 +30,9 @@ export const Route = createFileRoute("/categories/$id")({
     };
   },
   component: Page,
-  notFoundComponent: () => <MissingItemScreen label="التصنيف" listTo="/categories" listLabel="التصنيفات" />,
+  notFoundComponent: () => (
+    <MissingItemScreen label="التصنيف" listTo="/categories" listLabel="التصنيفات" />
+  ),
   errorComponent: ErrorScreen,
 });
 
@@ -55,7 +57,9 @@ function Page() {
       <PageHero kicker="تصنيف" title={category.name} intro={category.description} />
       {featured && !filtering && (
         <section className="container-editorial pt-10">
-          <p className="mb-4 text-xs font-semibold tracking-wide text-primary">مادة مميزة في هذا التصنيف</p>
+          <p className="mb-4 text-xs font-semibold tracking-wide text-primary">
+            مادة مميزة في هذا التصنيف
+          </p>
           <div className="max-w-md">
             <ContentCard item={featured} />
           </div>
@@ -73,7 +77,12 @@ function Page() {
           <h2 className="mb-4 text-lg font-semibold">تصنيفات ذات صلة</h2>
           <div className="flex flex-wrap gap-2">
             {related.map((c) => (
-              <Link key={c.id} to="/categories/$id" params={{ id: c.id }} className="rounded-full border border-border px-4 py-1.5 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary">
+              <Link
+                key={c.id}
+                to="/categories/$id"
+                params={{ id: c.id }}
+                className="rounded-full border border-border px-4 py-1.5 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+              >
                 {c.name} <span className="text-xs">({c.count})</span>
               </Link>
             ))}

@@ -8,7 +8,11 @@ describe("Shared public page settings", () => {
     settings.hero.search = false;
     settings.sections.books = false;
     settings.pages.books.title = "المؤلفات";
-    expect(resolveSiteSettings(settings)).toMatchObject({ hero: { image: "https://example.com/banner.jpg", search: false }, sections: { books: false }, pages: { books: { title: "المؤلفات" } } });
+    expect(resolveSiteSettings(settings)).toMatchObject({
+      hero: { image: "https://example.com/banner.jpg", search: false },
+      sections: { books: false },
+      pages: { books: { title: "المؤلفات" } },
+    });
   });
   it("rejects unsafe banner URLs", () => {
     const settings = structuredClone(defaultSiteSettings);

@@ -36,7 +36,15 @@ export function BackToTop() {
       }`}
     >
       <svg viewBox="0 0 48 48" className="absolute inset-0 size-full -rotate-90" aria-hidden="true">
-        <circle cx="24" cy="24" r={RADIUS} fill="none" stroke="currentColor" strokeWidth="2.5" className="opacity-15" />
+        <circle
+          cx="24"
+          cy="24"
+          r={RADIUS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          className="opacity-15"
+        />
         <circle
           cx="24"
           cy="24"
@@ -50,7 +58,10 @@ export function BackToTop() {
           className="transition-[stroke-dashoffset] duration-150 ease-out"
         />
       </svg>
-      <ArrowUp className="size-5 transition-transform duration-300 group-hover:-translate-y-0.5" aria-hidden="true" />
+      <ArrowUp
+        className="size-5 transition-transform duration-300 group-hover:-translate-y-0.5"
+        aria-hidden="true"
+      />
     </button>
   );
 }

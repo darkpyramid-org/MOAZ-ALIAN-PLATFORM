@@ -401,5 +401,4 @@ export const videos: VideoItem[] = [
     durationSeconds: null,
     seriesName: null,
   },
-
 ];
