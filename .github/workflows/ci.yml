@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  security-events: write
 
 jobs:
   test-frontend:
@@ -33,9 +34,7 @@ jobs:
         run: bun run lint
 
       - name: Format check
-        # Soft gate until a full Prettier pass is committed.
-        run: bunx prettier --check .
-        continue-on-error: true
+        run: bun run format:check
 
       - name: Unit tests
         run: bun run test
@@ -72,28 +71,23 @@ jobs:
           path: moaz-alian/dist
           retention-days: 7
 
-  # ---------------------------------------------------------------------------
-  # Security (Trivy) — disabled for now
-  # The previous job failed at "Set up job" (org / GITHUB_TOKEN policy).
-  # Re-enable when the org allows security-events: write for Actions.
-  # ---------------------------------------------------------------------------
-  # security:
-  #   name: Security (Trivy)
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     contents: read
-  #     security-events: write
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: aquasecurity/trivy-action@0.28.0
-  #       with:
-  #         scan-type: fs
-  #         scan-ref: .
-  #         format: sarif
-  #         output: trivy-results.sarif
-  #         severity: CRITICAL,HIGH
-  #         exit-code: "0"
-  #     - uses: github/codeql-action/upload-sarif@v3
-  #       if: always() && hashFiles('trivy-results.sarif') != ''
-  #       with:
-  #         sarif_file: trivy-results.sarif
+  security:
+    name: Security (Trivy)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "0"
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always() && hashFiles('trivy-results.sarif') != ''
+        with:
+          sarif_file: trivy-results.sarif
