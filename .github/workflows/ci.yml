@@ -27,6 +27,7 @@ jobs:
           bun-version: latest
 
       - name: Install dependencies
+        id: install-dependencies
         run: bun install --frozen-lockfile
 
       - name: Lint
@@ -36,6 +37,7 @@ jobs:
         run: bun run format:check
 
       - name: Unit tests
+        if: ${{ !cancelled() && steps.install-dependencies.outcome == 'success' }}
         run: bun run test
 
   build-frontend:
