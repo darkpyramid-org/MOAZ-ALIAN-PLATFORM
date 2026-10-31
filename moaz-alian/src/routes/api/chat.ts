@@ -16,6 +16,7 @@ const MAX_MESSAGES = 40;
 export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
+      GET: async () => Response.json({ ok: true, service: "chat" }),
       POST: async ({ request }) => {
         const user = await requireRouteUser(request);
         if (user instanceof Response) return user;
