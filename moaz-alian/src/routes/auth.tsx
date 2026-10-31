@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -107,7 +106,7 @@ function AuthPage() {
         const { data, error } = await supabase.auth.signUp({
           email: normalizedEmail,
           password,
-          options: { emailRedirectTo: window.location.origin + "/auth" },
+          options: { emailRedirectTo: authRedirectUrl },
         });
         if (error) throw error;
         if (data.session) navigate({ to: "/dashboard" });
@@ -131,27 +130,45 @@ function AuthPage() {
   }
 
   async function google() {
+    setBusy(true);
     sessionStorage.setItem("post_auth", target);
-    const r = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: authRedirectUrl },
     });
-    if (r.error) {
-      toast.error("تعذّر الدخول عبر Google");
+    if (error) {
+      sessionStorage.removeItem("post_auth");
+      setBusy(false);
+      toast.error("تعذّر بدء الدخول عبر Google. تحقق من إعدادات Google OAuth ثم حاول مرة أخرى.");
       return;
     }
-    if (r.redirected) return;
-    navigate({ to: target as "/dashboard" });
+    if (data.url) window.location.assign(data.url);
   }
 
-  // Returning from Google: session exists → continue
+  // Complete a PKCE callback before redirecting to the requested page.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    async function restoreAuth() {
+      const code = new URLSearchParams(window.location.search).get("code");
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) {
+          sessionStorage.removeItem("post_auth");
+          toast.error("تعذّر إكمال الدخول عبر Google. أعد المحاولة.");
+          return;
+        }
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      const { data } = await supabase.auth.getSession();
       const saved = sessionStorage.getItem("post_auth");
       if (data.session && saved) {
         sessionStorage.removeItem("post_auth");
-        navigate({ to: safePath(saved) as "/dashboard" });
+        navigate({ to: safePath(saved) as "/dashboard", replace: true });
       }
-    });
+      setBusy(false);
+    }
+
+    void restoreAuth();
   }, [navigate]);
 
   const titles = { in: "تسجيل الدخول", up: "إنشاء حساب", forgot: "استعادة كلمة المرور" };
