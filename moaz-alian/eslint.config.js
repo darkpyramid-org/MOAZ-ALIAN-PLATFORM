@@ -34,11 +34,13 @@ export default tseslint.config(
       ],
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",
-      // Formatting is enforced via `prettier --check` in CI; keep rule as warn
-      // so a large existing format drift does not block merges while the
-      // one-time `bun run format` pass is applied.
-      "prettier/prettier": "warn",
     },
   },
   eslintPluginPrettier,
+  // After prettier/recommended so this overrides prettier/prettier: error
+  {
+    rules: {
+      "prettier/prettier": "warn",
+    },
+  },
 );
