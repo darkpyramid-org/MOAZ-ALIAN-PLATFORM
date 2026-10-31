@@ -8,7 +8,8 @@ import { createSupabaseFetch } from "@/lib/supabase-fetch";
 
 function createUserClient(token: string) {
   const SUPABASE_URL = process.env["SUPABASE_URL"];
-  const SUPABASE_PUBLISHABLE_KEY = process.env["SUPABASE_PUBLISHABLE_KEY"];
+  const SUPABASE_PUBLISHABLE_KEY =
+    process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"];
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     throw new Error("Missing Supabase environment variable(s). Connect Lovable Cloud.");
   }

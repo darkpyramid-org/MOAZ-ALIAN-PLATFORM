@@ -8,8 +8,19 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
   tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    // nitro/vite builds from this
-    server: { entry: "server" },
+    // Use the Vercel Nitro preset so deployments expose the SSR handler instead of
+    // the Cloudflare worker output, which otherwise responds with a 404 on Vercel.
+    server: { entry: "src/server.ts" },
+  },
+  nitro: {
+    preset: "vercel",
+  },
+  vite: {
+    define: {
+      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(process.env.SUPABASE_URL ?? ''),
+      'import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY': JSON.stringify(
+        process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY ?? '',
+      ),
+    },
   },
 });

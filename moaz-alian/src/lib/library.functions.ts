@@ -8,7 +8,7 @@ import { createSupabaseFetch } from "@/lib/supabase-fetch";
 
 /** Public read of the whole library (content + categories). */
 export const getLibrary = createServerFn({ method: "GET" }).handler(async () => {
-  const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
+  const key = process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"]!;
   const sb = createClient<Database>(process.env["SUPABASE_URL"]!, key, {
     auth: { persistSession: false, autoRefreshToken: false, storage: undefined },
     global: { fetch: createSupabaseFetch(key) },
