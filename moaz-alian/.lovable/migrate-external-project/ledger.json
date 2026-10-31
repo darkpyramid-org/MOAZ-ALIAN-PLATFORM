@@ -1,0 +1,72 @@
+{
+ "source": "code archive: unified-pill-buttons-main.zip (Lovable export, TanStack Start + Drizzle + Lovable Cloud/Supabase)",
+ "capabilities": [
+  {
+   "capability": "application code",
+   "source": "archive src/",
+   "outcome": "restore into project working tree",
+   "status": "done",
+   "next_action": null
+  },
+  {
+   "capability": "schema (drizzle migrations 0000-0011)",
+   "source": "archive drizzle/migrations",
+   "outcome": "apply to new Lovable Cloud backend",
+   "status": "done",
+   "next_action": null
+  },
+  {
+   "capability": "bundled records (src/data/library seed)",
+   "source": "archive src/data + seed migrations",
+   "outcome": "import via seed migrations",
+   "status": "done",
+   "next_action": null
+  },
+  {
+   "capability": "auth identities",
+   "source": "none in archive (original users not exported)",
+   "outcome": "fresh backend, original users not carried over",
+   "status": "accepted",
+   "next_action": "user creates accounts fresh; first signup becomes admin"
+  },
+  {
+   "capability": "uploaded media",
+   "source": "none in archive (private bucket files not exported)",
+   "outcome": "missing; pages show explicit missing-file states",
+   "status": "pending",
+   "next_action": "user re-uploads via dashboard after preview"
+  },
+  {
+   "capability": "chat threads/messages",
+   "source": "none in archive",
+   "outcome": "missing; feature functional with fresh data",
+   "status": "accepted",
+   "next_action": null
+  },
+  {
+   "capability": "AI chat (Lovable AI Gateway)",
+   "source": "src/routes/api/chat.ts",
+   "outcome": "works with platform gateway",
+   "status": "done",
+   "next_action": "not yet exercised in browser"
+  },
+  {
+   "capability": "storage (private media bucket)",
+   "source": "drizzle 0008_media_storage_policies.sql",
+   "outcome": "recreated by migrations",
+   "status": "done",
+   "next_action": null
+  },
+  {
+   "capability": "button rounding unification",
+   "source": "user request",
+   "outcome": "make all buttons pill-rounded like the rest",
+   "status": "done",
+   "next_action": null
+  }
+ ],
+ "warnings": [
+  "Original project's Supabase users, chat threads and uploaded media were not part of the archive (per its own AGENTS.md).",
+  "User passwords/sessions do not carry over; on first visit users sign up fresh, first account becomes admin."
+ ]
+}
