@@ -38,6 +38,10 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const { redirect } = Route.useSearch();
+  const authRedirectUrl =
+    import.meta.env["VITE_DEV_SUPABASE_REDIRECT_URL"] ||
+    import.meta.env["VITE_NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL"] ||
+    `${window.location.origin}/auth`;
   const navigate = useNavigate();
   const [mode, setMode] = useState<"in" | "up" | "forgot">("in");
   const [email, setEmail] = useState("");
@@ -54,7 +58,7 @@ function AuthPage() {
       const { error } = await supabase.auth.resend({
         type: "signup",
         email,
-        options: { emailRedirectTo: window.location.origin + "/dashboard" },
+        options: { emailRedirectTo: authRedirectUrl },
       });
       if (error) throw error;
       setResent(true);
@@ -66,24 +70,44 @@ function AuthPage() {
     }
   }
 
+  function authErrorMessage(error: { code?: string; message?: string }) {
+    const code = error.code ?? "";
+    const message = error.message ?? "";
+    if (code === "email_not_confirmed" || /not (yet )?confirmed/i.test(message)) {
+      setUnconfirmed(true);
+      return "يجب تأكيد بريدك الإلكتروني أولًا. تحقق من صندوق الوارد أو أعد إرسال الرابط.";
+    }
+    if (code === "invalid_credentials" || /invalid login credentials/i.test(message)) {
+      return "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+    }
+    if (code === "over_request_rate_limit" || /rate limit/i.test(message)) {
+      return "محاولات كثيرة. انتظر قليلًا ثم حاول مرة أخرى.";
+    }
+    return "تعذر إتمام تسجيل الدخول. تحقق من الاتصال وحاول مرة أخرى.";
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    const normalizedEmail = email.trim().toLowerCase();
+    setEmail(normalizedEmail);
     setBusy(true);
+    setUnconfirmed(false);
     try {
       if (mode === "in") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({
+          email: normalizedEmail,
+          password,
+        });
         if (error) {
-          if (error.code === "email_not_confirmed" || /not (yet )?confirmed/i.test(error.message))
-            setUnconfirmed(true);
-          throw error;
+          toast.error(authErrorMessage(error));
+          return;
         }
-        setUnconfirmed(false);
-        navigate({ to: target as "/dashboard" });
+        navigate({ to: target as "/dashboard", replace: true });
       } else if (mode === "up") {
         const { data, error } = await supabase.auth.signUp({
-          email,
+          email: normalizedEmail,
           password,
-          options: { emailRedirectTo: window.location.origin + "/dashboard" },
+          options: { emailRedirectTo: window.location.origin + "/auth" },
         });
         if (error) throw error;
         if (data.session) navigate({ to: "/dashboard" });
