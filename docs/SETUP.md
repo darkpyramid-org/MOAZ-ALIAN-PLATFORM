@@ -59,3 +59,14 @@ bun run build
 
 - There is **no** `api-server/` package. HTTP handlers live under `src/routes/api/`.
 - Database schema and migrations live under `moaz-alian/drizzle/`.
+
+## Admin bootstrap
+
+New signups only create a `profiles` row. They are **not** auto-promoted to admin (migration `0012_remove_first_user_auto_admin`).
+
+To grant the first admin after deploy, run as a privileged operator (service role / SQL editor), for example:
+
+```sql
+insert into public.user_roles (user_id, role)
+values ('<auth-user-uuid>', 'admin');
+```
