@@ -17,28 +17,36 @@ export type ChatValidationOk = {
 
 export type ChatValidationErr = {
   ok: false;
-  error: "invalid_json" | "missing_thread" | "missing_messages";
+  error: "missing_thread" | "missing_messages";
   status: 400;
 };
 
-export function parseChatJson(text: string): { ok: true; body: ChatRequestBody } | { ok: false } {
-  try {
-    return { ok: true, body: JSON.parse(text) as ChatRequestBody };
-  } catch {
-    return { ok: false };
+const ALLOWED_MESSAGE_ROLES = new Set(["user", "assistant", "system"]);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isUIMessage(value: unknown): value is UIMessage {
+  if (!isRecord(value) || typeof value.role !== "string" || !ALLOWED_MESSAGE_ROLES.has(value.role)) {
+    return false;
   }
+
+  if (!Array.isArray(value.parts)) {
+    return false;
+  }
+
+  return value.parts.every((part) => isRecord(part) && typeof part.type === "string");
 }
 
 export function validateChatRequestBody(body: ChatRequestBody): ChatValidationOk | ChatValidationErr {
-  const threadId = typeof body.threadId === "string" ? body.threadId : undefined;
+  const threadId = typeof body.threadId === "string" ? body.threadId.trim() : "";
   if (!threadId) {
     return { ok: false, error: "missing_thread", status: 400 };
   }
 
   const rawMessages = Array.isArray(body.messages) ? body.messages : [];
-  const messages = rawMessages
-    .filter((m): m is UIMessage => !!m && typeof m === "object" && "role" in m && "parts" in m)
-    .slice(-MAX_CHAT_MESSAGES);
+  const messages = rawMessages.filter(isUIMessage).slice(-MAX_CHAT_MESSAGES);
 
   if (messages.length === 0) {
     return { ok: false, error: "missing_messages", status: 400 };
