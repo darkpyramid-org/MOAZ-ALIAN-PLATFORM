@@ -17,14 +17,6 @@ const supabaseKey =
   "";
 
 export default defineConfig({
-  tanstackStart: {
-    // Use the Vercel Nitro preset so deployments expose the SSR handler instead of
-    // the Cloudflare worker output, which otherwise responds with a 404 on Vercel.
-    server: { entry: "src/server.ts" },
-  },
-  nitro: {
-    preset: "vercel",
-  },
   vite: {
     define: {
       "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(supabaseUrl),
