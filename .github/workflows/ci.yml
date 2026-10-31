@@ -6,126 +6,118 @@ on:
   pull_request:
     branches: [main, develop]
 
+# Required for Trivy SARIF upload to the Security tab
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
 jobs:
+  # ---------------------------------------------------------------------------
+  # Frontend (moaz-alian) — only package that exists in the repo today
+  # ---------------------------------------------------------------------------
   test-frontend:
+    name: Frontend (lint / format / test)
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: moaz-alian
 
     steps:
-      - uses: actions/checkout@v3
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: '18'
-          cache: 'npm'
-      
+          bun-version: latest
+
       - name: Install dependencies
-        run: npm ci
-      
+        run: bun install --frozen-lockfile
+
       - name: Lint
-        run: npm run lint
-      
+        run: bun run lint
+
       - name: Format check
-        run: npm run format -- --check
-      
-      - name: Tests
-        run: npm run test
+        # package.json "format" is write-only; use prettier --check for CI
+        run: bunx prettier --check .
 
-  test-backend:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: api-server
-
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Lint
-        run: npm run lint
-      
-      - name: Tests
-        run: npm run test
+      - name: Unit tests
+        run: bun run test
 
   build-frontend:
+    name: Frontend build
     needs: test-frontend
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: moaz-alian
-    if: github.ref == 'refs/heads/main'
+    # Only build artifacts on main (or when explicitly needed)
+    if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
 
     steps:
-      - uses: actions/checkout@v3
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: '18'
-          cache: 'npm'
-      
+          bun-version: latest
+
       - name: Install dependencies
-        run: npm ci
-      
+        run: bun install --frozen-lockfile
+
       - name: Build
-        run: npm run build
-      
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        run: bun run build
+
+      - name: Upload build artifact
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
         with:
           name: frontend-build
           path: moaz-alian/dist
+          retention-days: 7
 
-  build-backend:
-    needs: test-backend
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: api-server
-    if: github.ref == 'refs/heads/main'
-
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Build
-        run: npm run build
-
+  # ---------------------------------------------------------------------------
+  # Security scan (filesystem)
+  # ---------------------------------------------------------------------------
   security:
+    name: Security (Trivy)
     runs-on: ubuntu-latest
-    
+
     steps:
-      - uses: actions/checkout@v3
-      
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-      
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "0" # report only; do not fail the job on findings yet
+
       - name: Upload Trivy results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: 'trivy-results.sarif'
+          sarif_file: trivy-results.sarif
+
+  # ---------------------------------------------------------------------------
+  # Placeholder for future backend (api-server does not exist yet)
+  # Uncomment / adapt when the backend package is added to the monorepo.
+  # ---------------------------------------------------------------------------
+  # test-backend:
+  #   name: Backend (lint / test)
+  #   runs-on: ubuntu-latest
+  #   defaults:
+  #     run:
+  #       working-directory: api-server
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: oven-sh/setup-bun@v2
+  #     - run: bun install --frozen-lockfile
+  #     - run: bun run lint
+  #     - run: bun run test
