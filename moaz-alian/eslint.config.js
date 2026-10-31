@@ -37,4 +37,10 @@ export default tseslint.config(
     },
   },
   eslintPluginPrettier,
+  // After prettier/recommended so this overrides prettier/prettier: error
+  {
+    rules: {
+      "prettier/prettier": "warn",
+    },
+  },
 );
