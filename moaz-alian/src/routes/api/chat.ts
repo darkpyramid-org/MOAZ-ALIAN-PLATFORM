@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { convertToModelMessages, type UIMessage } from "ai";
+import { convertToModelMessages } from "ai";
 
 import { createResponsesCall } from "@/lib/chat/responses.server";
 import {
@@ -10,8 +10,7 @@ import {
   verifyThreadOwnership,
 } from "@/lib/chat/chat.server";
 import { withLovableAiGatewayRunIdHeader } from "@/lib/chat/run-id";
-
-const MAX_MESSAGES = 40;
+import { validateChatRequestBody } from "@/lib/chat/request-validation";
 
 export const Route = createFileRoute("/api/chat")({
   server: {
@@ -20,31 +19,29 @@ export const Route = createFileRoute("/api/chat")({
         const user = await requireRouteUser(request);
         if (user instanceof Response) return user;
 
-        let body: { threadId?: unknown; messages?: unknown; trigger?: unknown };
+        let body: unknown;
         try {
           body = await request.json();
         } catch {
           return Response.json({ error: "invalid_json" }, { status: 400 });
         }
 
-        const threadId = typeof body.threadId === "string" ? body.threadId : undefined;
-        if (!threadId) {
-          return Response.json({ error: "missing_thread" }, { status: 400 });
+        const validated = validateChatRequestBody(
+          body && typeof body === "object"
+            ? (body as { threadId?: unknown; messages?: unknown; trigger?: unknown })
+            : {},
+        );
+        if (!validated.ok) {
+          return Response.json({ error: validated.error }, { status: validated.status });
         }
+        const { threadId, messages, trigger } = validated;
+
         if (!(await verifyThreadOwnership(user.supabase, threadId))) {
           return Response.json({ error: "thread_not_found" }, { status: 404 });
         }
 
-        const rawMessages = Array.isArray(body.messages) ? body.messages : [];
-        const messages = rawMessages
-          .filter((m): m is UIMessage => !!m && typeof m === "object" && "role" in m && "parts" in m)
-          .slice(-MAX_MESSAGES);
-        if (messages.length === 0) {
-          return Response.json({ error: "missing_messages" }, { status: 400 });
-        }
-
         // Save the user's turn (only on a fresh send, not a regenerate).
-        if (body.trigger !== "regenerate-message") {
+        if (trigger !== "regenerate-message") {
           const lastUser = [...messages].reverse().find((m) => m.role === "user");
           if (lastUser) {
             await persistUserMessage(user.supabase, threadId, lastUser);
