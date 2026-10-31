@@ -6,16 +6,13 @@ on:
   pull_request:
     branches: [main, develop]
 
-# Required for Trivy SARIF upload to the Security tab
 permissions:
   contents: read
   security-events: write
   actions: read
+  checks: write
 
 jobs:
-  # ---------------------------------------------------------------------------
-  # Frontend (moaz-alian) — only package that exists in the repo today
-  # ---------------------------------------------------------------------------
   test-frontend:
     name: Frontend (lint / format / test)
     runs-on: ubuntu-latest
@@ -39,7 +36,6 @@ jobs:
         run: bun run lint
 
       - name: Format check
-        # package.json "format" is write-only; use prettier --check for CI
         run: bunx prettier --check .
 
       - name: Unit tests
@@ -52,7 +48,6 @@ jobs:
     defaults:
       run:
         working-directory: moaz-alian
-    # Only build artifacts on main (or when explicitly needed)
     if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
 
     steps:
@@ -71,19 +66,18 @@ jobs:
         run: bun run build
 
       - name: Upload build artifact
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && success()
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
           path: moaz-alian/dist
           retention-days: 7
 
-  # ---------------------------------------------------------------------------
-  # Security scan (filesystem)
-  # ---------------------------------------------------------------------------
   security:
     name: Security (Trivy)
     runs-on: ubuntu-latest
+    # Do not block the PR if the scanner or SARIF upload has infra issues
+    continue-on-error: true
 
     steps:
       - name: Checkout
@@ -97,27 +91,11 @@ jobs:
           format: sarif
           output: trivy-results.sarif
           severity: CRITICAL,HIGH
-          exit-code: "0" # report only; do not fail the job on findings yet
+          exit-code: "0"
 
       - name: Upload Trivy results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        if: always() && hashFiles('trivy-results.sarif') != ''
         with:
           sarif_file: trivy-results.sarif
-
-  # ---------------------------------------------------------------------------
-  # Placeholder for future backend (api-server does not exist yet)
-  # Uncomment / adapt when the backend package is added to the monorepo.
-  # ---------------------------------------------------------------------------
-  # test-backend:
-  #   name: Backend (lint / test)
-  #   runs-on: ubuntu-latest
-  #   defaults:
-  #     run:
-  #       working-directory: api-server
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: oven-sh/setup-bun@v2
-  #     - run: bun install --frozen-lockfile
-  #     - run: bun run lint
-  #     - run: bun run test
+          category: trivy-fs
