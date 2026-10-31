@@ -1,6 +1,7 @@
 {
   "name": "tanstack_start_ts",
   "private": true,
+  "description": "MOAZ ALIAN cultural library and research platform",
   "sideEffects": false,
   "type": "module",
   "scripts": {
