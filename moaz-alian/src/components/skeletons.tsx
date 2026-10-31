@@ -260,16 +260,22 @@ export function RowsSkeleton({ rows = 8, chips = 2 }: { rows?: number; chips?: n
   );
 }
 
-/** Table body rows matching the debates table (render inside <TableBody>). */
+/** Table body rows matching the debates table (render inside <TableBody>).
+ * Must not wrap rows in a <div> — invalid HTML inside <tbody> and causes hydration warnings.
+ */
 export function TableRowsSkeleton({ rows = 5, columns = 6 }: { rows?: number; columns?: number }) {
   return (
-    <div role="status" aria-busy="true">
-      <span className="sr-only">جارٍ التحميل…</span>
+    <>
       {Array.from({ length: rows }, (_, r) => (
-        <TableRow key={r} className="align-top">
+        <TableRow
+          key={r}
+          className="align-top"
+          {...(r === 0 ? { role: "status" as const, "aria-busy": true as const } : {})}
+        >
           {Array.from({ length: columns }, (_, c) => (
             <TableCell key={c}>
               <div className="space-y-1.5" aria-hidden>
+                {r === 0 && c === 0 && <span className="sr-only">جارٍ التحميل…</span>}
                 <Skeleton className={`h-3.5 ${ROW_WIDTHS[(r + c) % ROW_WIDTHS.length]}`} />
                 {c === 0 && <Skeleton className="h-3 w-1/2" />}
               </div>
@@ -277,7 +283,7 @@ export function TableRowsSkeleton({ rows = 5, columns = 6 }: { rows?: number; co
           ))}
         </TableRow>
       ))}
-    </div>
+    </>
   );
 }
 
