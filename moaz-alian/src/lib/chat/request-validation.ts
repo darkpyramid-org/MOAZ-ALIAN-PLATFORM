@@ -21,7 +21,8 @@ export type ChatValidationErr = {
   status: 400;
 };
 
-export type BoundedBodyReadResult = { ok: true; text: string } | { ok: false; reason: "too_large" | "invalid_encoding" };
+export type BoundedBodyReadResult =
+  { ok: true; text: string } | { ok: false; reason: "too_large" | "invalid_encoding" };
 
 const ALLOWED_MESSAGE_ROLES = new Set(["user", "assistant"]);
 
