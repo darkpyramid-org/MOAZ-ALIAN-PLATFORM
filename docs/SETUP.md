@@ -2,233 +2,60 @@
 
 ## Prerequisites
 
-- Node.js 18+
-- npm, yarn, or bun
+- [Bun](https://bun.sh) (primary package manager used by CI)
 - Git
-- Supabase account (free tier available)
-- OpenAI API key
+- A Supabase project (Auth + Postgres)
+- Optional: Lovable AI API key for `/api/chat`
 
-## Installation
-
-### 1. Clone Repository
+## Install
 
 ```sh
 git clone https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM.git
-cd MOAZ-ALIAN-PLATFORM
-```
-
-### 2. Frontend Setup (moaz-alian/)
-
-```sh
-cd moaz-alian
-npm install
+cd MOAZ-ALIAN-PLATFORM/moaz-alian
+bun install
 cp .env.example .env.local
 ```
 
-**Edit `.env.local`:**
-```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_OPENAI_API_KEY=your_openai_api_key
-```
+Edit `.env.local` using the names in `.env.example`. **Never** put service-role keys in `VITE_*` variables.
 
-Start development:
-```sh
-npm run dev
-```
-
-Access at: `http://localhost:5173`
-
-### 3. Backend Setup (api-server/)
+## Develop
 
 ```sh
-cd api-server
-npm install
-cp .env.example .env.local
+bun run dev
 ```
 
-**Edit `.env.local`:**
-```env
-DATABASE_URL=postgresql://user:password@localhost:5432/moaz_alian
-OPENAI_API_KEY=your_openai_api_key
-JWT_SECRET=your_jwt_secret_key
-PORT=3000
-NODE_ENV=development
-```
+## Quality checks
 
-Start development:
 ```sh
-npm run dev
+bun run lint
+bun run format:check
+bun run test
+bun run build
 ```
 
-Access at: `http://localhost:3000`
+## Environment variables
 
-## Environment Configuration
-
-### Frontend Variables (moaz-alian/.env.local)
+### Client (browser)
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `VITE_SUPABASE_URL` | Yes | Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Yes | Supabase anonymous key |
-| `VITE_OPENAI_API_KEY` | Yes | OpenAI API key |
-| `VITE_APP_URL` | No | Application base URL |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Yes | Supabase anon/publishable key |
 
-### Backend Variables (api-server/.env.local)
+### Server only
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `DATABASE_URL` | Yes | PostgreSQL connection string |
-| `OPENAI_API_KEY` | Yes | OpenAI API key |
-| `JWT_SECRET` | Yes | Secret for JWT signing |
-| `PORT` | No | Server port (default: 3000) |
-| `NODE_ENV` | No | Environment (development/production) |
+| `SUPABASE_URL` | Yes | Same project URL for SSR/server routes |
+| `SUPABASE_PUBLISHABLE_KEY` | Yes | Publishable key for user-scoped server clients |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes* | Service role for privileged server operations |
+| `LOVABLE_API_KEY` | For chat | Lovable AI gateway |
+| `LOVABLE_DB_MIGRATION_URL` | Optional | Postgres URL for Drizzle migrations |
+| `LOVABLE_CRON_SECRET` | Optional | Cron authentication |
 
-## Database Setup
+\*Required for routes/integrations that use the service-role client.
 
-### Supabase
+## Notes
 
-1. Create account at [supabase.com](https://supabase.com)
-2. Create new project
-3. Get credentials from project settings
-4. Add to frontend `.env.local`
-
-### Local PostgreSQL
-
-1. Install PostgreSQL
-2. Create database:
-   ```sh
-   createdb moaz_alian
-   ```
-3. Run migrations:
-   ```sh
-   cd moaz-alian
-   npm run db:migrate
-   ```
-4. Add connection string to backend `.env.local`:
-   ```
-   DATABASE_URL=postgresql://localhost/moaz_alian
-   ```
-
-## Running Both Applications
-
-**Terminal 1 - Frontend:**
-```sh
-cd moaz-alian
-npm run dev
-```
-
-**Terminal 2 - Backend:**
-```sh
-cd api-server
-npm run dev
-```
-
-Both will run in development mode with hot reload.
-
-## Build for Production
-
-### Frontend
-```sh
-cd moaz-alian
-npm run build
-npm run preview  # Preview production build
-```
-
-### Backend
-```sh
-cd api-server
-npm run build
-```
-
-## Docker Setup (Optional)
-
-### Frontend
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-EXPOSE 5173
-CMD ["npm", "run", "preview"]
-```
-
-### Backend
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-EXPOSE 3000
-CMD ["npm", "start"]
-```
-
-## Code Quality
-
-### All Applications
-
-```sh
-npm run lint      # ESLint check
-npm run format    # Prettier format
-npm run test      # Run tests
-```
-
-## Troubleshooting
-
-### Port Already in Use
-
-Change port in app config:
-```sh
-npm run dev -- --port 3001
-```
-
-### Database Connection Error
-
-1. Verify connection string
-2. Check PostgreSQL is running
-3. Verify user has database access
-
-### Module Not Found
-
-Clear and reinstall:
-```sh
-rm -rf node_modules package-lock.json
-npm install
-```
-
-### Environment Variables Not Loaded
-
-For frontend: ensure variable starts with `VITE_`
-
-For backend: restart dev server after changing `.env`
-
-## IDE Setup
-
-### VS Code Extensions
-
-- ESLint
-- Prettier
-- Tailwind CSS IntelliSense
-- Thunder Client or REST Client (for API testing)
-
-### Settings (.vscode/settings.json)
-
-```json
-{
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "editor.formatOnSave": true,
-  "[typescript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
-}
-```
-
-## Next Steps
-
-- Read [ARCHITECTURE.md](./ARCHITECTURE.md) for system overview
-- Check [API.md](./API.md) for API documentation
-- See [../CONTRIBUTING.md](../CONTRIBUTING.md) for development guidelines
+- There is **no** `api-server/` package. HTTP handlers live under `src/routes/api/`.
+- Database schema and migrations live under `moaz-alian/drizzle/`.
