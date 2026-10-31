@@ -5,22 +5,22 @@
 //     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { loadEnv } from "vite";
+
+const env = loadEnv("development", process.cwd(), "");
+const supabaseUrl = env.SUPABASE_URL || process.env.SUPABASE_URL || "";
+const supabaseKey =
+  env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  env.SUPABASE_PUBLISHABLE_KEY ||
+  env.SUPABASE_ANON_KEY ||
+  process.env.SUPABASE_ANON_KEY ||
+  "";
 
 export default defineConfig({
-  tanstackStart: {
-    // Use the Vercel Nitro preset so deployments expose the SSR handler instead of
-    // the Cloudflare worker output, which otherwise responds with a 404 on Vercel.
-    server: { entry: "src/server.ts" },
-  },
-  nitro: {
-    preset: "vercel",
-  },
   vite: {
     define: {
-      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(process.env.SUPABASE_URL ?? ''),
-      'import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY': JSON.stringify(
-        process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY ?? '',
-      ),
+      "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(supabaseUrl),
+      "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(supabaseKey),
     },
   },
 });
