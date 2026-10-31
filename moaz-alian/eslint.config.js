@@ -40,7 +40,7 @@ export default tseslint.config(
   // After prettier/recommended so this overrides prettier/prettier: error
   {
     rules: {
-      "prettier/prettier": "warn",
+      "prettier/prettier": "error",
     },
   },
 );
