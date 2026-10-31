@@ -55,7 +55,9 @@ function isUIMessage(value: unknown): value is UIMessage {
   return Array.isArray(value.parts) && value.parts.every(isMessagePart);
 }
 
-export function validateChatRequestBody(body: ChatRequestBody): ChatValidationOk | ChatValidationErr {
+export function validateChatRequestBody(
+  body: ChatRequestBody,
+): ChatValidationOk | ChatValidationErr {
   const threadId = typeof body.threadId === "string" ? body.threadId.trim() : "";
   if (!threadId) {
     return { ok: false, error: "missing_thread", status: 400 };
