@@ -57,10 +57,11 @@ export function validateChatRequestBody(body: ChatRequestBody): ChatValidationOk
     return { ok: false, error: "missing_thread", status: 400 };
   }
 
-  if (!Array.isArray(body.messages) || body.messages.length === 0 || !body.messages.every(isUIMessage)) {
+  const rawMessages = body.messages;
+  if (!Array.isArray(rawMessages) || rawMessages.length === 0 || !rawMessages.every(isUIMessage)) {
     return { ok: false, error: "missing_messages", status: 400 };
   }
 
-  const messages = body.messages.slice(-MAX_CHAT_MESSAGES);
+  const messages = (rawMessages as UIMessage[]).slice(-MAX_CHAT_MESSAGES);
   return { ok: true, threadId, messages, trigger: body.trigger };
 }
