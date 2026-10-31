@@ -44,7 +44,11 @@ function isMessagePart(value: unknown): boolean {
 }
 
 function isUIMessage(value: unknown): value is UIMessage {
-  if (!isRecord(value) || typeof value.role !== "string" || !ALLOWED_MESSAGE_ROLES.has(value.role)) {
+  if (
+    !isRecord(value) ||
+    typeof value.role !== "string" ||
+    !ALLOWED_MESSAGE_ROLES.has(value.role)
+  ) {
     return false;
   }
 
