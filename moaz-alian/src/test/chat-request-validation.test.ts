@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { validateChatRequestBody } from "@/lib/chat/request-validation";
+import {
+  readBoundedRequestBody,
+  validateChatRequestBody,
+} from "@/lib/chat/request-validation";
 
 describe("validateChatRequestBody", () => {
   it("requires a non-empty thread ID", () => {
@@ -65,5 +68,43 @@ describe("validateChatRequestBody", () => {
       expect(result.messages).toHaveLength(40);
       expect(result.messages[0]?.parts).toEqual([{ type: "text", text: "10" }]);
     }
+  });
+});
+
+describe("readBoundedRequestBody", () => {
+  it("reads a body within the configured byte limit", async () => {
+    const request = new Request("https://example.test/api/chat", {
+      method: "POST",
+      body: '{"ok":true}',
+    });
+
+    await expect(readBoundedRequestBody(request, 32)).resolves.toEqual({
+      ok: true,
+      text: '{"ok":true}',
+    });
+  });
+
+  it("cancels a request body that exceeds the byte limit", async () => {
+    const request = new Request("https://example.test/api/chat", {
+      method: "POST",
+      body: "123456",
+    });
+
+    await expect(readBoundedRequestBody(request, 5)).resolves.toEqual({
+      ok: false,
+      reason: "too_large",
+    });
+  });
+
+  it("rejects invalid UTF-8 instead of parsing replacement characters", async () => {
+    const request = new Request("https://example.test/api/chat", {
+      method: "POST",
+      body: new Uint8Array([0xff]),
+    });
+
+    await expect(readBoundedRequestBody(request, 5)).resolves.toEqual({
+      ok: false,
+      reason: "invalid_encoding",
+    });
   });
 });
