@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { isValidMediaObjectPath } from "@/lib/media/object-path";
 
 // Serves images uploaded to the private "media" storage bucket.
 // Requests /api/media/media/<path> stream the object with long-lived caching.
 
 const MEDIA_BUCKET = "media";
-const OBJECT_PATH_RE = /^media\/[\w][\w./-]*$/; // no "..", no leading slash games
 
 function storageHeaders(apikey: string): HeadersInit {
   // Publishable key only; bucket reads are gated by a public-read policy.
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/api/media/$")({
         const url = new URL(request.url);
         const path = decodeURIComponent(url.pathname.replace(/^\/api\/media\//, ""));
 
-        if (!OBJECT_PATH_RE.test(path)) {
+        if (!isValidMediaObjectPath(path)) {
           return new Response("Not found", { status: 404 });
         }
 
