@@ -12,13 +12,17 @@ import { FormActions } from "@/components/dashboard/FormActions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/dashboard/categories")({
-  head: () => ({ meta: [
-    { title: "إدارة التصنيفات — لوحة مكتبة معاذ عليان" },
-    { name: "description", content: "إدارة التصنيفات في مكتبة معاذ عليان." },
-    { property: "og:title", content: "إدارة التصنيفات — مكتبة معاذ عليان" },
-    { property: "og:description", content: "إدارة التصنيفات في لوحة إدارة المكتبة." },
-    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "إدارة التصنيفات — لوحة مكتبة معاذ عليان" },
+      { name: "description", content: "إدارة التصنيفات في مكتبة معاذ عليان." },
+      { property: "og:title", content: "إدارة التصنيفات — مكتبة معاذ عليان" },
+      { property: "og:description", content: "إدارة التصنيفات في لوحة إدارة المكتبة." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: CategoriesPage,
 });
 
@@ -45,12 +49,23 @@ function CategoriesPage() {
     e.preventDefault();
     if (!edit) return;
     const id = edit.isNew ? slugify(edit.id || edit.name) : edit.id;
-    if (!id || !edit.name.trim()) { toast.error("الاسم والمعرّف مطلوبان"); return; }
-    const row = { id, name: edit.name.trim(), description: edit.description.trim(), ...(edit.isNew ? { sort_order: cats.length } : {}) };
+    if (!id || !edit.name.trim()) {
+      toast.error("الاسم والمعرّف مطلوبان");
+      return;
+    }
+    const row = {
+      id,
+      name: edit.name.trim(),
+      description: edit.description.trim(),
+      ...(edit.isNew ? { sort_order: cats.length } : {}),
+    };
     const { error } = edit.isNew
       ? await supabase.from("categories").insert(row)
       : await supabase.from("categories").update(row).eq("id", id);
-    if (error) { toast.error(error.code === "23505" ? "المعرّف مستخدم" : error.message); return; }
+    if (error) {
+      toast.error(error.code === "23505" ? "المعرّف مستخدم" : error.message);
+      return;
+    }
     toast.success("تم الحفظ");
     setEdit(null);
     refresh();
@@ -60,7 +75,10 @@ function CategoriesPage() {
     const used = items.filter((i) => i.categoryIds.includes(id)).length;
     if (used && !confirm(`هذا التصنيف مستخدم في ${used} مادة. حذفه؟`)) return;
     const { error } = await supabase.from("categories").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("تم الحذف");
     refresh();
   }
@@ -70,23 +88,36 @@ function CategoriesPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold sm:text-3xl">التصنيفات</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{cats.length.toLocaleString("ar-EG")} تصنيف</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {cats.length.toLocaleString("ar-EG")} تصنيف
+          </p>
         </div>
-        <button className="btn-gold" onClick={() => setEdit({ id: "", name: "", description: "", isNew: true })}>
+        <button
+          className="btn-gold"
+          onClick={() => setEdit({ id: "", name: "", description: "", isNew: true })}
+        >
           <Plus className="size-4" /> تصنيف جديد
         </button>
       </div>
 
       <div className="flex flex-wrap items-center justify-end gap-2">
-        <SortSelect value={sort} onChange={setSort} options={[
-          { value: "order", label: "الترتيب الافتراضي" },
-          { value: "name", label: "حسب الاسم" },
-          { value: "count", label: "الأكثر مواد" },
-        ]} />
+        <SortSelect
+          value={sort}
+          onChange={setSort}
+          options={[
+            { value: "order", label: "الترتيب الافتراضي" },
+            { value: "name", label: "حسب الاسم" },
+            { value: "count", label: "الأكثر مواد" },
+          ]}
+        />
         <ViewToggle view={view} onChange={setView} />
       </div>
 
-      <div className={view === "grid" ? "grid gap-3 sm:grid-cols-2 xl:grid-cols-3" : "flex flex-col gap-2"}>
+      <div
+        className={
+          view === "grid" ? "grid gap-3 sm:grid-cols-2 xl:grid-cols-3" : "flex flex-col gap-2"
+        }
+      >
         {paged.items.map((c) => (
           <div key={c.id} className="flex flex-col rounded-2xl border border-border bg-surface p-4">
             <div className="flex items-start justify-between gap-2">
@@ -97,26 +128,66 @@ function CategoriesPage() {
             </div>
             <p className="mt-1 flex-1 text-sm text-muted-foreground">{c.description}</p>
             <div className="mt-3 flex gap-1">
-              <button onClick={() => setEdit({ ...c, isNew: false })} className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm hover:bg-accent"><Pencil className="size-4" /> تعديل</button>
-              <button onClick={() => remove(c.id)} className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm text-destructive hover:bg-accent"><Trash2 className="size-4" /> حذف</button>
+              <button
+                onClick={() => setEdit({ ...c, isNew: false })}
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm hover:bg-accent"
+              >
+                <Pencil className="size-4" /> تعديل
+              </button>
+              <button
+                onClick={() => remove(c.id)}
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm text-destructive hover:bg-accent"
+              >
+                <Trash2 className="size-4" /> حذف
+              </button>
             </div>
           </div>
         ))}
       </div>
       <div className="overflow-hidden rounded-2xl border border-border bg-surface empty:hidden">
-        <Pagination page={paged.page} pageCount={paged.pageCount} onPage={paged.setPage} total={sorted.length} unit="تصنيف" />
+        <Pagination
+          page={paged.page}
+          pageCount={paged.pageCount}
+          onPage={paged.setPage}
+          total={sorted.length}
+          unit="تصنيف"
+        />
       </div>
 
       <Dialog open={!!edit} onOpenChange={(o) => !o && setEdit(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{edit?.isNew ? "تصنيف جديد" : "تعديل التصنيف"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{edit?.isNew ? "تصنيف جديد" : "تعديل التصنيف"}</DialogTitle>
+          </DialogHeader>
           {edit && (
             <form onSubmit={save} className="space-y-4">
-              <div className="space-y-1.5"><Label>الاسم</Label><Input required value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} /></div>
+              <div className="space-y-1.5">
+                <Label>الاسم</Label>
+                <Input
+                  required
+                  value={edit.name}
+                  onChange={(e) => setEdit({ ...edit, name: e.target.value })}
+                />
+              </div>
               {edit.isNew && (
-                <div className="space-y-1.5"><Label>المعرّف (بالإنجليزية)</Label><Input dir="ltr" placeholder="history" value={edit.id} onChange={(e) => setEdit({ ...edit, id: e.target.value })} /></div>
+                <div className="space-y-1.5">
+                  <Label>المعرّف (بالإنجليزية)</Label>
+                  <Input
+                    dir="ltr"
+                    placeholder="history"
+                    value={edit.id}
+                    onChange={(e) => setEdit({ ...edit, id: e.target.value })}
+                  />
+                </div>
               )}
-              <div className="space-y-1.5"><Label>الوصف</Label><Textarea rows={3} value={edit.description} onChange={(e) => setEdit({ ...edit, description: e.target.value })} /></div>
+              <div className="space-y-1.5">
+                <Label>الوصف</Label>
+                <Textarea
+                  rows={3}
+                  value={edit.description}
+                  onChange={(e) => setEdit({ ...edit, description: e.target.value })}
+                />
+              </div>
               <div>
                 <FormActions onCancel={() => setEdit(null)} />
               </div>

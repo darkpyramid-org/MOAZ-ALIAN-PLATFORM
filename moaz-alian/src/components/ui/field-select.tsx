@@ -1,4 +1,10 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 export type FieldSelectOption = { value: string; label: string; disabled?: boolean };
@@ -34,8 +40,14 @@ export function FieldSelect({
   contentClassName?: string;
 }) {
   return (
-    <Select value={value} onValueChange={onChange} disabled={disabled} {...(dir ? { dir } : {})}
-      {...(open !== undefined ? { open } : {})} {...(onOpenChange ? { onOpenChange } : {})}>
+    <Select
+      value={value}
+      onValueChange={onChange}
+      disabled={disabled}
+      {...(dir ? { dir } : {})}
+      {...(open !== undefined ? { open } : {})}
+      {...(onOpenChange ? { onOpenChange } : {})}
+    >
       <SelectTrigger aria-label={ariaLabel} className={cn("w-full", className)}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>

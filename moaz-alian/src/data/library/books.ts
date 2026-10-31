@@ -146,5 +146,4 @@ export const books: BookItem[] = [
       },
     ],
   },
-
 ];

@@ -18,7 +18,11 @@ export function FaqList() {
       <p className="px-4 pb-3 text-xs text-muted-foreground">
         إجابات سريعة عن أكثر ما يسأل عنه الزوار.
       </p>
-      <Accordion type="single" collapsible className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
+      <Accordion
+        type="single"
+        collapsible
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4"
+      >
         {FAQ_ITEMS.map((item) => (
           <AccordionItem key={item.id} value={item.id} className="last:border-b-0">
             <AccordionTrigger className="text-start text-sm font-medium">

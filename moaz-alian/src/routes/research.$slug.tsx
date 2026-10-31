@@ -2,7 +2,17 @@ import { ErrorScreen, MissingItemScreen } from "@/components/feedback/StatusScre
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { Download } from "lucide-react";
 
-import { DetailBody, DetailShell, FactGrid, MetaList, SiblingList, TocNav, detailHead, siblings, sourceRows } from "@/components/content/Detail";
+import {
+  DetailBody,
+  DetailShell,
+  FactGrid,
+  MetaList,
+  SiblingList,
+  TocNav,
+  detailHead,
+  siblings,
+  sourceRows,
+} from "@/components/content/Detail";
 import { ContentImage } from "@/components/content/cards";
 import { formatDateAr, itemBySlug } from "@/lib/content";
 import type { ResearchItem } from "@/types/content";
@@ -15,7 +25,9 @@ export const Route = createFileRoute("/research/$slug")({
   },
   head: ({ loaderData }) => detailHead(loaderData?.item, "البحث"),
   component: Page,
-  notFoundComponent: () => <MissingItemScreen label="البحث" listTo="/research" listLabel="الأبحاث" />,
+  notFoundComponent: () => (
+    <MissingItemScreen label="البحث" listTo="/research" listLabel="الأبحاث" />
+  ),
   errorComponent: ErrorScreen,
 });
 
@@ -27,20 +39,54 @@ function Page() {
       aside={
         <>
           <TocNav body={item.body} label="محتويات البحث" />
-          <MetaList rows={[["الباحث", item.authorName], ["الصيغة", item.documentFormat], ["عدد المراجع", item.references.length || null], ...sourceRows(item)]} />
+          <MetaList
+            rows={[
+              ["الباحث", item.authorName],
+              ["الصيغة", item.documentFormat],
+              ["عدد المراجع", item.references.length || null],
+              ...sourceRows(item),
+            ]}
+          />
           <SiblingList title="أبحاث أخرى" items={siblings(item, () => true)} />
         </>
       }
     >
       <div className="space-y-10">
-        {item.thumbnailUrl && <ContentImage src={item.thumbnailUrl} fallback="/images/research-cover.webp" title={item.title} rounded />}
+        {item.thumbnailUrl && (
+          <ContentImage
+            src={item.thumbnailUrl}
+            fallback="/images/research-cover.webp"
+            title={item.title}
+            rounded
+          />
+        )}
         {item.documentUrl ? (
-          <a href={item.documentUrl} target="_blank" rel="noopener noreferrer" className="btn-gold text-sm">
+          <a
+            href={item.documentUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-gold text-sm"
+          >
             تحميل الوثيقة <Download className="size-4" aria-hidden />
           </a>
-        ) : <p className="text-sm leading-7 text-muted-foreground">لم يُضف ملف كامل لهذا البحث بعد.</p>}
-        <FactGrid facts={[["الباحث", item.authorName], ["تاريخ النشر", formatDateAr(item.publishedAt)], ["الصيغة", item.documentFormat], ["عدد المراجع", item.references.length || null]]} />
-        <DetailBody item={item} heading="نص البحث" emptyText="لم يُضف النص الكامل أو الملخص التفصيلي لهذا البحث بعد. يمكن لفريق الموقع إضافته من لوحة التحكم." />
+        ) : (
+          <p className="text-sm leading-7 text-muted-foreground">
+            لم يُضف ملف كامل لهذا البحث بعد.
+          </p>
+        )}
+        <FactGrid
+          facts={[
+            ["الباحث", item.authorName],
+            ["تاريخ النشر", formatDateAr(item.publishedAt)],
+            ["الصيغة", item.documentFormat],
+            ["عدد المراجع", item.references.length || null],
+          ]}
+        />
+        <DetailBody
+          item={item}
+          heading="نص البحث"
+          emptyText="لم يُضف النص الكامل أو الملخص التفصيلي لهذا البحث بعد. يمكن لفريق الموقع إضافته من لوحة التحكم."
+        />
         <section>
           <h2 className="mb-3 text-xl font-bold">المراجع</h2>
           {item.references.length ? (

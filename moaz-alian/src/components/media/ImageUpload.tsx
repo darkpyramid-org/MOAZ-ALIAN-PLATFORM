@@ -161,7 +161,8 @@ export function ImageUpload({
               disabled={disabled || uploading}
               onClick={() => inputRef.current?.click()}
             >
-              <Replace />تغيير الصورة
+              <Replace />
+              تغيير الصورة
             </Button>
             <Button
               type="button"
@@ -173,7 +174,8 @@ export function ImageUpload({
                 setPreviewFailed(false);
               }}
             >
-              <Trash2 />إزالة
+              <Trash2 />
+              إزالة
             </Button>
           </div>
         </div>
@@ -211,7 +213,9 @@ export function ImageUpload({
             <>
               <ImagePlus className="size-7 text-muted-foreground" aria-hidden="true" />
               <span className="text-sm font-medium">اضغط لاختيار صورة من جهازك</span>
-              <span className="text-xs text-muted-foreground">أو اسحب الصورة وأفلتها هنا · حتى {maxSizeMb} ميجابايت</span>
+              <span className="text-xs text-muted-foreground">
+                أو اسحب الصورة وأفلتها هنا · حتى {maxSizeMb} ميجابايت
+              </span>
             </>
           )}
         </div>
@@ -226,7 +230,8 @@ export function ImageUpload({
             className="h-auto p-0 text-xs text-muted-foreground"
             onClick={() => setUrlOpen((v) => !v)}
           >
-            <Link2 />{urlOpen ? "إخفاء" : "أو الصق رابط صورة من الإنترنت"}
+            <Link2 />
+            {urlOpen ? "إخفاء" : "أو الصق رابط صورة من الإنترنت"}
           </Button>
           {urlOpen && (
             <div className="mt-2 flex items-start gap-2">

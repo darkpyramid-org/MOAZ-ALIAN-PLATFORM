@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type RefObject,
+} from "react";
 
 /** Keeps an overlay mounted during its exit animation; `visible` flips a frame after mount so CSS transitions run. */
 export function usePresence(open: boolean, exitMs = 340) {
@@ -58,7 +64,8 @@ export function useDismiss(open: boolean, onClose: () => void) {
       window.removeEventListener("keydown", onKey);
       // Only restore if focus is lost (another overlay may have taken it).
       requestAnimationFrame(() => {
-        if (!document.activeElement || document.activeElement === document.body) previous?.focus?.();
+        if (!document.activeElement || document.activeElement === document.body)
+          previous?.focus?.();
       });
     };
   }, [open]);

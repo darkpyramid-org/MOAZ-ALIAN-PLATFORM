@@ -1,7 +1,6 @@
 import type { ContentItem } from "@/types/content";
 import { libraryItems } from "./library";
 
-
 /**
  * Seed dataset.
  *

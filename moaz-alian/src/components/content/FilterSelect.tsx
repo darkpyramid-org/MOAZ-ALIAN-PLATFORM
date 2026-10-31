@@ -1,4 +1,10 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 const ALL = "__all__";
@@ -32,7 +38,11 @@ export function FilterSelect({
       onValueChange={(v) => onChange(v === ALL ? undefined : v)}
       disabled={!!disabled}
     >
-      <SelectTrigger aria-label={label} {...(title ? { title } : {})} className={cn("field-select md:w-auto md:min-w-44", className)}>
+      <SelectTrigger
+        aria-label={label}
+        {...(title ? { title } : {})}
+        className={cn("field-select md:w-auto md:min-w-44", className)}
+      >
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
