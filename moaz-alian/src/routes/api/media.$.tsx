@@ -16,7 +16,12 @@ export const Route = createFileRoute("/api/media/$")({
     handlers: {
       GET: async ({ request }) => {
         const url = new URL(request.url);
-        const path = decodeURIComponent(url.pathname.replace(/^\/api\/media\//, ""));
+        let path: string;
+        try {
+          path = decodeURIComponent(url.pathname.replace(/^\/api\/media\//, ""));
+        } catch {
+          return new Response("Not found", { status: 404 });
+        }
 
         if (!isValidMediaObjectPath(path)) {
           return new Response("Not found", { status: 404 });
