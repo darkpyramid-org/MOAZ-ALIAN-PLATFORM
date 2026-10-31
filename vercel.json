@@ -1,0 +1,5 @@
+{
+  "buildCommand": "cd moaz-alian && bun install --frozen-lockfile && bun run build",
+  "outputDirectory": "moaz-alian/.vercel/output",
+  "framework": null
+}
