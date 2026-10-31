@@ -70,23 +70,23 @@ jobs:
           path: moaz-alian/dist
           retention-days: 7
 
-  # Trivy SARIF upload requires organization/repository security-events permissions.
-  # Keep this scan disabled until the owner enables those permissions; do not claim SARIF is uploaded.
+  # Table output does not require the security-events permission used by SARIF uploads.
   dependency-audit:
-    name: Dependency audit (Bun)
+    name: Dependency vulnerability scan
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: moaz-alian
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+
+      - name: Scan dependencies with Trivy
+        uses: aquasecurity/trivy-action@0.33.1
         with:
-          bun-version: latest
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-      - name: Audit dependencies
-        run: bun pm scan
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
+          vuln-type: library
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
