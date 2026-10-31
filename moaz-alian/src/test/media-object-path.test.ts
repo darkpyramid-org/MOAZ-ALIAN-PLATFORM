@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { isValidMediaObjectPath } from "@/lib/media/object-path";
 
 describe("isValidMediaObjectPath", () => {
@@ -9,6 +10,10 @@ describe("isValidMediaObjectPath", () => {
 
   it("rejects traversal and invalid shapes", () => {
     expect(isValidMediaObjectPath("media/../secret")).toBe(false);
+    expect(isValidMediaObjectPath("media/covers/../secret")).toBe(false);
+    expect(isValidMediaObjectPath("media/covers/./secret")).toBe(false);
+    expect(isValidMediaObjectPath("media//secret")).toBe(false);
+    expect(isValidMediaObjectPath("media/covers/")).toBe(false);
     expect(isValidMediaObjectPath("../media/x")).toBe(false);
     expect(isValidMediaObjectPath("/media/x")).toBe(false);
     expect(isValidMediaObjectPath("other/bucket/x")).toBe(false);
