@@ -1,40 +1,33 @@
 import { describe, expect, it } from "vitest";
-import { parseChatJson, validateChatRequestBody } from "@/lib/chat/request-validation";
-
-describe("parseChatJson", () => {
-  it("rejects invalid JSON", () => {
-    expect(parseChatJson("{").ok).toBe(false);
-  });
-
-  it("accepts object JSON", () => {
-    const r = parseChatJson('{"threadId":"t1"}');
-    expect(r.ok).toBe(true);
-  });
-});
+import { validateChatRequestBody } from "@/lib/chat/request-validation";
 
 describe("validateChatRequestBody", () => {
-  it("requires threadId", () => {
-    const r = validateChatRequestBody({ messages: [{ role: "user", parts: [] }] });
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error).toBe("missing_thread");
+  it("requires a non-empty thread ID", () => {
+    for (const threadId of [undefined, "", "   ", 42]) {
+      const result = validateChatRequestBody({ threadId, messages: [{ role: "user", parts: [] }] });
+      expect(result).toMatchObject({ ok: false, error: "missing_thread", status: 400 });
+    }
   });
 
-  it("requires at least one valid message", () => {
-    const r = validateChatRequestBody({ threadId: "t1", messages: [{ foo: 1 }] });
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error).toBe("missing_messages");
+  it("rejects missing or malformed messages", () => {
+    for (const messages of [undefined, [], [{ foo: "bar" }], [{ role: "owner", parts: [] }], [{ role: "user", parts: "not-an-array" }]]) {
+      const result = validateChatRequestBody({ threadId: "thread-1", messages });
+      expect(result).toMatchObject({ ok: false, error: "missing_messages", status: 400 });
+    }
   });
 
-  it("accepts valid payload and trims message window", () => {
-    const messages = Array.from({ length: 50 }, (_, i) => ({
-      role: i % 2 === 0 ? "user" : "assistant",
-      parts: [{ type: "text", text: String(i) }],
+  it("trims thread IDs and caps the message window", () => {
+    const messages = Array.from({ length: 50 }, (_, index) => ({
+      role: index % 2 === 0 ? "user" : "assistant",
+      parts: [{ type: "text", text: String(index) }],
     }));
-    const r = validateChatRequestBody({ threadId: "abc", messages });
-    expect(r.ok).toBe(true);
-    if (r.ok) {
-      expect(r.threadId).toBe("abc");
-      expect(r.messages.length).toBe(40);
+
+    const result = validateChatRequestBody({ threadId: "  thread-1  ", messages });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.threadId).toBe("thread-1");
+      expect(result.messages).toHaveLength(40);
+      expect(result.messages[0]?.parts).toEqual([{ type: "text", text: "10" }]);
     }
   });
 });
