@@ -12,11 +12,21 @@ import type { ContentItem } from "@/types/content";
 const PAGE_SIZE = 9;
 export const RETURN_KEY = "return-to-results";
 
-export function PageHero({ kicker, title, intro }: { kicker: string; title: string; intro: string }) {
+export function PageHero({
+  kicker,
+  title,
+  intro,
+}: {
+  kicker: string;
+  title: string;
+  intro: string;
+}) {
   return (
     <section className="hero-band">
       <div className="container-editorial py-10 md:py-14">
-        <p className="animate-rise mb-2 text-xs font-semibold tracking-wide text-primary">{kicker}</p>
+        <p className="animate-rise mb-2 text-xs font-semibold tracking-wide text-primary">
+          {kicker}
+        </p>
         <h1 className="animate-rise-1 text-3xl font-bold tracking-tight md:text-5xl">{title}</h1>
         <span className="gold-rule mt-5 block" aria-hidden />
         <p className="animate-rise-2 mt-5 max-w-2xl leading-8 text-muted-foreground">{intro}</p>
@@ -25,7 +35,11 @@ export function PageHero({ kicker, title, intro }: { kicker: string; title: stri
   );
 }
 
-const SORT_LABELS: Record<SortKey, string> = { new: "الأحدث أولًا", old: "الأقدم أولًا", title: "حسب العنوان" };
+const SORT_LABELS: Record<SortKey, string> = {
+  new: "الأحدث أولًا",
+  old: "الأقدم أولًا",
+  title: "حسب العنوان",
+};
 
 export function Listing({
   items,
@@ -58,7 +72,10 @@ export function Listing({
   // Debounce typing into the URL.
   useEffect(() => {
     if ((search.q ?? "") === draft) return;
-    const t = setTimeout(() => onChange({ ...search, q: draft || undefined, page: undefined }), 250);
+    const t = setTimeout(
+      () => onChange({ ...search, q: draft || undefined, page: undefined }),
+      250,
+    );
     return () => clearTimeout(t);
   }, [draft]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -78,7 +95,8 @@ export function Listing({
 
   const chips: { label: string; clear: ListingSearch }[] = [];
   if (search.q) chips.push({ label: `«${search.q}»`, clear: { q: undefined } });
-  if (search.cat) chips.push({ label: categoryById(search.cat)?.name ?? search.cat, clear: { cat: undefined } });
+  if (search.cat)
+    chips.push({ label: categoryById(search.cat)?.name ?? search.cat, clear: { cat: undefined } });
   if (search.series) chips.push({ label: search.series, clear: { series: undefined } });
   const anyFilter = chips.length > 0 || !!search.sort;
 
@@ -87,7 +105,10 @@ export function Listing({
       <div className="mb-4 grid grid-cols-2 gap-3 md:flex md:items-center">
         <label className="relative col-span-2 flex-1">
           <span className="sr-only">ابحث في هذا القسم</span>
-          <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+          <Search
+            className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
           <input
             type="search"
             value={draft}
@@ -118,7 +139,10 @@ export function Listing({
           label="الترتيب"
           value={search.sort ?? "new"}
           onChange={(v) => set({ sort: !v || v === "new" ? undefined : (v as SortKey) })}
-          options={(Object.keys(SORT_LABELS) as SortKey[]).map((k) => ({ value: k, label: SORT_LABELS[k] }))}
+          options={(Object.keys(SORT_LABELS) as SortKey[]).map((k) => ({
+            value: k,
+            label: SORT_LABELS[k],
+          }))}
           disabled={!!search.q}
           title={search.q ? "النتائج مرتبة حسب الصلة بالبحث" : undefined}
         />
@@ -141,7 +165,11 @@ export function Listing({
           </button>
         ))}
         {anyFilter && (
-          <button type="button" onClick={() => onChange({})} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+          <button
+            type="button"
+            onClick={() => onChange({})}
+            className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+          >
             <RotateCcw className="size-3" aria-hidden />
             إعادة الضبط
           </button>
@@ -152,10 +180,19 @@ export function Listing({
         <EmptyState
           title="لا توجد نتائج مطابقة"
           hint="جرّب كلمات أخرى أو أزل عوامل التصفية."
-          action={anyFilter ? <button type="button" className="btn-outline text-sm" onClick={() => onChange({})}>إعادة ضبط الفلاتر</button> : undefined}
+          action={
+            anyFilter ? (
+              <button type="button" className="btn-outline text-sm" onClick={() => onChange({})}>
+                إعادة ضبط الفلاتر
+              </button>
+            ) : undefined
+          }
         />
       ) : (
-        <div key={`${page}-${filtered.length}`} className={`animate-rise grid gap-6 sm:grid-cols-2 ${grid}`}>
+        <div
+          key={`${page}-${filtered.length}`}
+          className={`animate-rise grid gap-6 sm:grid-cols-2 ${grid}`}
+        >
           {visible.map((it) => (
             <ContentCard key={it.id} item={it} />
           ))}

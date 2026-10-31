@@ -10,7 +10,14 @@ export const Route = createFileRoute("/sitemap.xml")({
       GET: ({ request }) => {
         const origin = new URL(request.url).origin;
         const paths = [
-          "/", "/videos", "/books", "/articles", "/research", "/categories", "/about", "/search",
+          "/",
+          "/videos",
+          "/books",
+          "/articles",
+          "/research",
+          "/categories",
+          "/about",
+          "/search",
           ...categories.map((c) => `/categories/${c.id}`),
           ...allItems.filter((i) => !i.demo).map((i) => `${TYPE_ROUTES[i.type]}/${i.slug}`),
         ];

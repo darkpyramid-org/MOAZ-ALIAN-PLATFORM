@@ -1,10 +1,7 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { streamText, type ModelMessage } from "ai";
 
-import {
-  createLovableAiGatewayRunIdFetch,
-  getLovableAiGatewayRunId,
-} from "./run-id";
+import { createLovableAiGatewayRunIdFetch, getLovableAiGatewayRunId } from "./run-id";
 
 const GATEWAY_BASE_URL = "https://ai.gateway.lovable.dev/v1";
 

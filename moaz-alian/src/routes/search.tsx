@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-
 import { ContentCard } from "@/components/content/cards";
 import { PageHero, RETURN_KEY } from "@/components/content/Listing";
 import { EmptyState } from "@/components/content/ui";
@@ -22,7 +21,11 @@ export const Route = createFileRoute("/search")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { title: "البحث — معاذ عليان" },
-      { name: "description", content: "ابحث في فيديوهات وكتب ومقالات وأبحاث معاذ عليان ببحث عربي يتجاوز اختلاف الهمزات والتشكيل." },
+      {
+        name: "description",
+        content:
+          "ابحث في فيديوهات وكتب ومقالات وأبحاث معاذ عليان ببحث عربي يتجاوز اختلاف الهمزات والتشكيل.",
+      },
       { property: "og:title", content: "البحث — معاذ عليان" },
       { property: "og:description", content: "بحث عربي ذكي في المكتبة كاملة." },
     ],
@@ -50,7 +53,11 @@ function Page() {
 
   return (
     <>
-      <PageHero kicker="بحث" title={q ? `نتائج «${q}»` : "ابحث في المكتبة"} intro="البحث يتجاهل التشكيل واختلاف الهمزات والتاء المربوطة." />
+      <PageHero
+        kicker="بحث"
+        title={q ? `نتائج «${q}»` : "ابحث في المكتبة"}
+        intro="البحث يتجاهل التشكيل واختلاف الهمزات والتاء المربوطة."
+      />
       <div className="container-editorial section-y-sm">
         <form
           role="search"
@@ -60,7 +67,10 @@ function Page() {
           }}
           className="relative mb-6"
         >
-          <Search className="pointer-events-none absolute start-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
+          <Search
+            className="pointer-events-none absolute start-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
           <input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
@@ -68,7 +78,12 @@ function Page() {
             aria-label="كلمة البحث"
             className="field w-full py-3.5 ps-12 pe-28"
           />
-          <button type="submit" className="btn-gold absolute end-1.5 top-1/2 -translate-y-1/2 text-sm">بحث</button>
+          <button
+            type="submit"
+            className="btn-gold absolute end-1.5 top-1/2 -translate-y-1/2 text-sm"
+          >
+            بحث
+          </button>
         </form>
         {q && (
           <div className="mb-6 flex flex-wrap gap-2">

@@ -14,9 +14,17 @@ export const Route = createFileRoute("/videos/")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { title: "الفيديوهات — معاذ عليان" },
-      { name: "description", content: "حلقات وحوارات مسجّلة في مقارنة الأديان والرد على الشبهات، مع روابط مشاهدتها في مصادرها الأصلية." },
+      {
+        name: "description",
+        content:
+          "حلقات وحوارات مسجّلة في مقارنة الأديان والرد على الشبهات، مع روابط مشاهدتها في مصادرها الأصلية.",
+      },
       { property: "og:title", content: "الفيديوهات — معاذ عليان" },
-      { property: "og:description", content: "حلقات وحوارات مسجّلة في مقارنة الأديان والرد على الشبهات، مع روابط مشاهدتها في مصادرها الأصلية." },
+      {
+        property: "og:description",
+        content:
+          "حلقات وحوارات مسجّلة في مقارنة الأديان والرد على الشبهات، مع روابط مشاهدتها في مصادرها الأصلية.",
+      },
     ],
   }),
   component: Page,
@@ -29,7 +37,7 @@ function Page() {
   return (
     <>
       <PageHero kicker={page.kicker} title={page.title} intro={page.intro} />
-      
+
       <Listing
         items={itemsByType("video")}
         search={search}

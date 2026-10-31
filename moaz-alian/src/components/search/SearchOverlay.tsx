@@ -29,7 +29,6 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
   useScrollLock(open);
   useDismiss(open, onClose);
 
-
   useEffect(() => {
     if (!open) return;
     setQ("");
@@ -43,7 +42,11 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
 
   const catHits = useMemo(() => {
     const n = normalizeArabic(q);
-    return n ? categories.filter((c) => normalizeArabic(c.name + " " + c.description).includes(n)).slice(0, 4) : [];
+    return n
+      ? categories
+          .filter((c) => normalizeArabic(c.name + " " + c.description).includes(n))
+          .slice(0, 4)
+      : [];
   }, [q]);
 
   const groups = useMemo(() => {
@@ -66,7 +69,11 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
       aria-label="البحث في الموقع"
       onKeyDown={trapFocus(panelRef)}
     >
-      <div data-state={state} className="drawer-backdrop absolute inset-0 bg-overlay backdrop-blur-sm" onClick={onClose} />
+      <div
+        data-state={state}
+        className="drawer-backdrop absolute inset-0 bg-overlay backdrop-blur-sm"
+        onClick={onClose}
+      />
       <div
         ref={panelRef}
         data-state={state}
@@ -133,7 +140,13 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
               <p className="mb-2 text-xs font-semibold text-primary">التصنيفات</p>
               <div className="flex flex-wrap gap-2">
                 {catHits.map((c) => (
-                  <Link key={c.id} to="/categories/$id" params={{ id: c.id }} onClick={onClose} className="rounded-full border border-border px-3 py-1 text-sm transition-colors hover:border-primary hover:text-primary">
+                  <Link
+                    key={c.id}
+                    to="/categories/$id"
+                    params={{ id: c.id }}
+                    onClick={onClose}
+                    className="rounded-full border border-border px-3 py-1 text-sm transition-colors hover:border-primary hover:text-primary"
+                  >
                     <Highlight text={c.name} query={q} />
                   </Link>
                 ))}
@@ -164,12 +177,17 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                         className="search-hit group mx-1 flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 transition-colors hover:bg-accent"
                       >
                         <span className="min-w-0">
-                          <span className="block text-sm font-medium leading-6"><Highlight text={item.title} query={q} /></span>
+                          <span className="block text-sm font-medium leading-6">
+                            <Highlight text={item.title} query={q} />
+                          </span>
                           <span className="block truncate text-xs text-muted-foreground">
                             {item.description}
                           </span>
                         </span>
-                        <ArrowLeft className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-x-1 group-hover:text-primary" aria-hidden />
+                        <ArrowLeft
+                          className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-x-1 group-hover:text-primary"
+                          aria-hidden
+                        />
                       </Link>
                     </li>
                   );

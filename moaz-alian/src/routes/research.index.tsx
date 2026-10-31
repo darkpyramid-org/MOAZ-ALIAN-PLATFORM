@@ -14,9 +14,15 @@ export const Route = createFileRoute("/research/")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { title: "الأبحاث — معاذ عليان" },
-      { name: "description", content: "أوراق بحثية ومجموعات مراجع في النصوص الدينية ومقارنة الأديان." },
+      {
+        name: "description",
+        content: "أوراق بحثية ومجموعات مراجع في النصوص الدينية ومقارنة الأديان.",
+      },
       { property: "og:title", content: "الأبحاث — معاذ عليان" },
-      { property: "og:description", content: "أوراق بحثية ومجموعات مراجع في النصوص الدينية ومقارنة الأديان." },
+      {
+        property: "og:description",
+        content: "أوراق بحثية ومجموعات مراجع في النصوص الدينية ومقارنة الأديان.",
+      },
     ],
   }),
   component: Page,
@@ -29,7 +35,7 @@ function Page() {
   return (
     <>
       <PageHero kicker={page.kicker} title={page.title} intro={page.intro} />
-      
+
       <Listing
         items={itemsByType("research")}
         search={search}

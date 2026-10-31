@@ -25,7 +25,15 @@ function Lines({ rows, className = "space-y-2.5" }: { rows: number; className?: 
 }
 
 /** Screen-reader announcement wrapper for every skeleton screen. */
-function Busy({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
+function Busy({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <div role="status" aria-busy="true" className={className}>
       <span className="sr-only">{label}</span>
@@ -38,7 +46,10 @@ function Busy({ label, children, className }: { label: string; children: React.R
 
 export function MediaCardSkeleton() {
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface" aria-hidden>
+    <div
+      className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface"
+      aria-hidden
+    >
       <Skeleton className="aspect-video w-full grow rounded-none border-b border-border" />
       <div className="flex flex-col p-4">
         <Skeleton className="h-3 w-16" />
@@ -55,7 +66,10 @@ export function MediaCardSkeleton() {
 
 export function BookCardSkeleton() {
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface" aria-hidden>
+    <div
+      className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface"
+      aria-hidden
+    >
       <Skeleton className="aspect-[2/3] w-full grow rounded-none border-b border-border" />
       <div className="flex flex-col p-4">
         <Skeleton className="h-3 w-16" />
@@ -95,7 +109,13 @@ export function CardGridSkeleton({
   return (
     <div className={grid} aria-hidden>
       {Array.from({ length: count }, (_, i) =>
-        variant === "book" ? <BookCardSkeleton key={i} /> : variant === "explore" ? <ExploreCardSkeleton key={i} /> : <MediaCardSkeleton key={i} />,
+        variant === "book" ? (
+          <BookCardSkeleton key={i} />
+        ) : variant === "explore" ? (
+          <ExploreCardSkeleton key={i} />
+        ) : (
+          <MediaCardSkeleton key={i} />
+        ),
       )}
     </div>
   );
@@ -118,7 +138,13 @@ export function PageHeroSkeleton() {
 }
 
 /** Listing pages (/videos, /books, /articles, /research, /categories). */
-export function ListingSkeleton({ grid = "md:grid-cols-3", variant = "media" }: { grid?: string; variant?: "media" | "book" }) {
+export function ListingSkeleton({
+  grid = "md:grid-cols-3",
+  variant = "media",
+}: {
+  grid?: string;
+  variant?: "media" | "book";
+}) {
   return (
     <Busy label="جارٍ التحميل…">
       <PageHeroSkeleton />
@@ -163,11 +189,19 @@ export function HomeSkeleton() {
         </div>
         <Skeleton className="mt-14 h-4 w-36" aria-hidden />
         <div className="mt-6">
-          <CardGridSkeleton count={8} variant="explore" grid="grid gap-5 sm:grid-cols-2 lg:grid-cols-4" />
+          <CardGridSkeleton
+            count={8}
+            variant="explore"
+            grid="grid gap-5 sm:grid-cols-2 lg:grid-cols-4"
+          />
         </div>
         <Skeleton className="mt-14 h-4 w-28" aria-hidden />
         <div className="mt-6">
-          <CardGridSkeleton count={5} variant="book" grid="grid gap-5 sm:grid-cols-3 lg:grid-cols-5" />
+          <CardGridSkeleton
+            count={5}
+            variant="book"
+            grid="grid gap-5 sm:grid-cols-3 lg:grid-cols-5"
+          />
         </div>
       </div>
     </Busy>
@@ -239,7 +273,11 @@ export function ContentPageSkeleton() {
 /** Row list matching dashboard content/users lists. */
 export function RowsSkeleton({ rows = 8, chips = 2 }: { rows?: number; chips?: number }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-surface" role="status" aria-busy="true">
+    <div
+      className="overflow-hidden rounded-2xl border border-border bg-surface"
+      role="status"
+      aria-busy="true"
+    >
       <span className="sr-only">جارٍ التحميل…</span>
       <ul className="divide-y divide-border" aria-hidden>
         {Array.from({ length: rows }, (_, i) => (
@@ -315,7 +353,10 @@ export function DashboardShellSkeleton() {
   return (
     <div className="flex min-h-screen w-full bg-background" role="status" aria-busy="true">
       <span className="sr-only">جارٍ التحميل…</span>
-      <div className="hidden w-60 shrink-0 border-e border-border bg-sidebar p-3 md:block" aria-hidden>
+      <div
+        className="hidden w-60 shrink-0 border-e border-border bg-sidebar p-3 md:block"
+        aria-hidden
+      >
         <Skeleton className="h-9 w-full rounded-lg" />
         <div className="mt-4 space-y-1.5">
           {Array.from({ length: 7 }, (_, i) => (
@@ -324,7 +365,10 @@ export function DashboardShellSkeleton() {
         </div>
       </div>
       <div className="min-w-0 flex-1">
-        <div className="flex h-14 items-center gap-3 border-b border-border px-3 sm:px-5" aria-hidden>
+        <div
+          className="flex h-14 items-center gap-3 border-b border-border px-3 sm:px-5"
+          aria-hidden
+        >
           <Skeleton className="size-7 rounded-md" />
           <Skeleton className="h-4 w-48" />
           <Skeleton className="ms-auto h-6 w-16 rounded-full" />

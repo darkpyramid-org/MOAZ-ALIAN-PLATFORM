@@ -116,7 +116,10 @@ export function searchItems(query: string, pool: ContentItem[] = allItems): Sear
     }
     if (allMatched) hits.push({ item, score });
   }
-  return hits.sort((a, b) => b.score - a.score || (b.item.publishedAt ?? "").localeCompare(a.item.publishedAt ?? ""));
+  return hits.sort(
+    (a, b) =>
+      b.score - a.score || (b.item.publishedAt ?? "").localeCompare(a.item.publishedAt ?? ""),
+  );
 }
 
 export function formatDateAr(iso: string | null): string | null {

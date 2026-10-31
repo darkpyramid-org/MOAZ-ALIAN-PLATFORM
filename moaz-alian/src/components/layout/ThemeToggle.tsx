@@ -11,7 +11,9 @@ export const THEME_BOOT_SCRIPT = `(function(){try{var t=localStorage.getItem("${
 
 function applyTheme(theme: Theme) {
   document.documentElement.classList.toggle("light", theme === "light");
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "light" ? "#f7f4ed" : "#101820");
+  document
+    .querySelector('meta[name="theme-color"]')
+    ?.setAttribute("content", theme === "light" ? "#f7f4ed" : "#101820");
   try {
     localStorage.setItem(THEME_KEY, theme);
   } catch {

@@ -5,7 +5,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /** Sort dropdown built on the shared FieldSelect so every list page stays consistent. */
-export function SortSelect({ value, onChange, options, className }: {
+export function SortSelect({
+  value,
+  onChange,
+  options,
+  className,
+}: {
   value: string;
   onChange: (value: string) => void;
   options: FieldSelectOption[];
@@ -24,7 +29,11 @@ export function SortSelect({ value, onChange, options, className }: {
 }
 
 /** Grid/list switch used by card-based list pages. */
-export function ViewToggle({ view, onChange, className }: {
+export function ViewToggle({
+  view,
+  onChange,
+  className,
+}: {
   view: "list" | "grid";
   onChange: (view: "list" | "grid") => void;
   className?: string;
@@ -34,7 +43,14 @@ export function ViewToggle({ view, onChange, className }: {
     { key: "grid" as const, icon: LayoutGrid, label: "عرض شبكة" },
   ];
   return (
-    <div className={cn("flex shrink-0 self-center rounded-lg border border-border bg-surface p-1", className)} role="group" aria-label="طريقة العرض">
+    <div
+      className={cn(
+        "flex shrink-0 self-center rounded-lg border border-border bg-surface p-1",
+        className,
+      )}
+      role="group"
+      aria-label="طريقة العرض"
+    >
       {opts.map((o) => (
         <button
           key={o.key}
@@ -44,7 +60,9 @@ export function ViewToggle({ view, onChange, className }: {
           onClick={() => onChange(o.key)}
           className={cn(
             "rounded-md p-1.5 transition",
-            view === o.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent",
+            view === o.key
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-accent",
           )}
         >
           <o.icon className="size-4" aria-hidden />
@@ -55,7 +73,11 @@ export function ViewToggle({ view, onChange, className }: {
 }
 
 /** Filter chip; toggles one list filter on/off. */
-export function FilterChip({ active, onClick, children }: {
+export function FilterChip({
+  active,
+  onClick,
+  children,
+}: {
   active: boolean;
   onClick: () => void;
   children: ReactNode;
@@ -67,7 +89,9 @@ export function FilterChip({ active, onClick, children }: {
       onClick={onClick}
       className={cn(
         "shrink-0 rounded-full border px-3 py-1.5 text-sm transition",
-        active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-surface hover:bg-accent",
+        active
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-border bg-surface hover:bg-accent",
       )}
     >
       {children}
@@ -92,7 +116,13 @@ export function usePaged<T>(list: T[], pageSize: number, resetKey: unknown) {
 }
 
 /** Pager footer shown only when there is more than one page. */
-export function Pagination({ page, pageCount, onPage, total, unit = "مادة" }: {
+export function Pagination({
+  page,
+  pageCount,
+  onPage,
+  total,
+  unit = "مادة",
+}: {
   page: number;
   pageCount: number;
   onPage: (page: number) => void;
@@ -103,13 +133,26 @@ export function Pagination({ page, pageCount, onPage, total, unit = "مادة" }
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-3 sm:px-5">
       <p className="text-xs text-muted-foreground" aria-live="polite">
-        صفحة {page.toLocaleString("ar-EG")} من {pageCount.toLocaleString("ar-EG")} • {total.toLocaleString("ar-EG")} {unit}
+        صفحة {page.toLocaleString("ar-EG")} من {pageCount.toLocaleString("ar-EG")} •{" "}
+        {total.toLocaleString("ar-EG")} {unit}
       </p>
       <div className="flex gap-1">
-        <Button type="button" variant="outline" size="sm" disabled={page <= 1} onClick={() => onPage(page - 1)}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={page <= 1}
+          onClick={() => onPage(page - 1)}
+        >
           <ChevronRight className="size-4" aria-hidden /> السابق
         </Button>
-        <Button type="button" variant="outline" size="sm" disabled={page >= pageCount} onClick={() => onPage(page + 1)}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={page >= pageCount}
+          onClick={() => onPage(page + 1)}
+        >
           التالي <ChevronLeft className="size-4" aria-hidden />
         </Button>
       </div>

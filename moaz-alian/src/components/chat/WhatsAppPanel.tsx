@@ -48,7 +48,9 @@ export function WhatsAppPanel() {
       </div>
       <p className="px-4 pb-3 text-xs text-muted-foreground">
         اختر رسالة جاهزة أو اكتب رسالتك، وسيفتح واتساب على الرقم{" "}
-        <span dir="ltr" className="font-medium text-foreground">{WHATSAPP_DISPLAY}</span>{" "}
+        <span dir="ltr" className="font-medium text-foreground">
+          {WHATSAPP_DISPLAY}
+        </span>{" "}
         مباشرة.
       </p>
 
@@ -84,8 +86,6 @@ export function WhatsAppPanel() {
           className="field w-full resize-none rounded-2xl border-input bg-input/40 px-3 py-2 text-xs"
         />
         <Button asChild className="w-full">
-
-
           <a href={waLink(message)} target="_blank" rel="noopener noreferrer">
             <ExternalLink className="size-4" aria-hidden="true" />
             فتح واتساب وإرسال الرسالة

@@ -29,13 +29,19 @@ export function FeaturedArticle() {
         </div>
         <div className="p-8">
           <TypeKicker type="article" />
-          <h2 className="mt-2 text-2xl font-bold leading-snug group-hover:text-primary">{a.title}</h2>
+          <h2 className="mt-2 text-2xl font-bold leading-snug group-hover:text-primary">
+            {a.title}
+          </h2>
           <p className="mt-3 leading-8 text-muted-foreground">{a.description}</p>
           <div className="mt-5 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             {formatDateAr(a.publishedAt) && <span>{formatDateAr(a.publishedAt)}</span>}
             {a.demo && <DemoBadge />}
             <span className="inline-flex items-center gap-1 font-medium text-primary">
-              اقرأ المقال <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-1" aria-hidden />
+              اقرأ المقال{" "}
+              <ArrowLeft
+                className="size-4 transition-transform group-hover:-translate-x-1"
+                aria-hidden
+              />
             </span>
           </div>
         </div>
@@ -51,7 +57,12 @@ export function FeaturedVideo() {
   return (
     <section className="border-y border-border bg-deep">
       <div className="container-editorial grid items-center gap-10 section-y lg:grid-cols-[1.4fr_1fr]">
-        <Link to="/videos/$slug" params={{ slug: v.slug }} className="group relative block overflow-hidden rounded-lg" aria-label={`مشاهدة: ${v.title}`}>
+        <Link
+          to="/videos/$slug"
+          params={{ slug: v.slug }}
+          className="group relative block overflow-hidden rounded-lg"
+          aria-label={`مشاهدة: ${v.title}`}
+        >
           <div className="transition-transform duration-300 group-hover:scale-[1.02]">
             <VideoThumb title={v.title} />
           </div>

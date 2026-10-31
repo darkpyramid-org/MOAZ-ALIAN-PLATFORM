@@ -21,13 +21,24 @@ type DatePickerProps = {
   dir?: "rtl" | "ltr";
 };
 
-export function DatePicker({ value, onChange, id, name, placeholder, disabled, className, dir = "rtl", ...aria }: DatePickerProps) {
+export function DatePicker({
+  value,
+  onChange,
+  id,
+  name,
+  placeholder,
+  disabled,
+  className,
+  dir = "rtl",
+  ...aria
+}: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
   const selected = parseDateValue(value);
   const locale = dir === "rtl" ? ar : enUS;
-  const text = dir === "rtl"
-    ? { placeholder: "اختر التاريخ", today: "اليوم", clear: "مسح التاريخ" }
-    : { placeholder: "Pick a date", today: "Today", clear: "Clear date" };
+  const text =
+    dir === "rtl"
+      ? { placeholder: "اختر التاريخ", today: "اليوم", clear: "مسح التاريخ" }
+      : { placeholder: "Pick a date", today: "Today", clear: "Clear date" };
 
   function choose(date?: Date) {
     onChange(serializeDateValue(date));
@@ -38,22 +49,61 @@ export function DatePicker({ value, onChange, id, name, placeholder, disabled, c
     <Popover open={open} onOpenChange={setOpen}>
       {name && <input type="hidden" name={name} value={value ?? ""} disabled={disabled} />}
       <PopoverTrigger asChild>
-        <Button id={id} type="button" variant="outline" disabled={disabled} dir={dir}
-          className={cn("field h-10 w-full min-w-0 justify-start px-4 text-start font-normal", !selected && "text-muted-foreground", className)}
-          {...aria}>
+        <Button
+          id={id}
+          type="button"
+          variant="outline"
+          disabled={disabled}
+          dir={dir}
+          className={cn(
+            "field h-10 w-full min-w-0 justify-start px-4 text-start font-normal",
+            !selected && "text-muted-foreground",
+            className,
+          )}
+          {...aria}
+        >
           <CalendarIcon aria-hidden="true" />
-          <span className="truncate">{selected ? format(selected, "d MMMM yyyy", { locale }) : placeholder ?? text.placeholder}</span>
+          <span className="truncate">
+            {selected
+              ? format(selected, "d MMMM yyyy", { locale })
+              : (placeholder ?? text.placeholder)}
+          </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" dir={dir} className="pointer-events-auto w-auto max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl p-0 shadow-float">
-        <Calendar mode="single" selected={selected} onSelect={choose} defaultMonth={selected ?? new Date()}
-          locale={locale} dir={dir} captionLayout="dropdown" autoFocus
+      <PopoverContent
+        align="start"
+        dir={dir}
+        className="pointer-events-auto w-auto max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl p-0 shadow-float"
+      >
+        <Calendar
+          mode="single"
+          selected={selected}
+          onSelect={choose}
+          defaultMonth={selected ?? new Date()}
+          locale={locale}
+          dir={dir}
+          captionLayout="dropdown"
+          autoFocus
           formatters={{ formatMonthDropdown: (date) => format(date, "MMM", { locale }) }}
-          labels={{ labelMonthDropdown: () => dir === "rtl" ? "الشهر" : "Month", labelYearDropdown: () => dir === "rtl" ? "السنة" : "Year" }}
-          className="pointer-events-auto" />
+          labels={{
+            labelMonthDropdown: () => (dir === "rtl" ? "الشهر" : "Month"),
+            labelYearDropdown: () => (dir === "rtl" ? "السنة" : "Year"),
+          }}
+          className="pointer-events-auto"
+        />
         <div className="flex items-center justify-between gap-2 border-t border-border p-2">
-          <Button type="button" variant="ghost" size="sm" onClick={() => choose(new Date())}>{text.today}</Button>
-          <Button type="button" variant="ghost" size="sm" disabled={!value} onClick={() => choose()}>{text.clear}</Button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => choose(new Date())}>
+            {text.today}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={!value}
+            onClick={() => choose()}
+          >
+            {text.clear}
+          </Button>
         </div>
       </PopoverContent>
     </Popover>

@@ -14,9 +14,15 @@ export const Route = createFileRoute("/books/")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { title: "الكتب — معاذ عليان" },
-      { name: "description", content: "كتب ومؤلفات منشورة، مع روابط القراءة المتاحة من مصادر معتمدة." },
+      {
+        name: "description",
+        content: "كتب ومؤلفات منشورة، مع روابط القراءة المتاحة من مصادر معتمدة.",
+      },
       { property: "og:title", content: "الكتب — معاذ عليان" },
-      { property: "og:description", content: "كتب ومؤلفات منشورة، مع روابط القراءة المتاحة من مصادر معتمدة." },
+      {
+        property: "og:description",
+        content: "كتب ومؤلفات منشورة، مع روابط القراءة المتاحة من مصادر معتمدة.",
+      },
     ],
   }),
   component: Page,
@@ -29,7 +35,7 @@ function Page() {
   return (
     <>
       <PageHero kicker={page.kicker} title={page.title} intro={page.intro} />
-      
+
       <Listing
         items={itemsByType("book")}
         search={search}

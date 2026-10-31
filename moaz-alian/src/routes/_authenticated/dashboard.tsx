@@ -13,7 +13,10 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { title: "لوحة التحكم — مكتبة معاذ عليان" },
-      { name: "description", content: "إدارة محتوى مكتبة معاذ عليان: الفيديوهات والكتب والمقالات والأبحاث." },
+      {
+        name: "description",
+        content: "إدارة محتوى مكتبة معاذ عليان: الفيديوهات والكتب والمقالات والأبحاث.",
+      },
       { property: "og:title", content: "لوحة التحكم — مكتبة معاذ عليان" },
       { property: "og:description", content: "إدارة محتوى المكتبة." },
       { name: "robots", content: "noindex" },
@@ -44,11 +47,16 @@ function DashboardLayout() {
           <ShieldAlert className="mx-auto size-10 text-primary" />
           <h1 className="mt-4 text-xl font-bold">لا تملك صلاحية الدخول بعد</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            حسابك ({data?.user?.email}) مسجّل، لكن يلزم أن يمنحك أحد المشرفين صلاحية من صفحة المستخدمين.
+            حسابك ({data?.user?.email}) مسجّل، لكن يلزم أن يمنحك أحد المشرفين صلاحية من صفحة
+            المستخدمين.
           </p>
           <div className="mt-6 flex justify-center gap-2">
-            <Link to="/" className="btn-outline">المكتبة</Link>
-            <button onClick={signOut} className="btn-gold">تسجيل الخروج</button>
+            <Link to="/" className="btn-outline">
+              المكتبة
+            </Link>
+            <button onClick={signOut} className="btn-gold">
+              تسجيل الخروج
+            </button>
           </div>
         </div>
       </div>
@@ -67,9 +75,12 @@ function DashboardLayout() {
               <SidebarTrigger aria-label="فتح/إغلاق القائمة" />
               <span className="h-5 w-px bg-border" />
               <span className="truncate text-sm text-muted-foreground">{data.user?.email}</span>
-              <span className="rounded-full bg-accent px-2 py-0.5 text-xs">{isAdmin ? "مشرف" : "محرّر"}</span>
+              <span className="rounded-full bg-accent px-2 py-0.5 text-xs">
+                {isAdmin ? "مشرف" : "محرّر"}
+              </span>
               <button onClick={signOut} className="btn-outline ms-auto !px-3.5 !py-1.5 text-sm">
-                <LogOut className="size-4" /><span className="hidden sm:inline">خروج</span>
+                <LogOut className="size-4" />
+                <span className="hidden sm:inline">خروج</span>
               </button>
             </div>
           </header>

@@ -3,7 +3,15 @@ import { useEffect, useState } from "react";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { ExternalLink } from "lucide-react";
 
-import { ArticleBody, DetailShell, MetaList, detailHead, relatedOfType, sourceRows, tableOfContents } from "@/components/content/Detail";
+import {
+  ArticleBody,
+  DetailShell,
+  MetaList,
+  detailHead,
+  relatedOfType,
+  sourceRows,
+  tableOfContents,
+} from "@/components/content/Detail";
 import { ContentImage, VideoCard } from "@/components/content/cards";
 import { itemBySlug } from "@/lib/content";
 import type { ArticleItem, VideoItem } from "@/types/content";
@@ -16,7 +24,9 @@ export const Route = createFileRoute("/articles/$slug")({
   },
   head: ({ loaderData }) => detailHead(loaderData?.item, "المقال"),
   component: Page,
-  notFoundComponent: () => <MissingItemScreen label="المقال" listTo="/articles" listLabel="المقالات" />,
+  notFoundComponent: () => (
+    <MissingItemScreen label="المقال" listTo="/articles" listLabel="المقالات" />
+  ),
   errorComponent: ErrorScreen,
 });
 
@@ -63,12 +73,18 @@ function Page() {
         aside={
           <>
             {toc.length > 0 && (
-              <nav aria-label="محتويات المقال" className="rounded-2xl border border-border bg-surface p-5 lg:sticky lg:top-24">
+              <nav
+                aria-label="محتويات المقال"
+                className="rounded-2xl border border-border bg-surface p-5 lg:sticky lg:top-24"
+              >
                 <p className="mb-3 text-sm font-semibold">محتويات المقال</p>
                 <ol className="space-y-2 text-sm">
                   {toc.map((t) => (
                     <li key={t.id} className={t.level === 3 ? "ps-4" : ""}>
-                      <a href={`#${t.id}`} className="text-muted-foreground transition-colors hover:text-primary">
+                      <a
+                        href={`#${t.id}`}
+                        className="text-muted-foreground transition-colors hover:text-primary"
+                      >
                         {t.text}
                       </a>
                     </li>
@@ -79,7 +95,10 @@ function Page() {
             <MetaList
               rows={[
                 ["الكاتب", item.authorName],
-                ["مدة القراءة", item.readingTimeMinutes != null ? `${item.readingTimeMinutes} دقائق` : null],
+                [
+                  "مدة القراءة",
+                  item.readingTimeMinutes != null ? `${item.readingTimeMinutes} دقائق` : null,
+                ],
                 ...sourceRows(item),
               ]}
             />
@@ -98,16 +117,32 @@ function Page() {
           ) : null
         }
       >
-        {item.thumbnailUrl && <div className="mb-8"><ContentImage src={item.thumbnailUrl} fallback="/images/article-cover.webp" title={item.title} rounded /></div>}
+        {item.thumbnailUrl && (
+          <div className="mb-8">
+            <ContentImage
+              src={item.thumbnailUrl}
+              fallback="/images/article-cover.webp"
+              title={item.title}
+              rounded
+            />
+          </div>
+        )}
         {item.body ? (
           <ArticleBody body={item.body} />
         ) : (
           <div className="rounded-2xl border border-border bg-surface p-6">
             <p className="leading-8 text-muted-foreground">
-              {item.sourceUrl ? "نص المقال الكامل غير متوفر هنا. يمكنك الرجوع إلى المصدر الأصلي لقراءته." : "لم يُضف النص الكامل لهذا المقال بعد."}
+              {item.sourceUrl
+                ? "نص المقال الكامل غير متوفر هنا. يمكنك الرجوع إلى المصدر الأصلي لقراءته."
+                : "لم يُضف النص الكامل لهذا المقال بعد."}
             </p>
             {item.sourceUrl && (
-              <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" className="btn-gold mt-4 text-sm">
+              <a
+                href={item.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-gold mt-4 text-sm"
+              >
                 قراءة المقال في مصدره <ExternalLink className="size-4" aria-hidden />
               </a>
             )}

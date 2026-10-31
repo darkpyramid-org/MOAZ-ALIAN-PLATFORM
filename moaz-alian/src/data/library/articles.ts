@@ -90,5 +90,4 @@ export const articles: ArticleItem[] = [
 الرد الجيد يبدأ بالإنصاف، وينتهي بالوضوح لا بالاستعراض.`,
     readingTimeMinutes: 3,
   },
-
 ];
