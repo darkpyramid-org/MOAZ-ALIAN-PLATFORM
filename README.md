@@ -2,167 +2,69 @@
 
 مساحة معرفية عربية للبحث والقراءة: فيديوهات، كتب، مقالات وأبحاث، مع لوحة تحكم للفريق ومساعد ذكي.
 
-A comprehensive Arabic knowledge platform with video, book, article, and research content, featuring team dashboard and intelligent assistant.
+An Arabic knowledge platform for videos, books, articles, and research, with a team dashboard and AI assistant.
 
-## Repository Structure
+## Repository structure
 
 ```
 .
-├── moaz-alian/          # Frontend application (React + TanStack)
-├── api-server/          # Backend API server (Node.js)
-├── docs/                # Shared documentation
-├── .github/             # GitHub workflows and templates
-├── README.md            # This file
-├── CHANGELOG.md         # Version history
-├── CONTRIBUTING.md      # Contribution guidelines
-└── LICENSE              # MIT License
+├── moaz-alian/          # Full app (TanStack Start + React 19 + Supabase + Bun)
+├── docs/                # Documentation
+├── .github/             # GitHub Actions and templates
+├── README.md
+├── CONTRIBUTING.md
+└── LICENSE
 ```
 
-## Quick Start
+There is **no** separate `api-server/` package. Server routes live under `moaz-alian/src/routes/api/` (for example `/api/chat` and `/api/media/$`).
 
-### Frontend (moaz-alian)
+## Quick start
 
 ```sh
 cd moaz-alian
-npm install
-npm run dev
+bun install
+cp .env.example .env.local   # fill in real values
+bun run dev
 ```
 
-Frontend runs at: `http://localhost:5173`
+App runs at `http://localhost:5173` (or the port Vite prints).
 
-### Backend (api-server)
+## Tech stack
 
-```sh
-cd api-server
-npm install
-npm run dev
-```
+- **Runtime / package manager:** Bun
+- **UI:** React 19, TanStack Start & Router, Tailwind CSS, Radix UI
+- **Data / auth:** Supabase (Postgres + Auth + RLS)
+- **ORM / migrations:** Drizzle
+- **AI:** Lovable AI gateway (`LOVABLE_API_KEY`) via `/api/chat`
 
-Backend runs at: `http://localhost:3000`
+## Scripts (`moaz-alian/`)
 
-## Tech Stack
-
-### Frontend
-- React 19 with TypeScript
-- TanStack Start & Router
-- Tailwind CSS + Radix UI
-- Vite build tool
-- Vercel AI SDK
-
-### Backend
-- Node.js with Express/Nitro
-- PostgreSQL (Supabase)
-- Drizzle ORM
-- Authentication (Lovable Cloud Auth)
+| Command | Purpose |
+|---------|---------|
+| `bun run dev` | Development server |
+| `bun run build` | Production build |
+| `bun run lint` | ESLint |
+| `bun run format` | Prettier write |
+| `bun run format:check` | Prettier check |
+| `bun run test` | Vitest (once) |
 
 ## Documentation
 
-- [Setup Guide](./docs/SETUP.md) - Installation and configuration
-- [Architecture](./docs/ARCHITECTURE.md) - System design overview
-- [API Documentation](./docs/API.md) - API endpoints and usage
-- [Contributing](./CONTRIBUTING.md) - How to contribute
-- [Roadmap](./docs/ROADMAP.md) - Future plans
+- [Setup](./docs/SETUP.md)
+- [Architecture](./docs/ARCHITECTURE.md)
+- [API](./docs/API.md) — real routes only
+- [Contributing](./CONTRIBUTING.md)
+- [Roadmap](./docs/ROADMAP.md)
 
-## Development
+## Environment
 
-### Prerequisites
-- Node.js 18+
-- npm/yarn/bun
-- Git
+See `moaz-alian/.env.example` for client (`VITE_*`) and server variables.  
+**Never** expose `SUPABASE_SERVICE_ROLE_KEY` under a `VITE_` prefix.
 
-### Environment Setup
+## CI
 
-Create `.env.local` files in both `moaz-alian/` and `api-server/`:
-
-**moaz-alian/.env.local:**
-```env
-VITE_SUPABASE_URL=your_url
-VITE_SUPABASE_ANON_KEY=your_key
-VITE_OPENAI_API_KEY=your_key
-```
-
-**api-server/.env.local:**
-```env
-DATABASE_URL=your_database_url
-OPENAI_API_KEY=your_key
-JWT_SECRET=your_secret
-```
-
-### Running Both Apps
-
-Terminal 1 (Frontend):
-```sh
-cd moaz-alian
-npm run dev
-```
-
-Terminal 2 (Backend):
-```sh
-cd api-server
-npm run dev
-```
-
-## Code Quality
-
-### Frontend
-```sh
-cd moaz-alian
-npm run lint      # Check linting
-npm run format    # Format code
-npm run test      # Run tests
-```
-
-### Backend
-```sh
-cd api-server
-npm run lint      # Check linting
-npm run format    # Format code
-npm run test      # Run tests
-```
-
-## Building
-
-### Frontend
-```sh
-cd moaz-alian
-npm run build     # Production build
-npm run preview   # Preview build
-```
-
-### Backend
-```sh
-cd api-server
-npm run build     # Production build
-```
-
-## Deployment
-
-- **Frontend**: Vercel, Netlify, Cloudflare Pages
-- **Backend**: Vercel, Railway, Heroku, AWS Lambda
-- **Database**: Supabase (managed PostgreSQL)
-
-See [SETUP.md](./docs/SETUP.md) for detailed deployment instructions.
-
-## Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+GitHub Actions (`.github/workflows/ci.yml`) uses **Bun** only: install, lint, format check, test, and build. There is no backend job.
 
 ## License
 
-This project is licensed under the MIT License - see [LICENSE](./LICENSE) file for details.
-
-## Support
-
-- 📚 [Documentation](./docs/)
-- 🐛 [Report Issues](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues)
-- 💬 [Discussions](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/discussions)
-
----
-
-Built with ❤️ by the MOAZ ALIAN team
+MIT — see [LICENSE](./LICENSE).
