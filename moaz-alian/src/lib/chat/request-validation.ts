@@ -68,7 +68,10 @@ export async function readBoundedRequestBody(
   }
 
   try {
-    return { ok: true, text: new TextDecoder("utf-8", { fatal: true }).decode(bytes) };
+    return {
+      ok: true,
+      text: new TextDecoder("utf-8", { fatal: true }).decode(bytes),
+    };
   } catch {
     return { ok: false, reason: "invalid_encoding" };
   }
