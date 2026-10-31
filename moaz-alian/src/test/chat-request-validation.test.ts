@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  readBoundedRequestBody,
-  validateChatRequestBody,
-} from "@/lib/chat/request-validation";
+import { readBoundedRequestBody, validateChatRequestBody } from "@/lib/chat/request-validation";
 
 describe("readBoundedRequestBody", () => {
   it("reads a body within the configured byte limit", async () => {
