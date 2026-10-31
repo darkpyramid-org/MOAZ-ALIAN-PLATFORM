@@ -27,6 +27,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function isSafeFileUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "data:";
+  } catch {
+    return false;
+  }
+}
+
 function isMessagePart(value: unknown): boolean {
   if (!isRecord(value) || typeof value.type !== "string") {
     return false;
@@ -37,10 +46,18 @@ function isMessagePart(value: unknown): boolean {
   }
 
   if (value.type === "file") {
-    return typeof value.mediaType === "string" && typeof value.url === "string";
+    return (
+      typeof value.mediaType === "string" &&
+      value.mediaType.length > 0 &&
+      value.mediaType.length <= 255 &&
+      typeof value.url === "string" &&
+      isSafeFileUrl(value.url)
+    );
   }
 
-  return true;
+  // This endpoint has no tools or source-part contract. Reject unknown part
+  // types instead of forwarding arbitrary client-controlled objects to the SDK.
+  return false;
 }
 
 function isUIMessage(value: unknown): value is UIMessage {
@@ -52,7 +69,11 @@ function isUIMessage(value: unknown): value is UIMessage {
     return false;
   }
 
-  return Array.isArray(value.parts) && value.parts.every(isMessagePart);
+  return (
+    Array.isArray(value.parts) &&
+    value.parts.length > 0 &&
+    value.parts.every(isMessagePart)
+  );
 }
 
 export function validateChatRequestBody(
@@ -64,7 +85,12 @@ export function validateChatRequestBody(
   }
 
   const rawMessages = body.messages;
-  if (!Array.isArray(rawMessages) || rawMessages.length === 0 || !rawMessages.every(isUIMessage)) {
+  if (
+    !Array.isArray(rawMessages) ||
+    rawMessages.length === 0 ||
+    !rawMessages.every(isUIMessage) ||
+    rawMessages[rawMessages.length - 1]?.role !== "user"
+  ) {
     return { ok: false, error: "missing_messages", status: 400 };
   }
 
