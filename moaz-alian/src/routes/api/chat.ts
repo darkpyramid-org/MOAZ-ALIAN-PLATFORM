@@ -10,10 +10,7 @@ import {
   verifyThreadOwnership,
 } from "@/lib/chat/chat.server";
 import { withLovableAiGatewayRunIdHeader } from "@/lib/chat/run-id";
-import {
-  readBoundedRequestBody,
-  validateChatRequestBody,
-} from "@/lib/chat/request-validation";
+import { readBoundedRequestBody, validateChatRequestBody } from "@/lib/chat/request-validation";
 
 export const Route = createFileRoute("/api/chat")({
   server: {
