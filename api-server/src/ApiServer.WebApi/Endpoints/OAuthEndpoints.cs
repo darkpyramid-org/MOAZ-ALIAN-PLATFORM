@@ -34,15 +34,7 @@ public static class OAuthEndpoints
                             title: "غير مُفعَّل");
                     }
 
-                    var state = Convert.ToBase64String(RandomNumberGenerator.GetBytes(24));
-                    http.Response.Cookies.Append(StateCookie, state, new CookieOptions
-                    {
-                        HttpOnly = true,
-                        Secure = http.Request.IsHttps,
-                        SameSite = SameSiteMode.Lax,
-                        Expires = DateTimeOffset.UtcNow.AddMinutes(10),
-                        Path = "/",
-                    });
+                    var state = CreateSignedState(options.Value);
 
                     var redirectUri = cfg.RedirectUri!;
                     var authorizationEndpoint = cfg.AuthorizationEndpoint ?? DefaultAuthorizationEndpoint(p);
@@ -82,13 +74,10 @@ public static class OAuthEndpoints
                         return Results.Problem(detail: "Provider not configured.", statusCode: StatusCodes.Status501NotImplemented);
                     }
 
-                    var storedState = http.Request.Cookies[StateCookie];
-                    if (string.IsNullOrEmpty(state) || string.IsNullOrEmpty(storedState) || !CryptographicOperations.FixedTimeEquals(
-                            Encoding.UTF8.GetBytes(state), Encoding.UTF8.GetBytes(storedState)))
+                    if (string.IsNullOrEmpty(state) || !VerifySignedState(options.Value, state))
                     {
                         return Results.BadRequest(new { title = "حالة OAuth غير صالحة", status = 400 });
                     }
-                    http.Response.Cookies.Delete(StateCookie);
 
                     if (string.IsNullOrEmpty(code))
                     {
@@ -138,7 +127,7 @@ public static class OAuthEndpoints
                         }
 
                         var auth = await authService.ExternalLoginAsync(email, name, avatar, p, cancellationToken);
-                        return Results.Redirect($"{options.Value.FrontendUrl}/auth/oauth-callback?token={Uri.EscapeDataString(auth.Token)}");
+                        return Results.Redirect($"{options.Value.FrontendUrl}/auth?token={Uri.EscapeDataString(auth.Token)}");
                     }
                     catch (Exception ex)
                     {
@@ -177,6 +166,48 @@ public static class OAuthEndpoints
         _ => throw new ArgumentOutOfRangeException(nameof(provider)),
     };
 
+    private static string CreateSignedState(AuthOptions options)
+    {
+        var nonce = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
+        var ts = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var payload = $"{ts}.{nonce}";
+        var sig = ComputeHmac(payload, options.JwtSecret ?? "");
+        return Convert.ToBase64String(Encoding.UTF8.GetBytes($"{payload}.{sig}"))
+            .Replace("+", "-").Replace("/", "_").TrimEnd('=');
+    }
+
+    private static bool VerifySignedState(AuthOptions options, string state)
+    {
+        try
+        {
+            var padded = state.Replace("-", "+").Replace("_", "/");
+            switch (padded.Length % 4)
+            {
+                case 2: padded += "=="; break;
+                case 3: padded += "="; break;
+            }
+            var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(padded));
+            var parts = decoded.Split('.');
+            if (parts.Length != 3) return false;
+            if (!long.TryParse(parts[0], out var ts)) return false;
+            var age = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - ts;
+            if (age < 0 || age > 600) return false; // 10 min
+            var payload = $"{parts[0]}.{parts[1]}";
+            var expected = ComputeHmac(payload, options.JwtSecret ?? "");
+            return CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(expected), Encoding.UTF8.GetBytes(parts[2]));
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static string ComputeHmac(string data, string secret)
+    {
+        using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
+        return Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(data)));
+    }
     private static (string? Email, string? Name, string? Avatar) ExtractUserInfo(string provider, JsonElement root)
     {
         if (provider == "google")
