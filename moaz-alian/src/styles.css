@@ -891,36 +891,6 @@ html:has(body[data-scroll-locked]) {
     min-height: 100vh;
     background: var(--color-background);
   }
-  .status-grid {
-    position: absolute;
-    inset: 0;
-    z-index: -2;
-    background-image:
-      linear-gradient(
-        color-mix(in oklab, var(--color-foreground) 6%, transparent) 1px,
-        transparent 1px
-      ),
-      linear-gradient(
-        90deg,
-        color-mix(in oklab, var(--color-foreground) 6%, transparent) 1px,
-        transparent 1px
-      );
-    background-size: 44px 44px;
-    mask-image: radial-gradient(ellipse at center, black 20%, transparent 70%);
-    animation: status-grid-pan 24s linear infinite;
-  }
-  .status-orb {
-    position: absolute;
-    z-index: -1;
-    border-radius: 999px;
-    filter: blur(60px);
-    opacity: 0.45;
-    background: color-mix(in oklab, var(--color-primary) 70%, transparent);
-    animation: status-float 9s ease-in-out infinite;
-  }
-  .status-orb-danger {
-    background: color-mix(in oklab, var(--color-destructive) 55%, transparent);
-  }
   .status-code {
     font-size: clamp(6rem, 22vw, 12rem);
     font-weight: 700;
@@ -929,14 +899,7 @@ html:has(body[data-scroll-locked]) {
   }
   .status-digit {
     display: inline-block;
-    background: linear-gradient(
-      180deg,
-      var(--color-primary),
-      color-mix(in oklab, var(--color-primary) 25%, transparent)
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: var(--color-primary);
     animation: status-bob 4.5s ease-in-out infinite;
   }
   .status-digit:nth-child(2) {
@@ -1003,15 +966,6 @@ html:has(body[data-scroll-locked]) {
   }
 }
 
-@keyframes status-float {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(24px, -30px) scale(1.08);
-  }
-}
 @keyframes status-bob {
   0%,
   100% {
@@ -1024,11 +978,6 @@ html:has(body[data-scroll-locked]) {
 @keyframes status-spin {
   to {
     rotate: 360deg;
-  }
-}
-@keyframes status-grid-pan {
-  to {
-    background-position: 44px 44px;
   }
 }
 @keyframes status-shake {

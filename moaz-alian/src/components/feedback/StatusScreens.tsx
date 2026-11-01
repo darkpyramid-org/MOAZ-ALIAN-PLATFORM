@@ -37,12 +37,6 @@ function Stage({
 }) {
   return (
     <section className={`status-stage ${full ? "status-stage-full" : ""}`}>
-      <div className="status-grid" aria-hidden />
-      <div
-        className={`status-orb ${danger ? "status-orb-danger" : ""} size-72 -top-10 start-[8%]`}
-        aria-hidden
-      />
-      <div className="status-orb size-80 bottom-0 end-[6%] [animation-delay:-4s]" aria-hidden />
       <div className="relative w-full max-w-2xl text-center">{children}</div>
     </section>
   );

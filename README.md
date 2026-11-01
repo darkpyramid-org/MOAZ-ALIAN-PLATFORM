@@ -35,8 +35,10 @@ bun install
 bun run dev
 ```
 
-App runs at the port Vite prints; set `VITE_API_URL` / `API_URL` if the API is not on
-`http://localhost:5199`.
+App runs at the port Vite prints; set `API_URL` (SSR) if the API is not on
+`http://localhost:5199`. Browser calls don't need a variable in production:
+they stay same-origin under `/proxy-api`, which `vercel.json` rewrites to the
+backend — an HTTPS page must never fetch an HTTP API directly (mixed content).
 
 ## Tech stack
 
