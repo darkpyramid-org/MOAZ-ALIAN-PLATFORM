@@ -47,8 +47,9 @@ async function proxy(request: Request): Promise<Response> {
       headers: responseHeaders,
     });
   } catch (error) {
+    const msg = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
     console.error("[proxy-api] upstream fetch failed", error);
-    return new Response(JSON.stringify({ title: "Bad Gateway", status: 502 }), {
+    return new Response(JSON.stringify({ title: "Bad Gateway", status: 502, detail: msg }), {
       status: 502,
       headers: { "Content-Type": "application/json" },
     });
