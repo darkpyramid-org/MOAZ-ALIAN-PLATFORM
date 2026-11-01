@@ -28,6 +28,7 @@ lerna-debug.log*
 .env.local
 .env.*.local
 .dev.vars
+appsettings.*.user.json
 
 # IDE
 .vscode/*

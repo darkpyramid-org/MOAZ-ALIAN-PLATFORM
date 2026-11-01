@@ -22,6 +22,17 @@ using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ---- Machine-local overrides (e.g. the real JWT secret on the IIS host) ----
+// Optional per-host file, never committed: `appsettings.{Environment}.user.json`
+// wins over every committed JSON file, so a deployment carries its credentials
+// without panel access and without the repo ever holding them. IIS environment
+// variables set through the hosting panel take BOTH ranks above this file when
+// explicitly configured there — the file exists so they do not have to be.
+builder.Configuration.AddJsonFile(
+    $"appsettings.{builder.Environment.EnvironmentName}.user.json",
+    optional: true,
+    reloadOnChange: false);
+
 // ---- Application + Infrastructure (the two Add* calls wire every service,
 // repository, reader, cache, clock, and the JWT authentication) ----
 builder.Services.AddApplication();
@@ -58,6 +69,7 @@ builder.Services.AddScoped<IAuthorizationHandler, SiteAdminRequirementHandler>()
 // policy: the access token rides in the Authorization header, never a cookie,
 // which keeps this API inert against CSRF by construction. ----
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+var allowVercelOrigins = builder.Configuration.GetValue<bool>("Cors:AllowVercelOrigins", false);
 
 builder.Services.AddCors(options => options.AddPolicy(
     "frontend",
@@ -66,6 +78,16 @@ builder.Services.AddCors(options => options.AddPolicy(
         if (allowedOrigins is { Length: > 0 })
         {
             policy.WithOrigins(allowedOrigins);
+        }
+        else if (allowVercelOrigins)
+        {
+            // The frontend lives on Vercel, whose per-deployment subdomains change with
+            // every publish: accept the platform's scheme instead of guessing URLs.
+            // Writes stay protected by the JWT regardless — CORS here is only the
+            // browser's preflight, not the authorization boundary.
+            policy.SetIsOriginAllowed(origin =>
+                Uri.TryCreate(origin, UriKind.Absolute, out var uri)
+                && uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase));
         }
         else if (builder.Environment.IsDevelopment())
         {

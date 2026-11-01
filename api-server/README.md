@@ -199,18 +199,42 @@ The profile is self-contained (`win-x86`) and deploys through MSDeploy/WMSVC. Th
 `*.pubxml.user` file (encrypted deploy password, connection-string prompt) is machine-local and
 git-ignored — never commit it.
 
-On IIS, set the environment variables at the site level so the app sees production values
-(IIS Manager → your site → Configuration Editor → `environmentVariables`, or a local-only
-`web.config` transform):
+**The production secret lives in `appsettings.Production.user.json`** (project root, the deploy
+machine only, git-ignored) — the composition root loads optional `appsettings.{Environment}.user.json`
+overrides, so the IIS box needs no hosting-panel variables:
 
-- `ASPNETCORE_ENVIRONMENT=Production`
-- `ConnectionStrings__Postgres` — the production database (the dev pooler string must not ship)
-- `Auth__JwtSecret` — a fresh 32+ character random value
-- `Auth__Issuer` — the site's public URL (`https://moaz-alian.runasp.net`) so issued tokens validate against it
-- `Cors__AllowedOrigins__0` — the frontend's exact production origin
+```json
+{
+  "Auth": {
+    "Issuer": "http://moaz-alian.runasp.net",
+    "JwtSecret": "<generate once: openssl rand -hex 32>"
+  },
+  "Cors": { "AllowVercelOrigins": true }
+}
+```
 
-Note: TLS also terminates at the host here, plain HTTP inside IIS is expected, and
-`UseForwardedHeaders` already trusts loopback proxies in front of Kestrel.
+Regenerating it is just re-running the file with a new secret — every previous issued token
+stops validating, which is what you want on rotation. A hosting-panel `Auth__JwtSecret` variable
+would outrank nothing: filling the user file is enough; both rank below explicitly configured
+environment variables (`ASPNETCORE_ENVIRONMENT` ordering — see configuration precedence, the
+user file sits last).
+
+Frontend side (Vercel): set **`VITE_API_URL`** and **`API_URL`** to
+`https://moaz-alian.runasp.net` in Project Settings → Environment Variables, then redeploy —
+the built browser bundle and the SSR server both bake the base URL at build time.
+
+CORS: `Cors:AllowVercelOrigins=true` (the default in `appsettings.Production.json`) accepts the
+platform's per-deployment `*.vercel.app` subdomains. When the frontend has a final custom
+domain, pin it exactly in `Cors:AllowedOrigins__0` (user or panel config) and set the flag to
+`false`.
+
+Startup failures (HTTP 500.30) mean configuration, not code, 99% of the time. Order of checks:
+
+1. Missing/short `Auth:JwtSecret` — the options validator refuses to boot and says so.
+2. Database reachability — the connection-string guard refuses to boot when empty.
+3. Still unclear → turn on stdout logs in the published `web.config`
+   (`stdoutLogEnabled="true"`, `stdoutLogFile=".\logs\stdout"`), redeploy, read
+   `logs\stdout_*.log` in the site root. Keep it off afterwards.
 
 ### Deploy checklist
 
