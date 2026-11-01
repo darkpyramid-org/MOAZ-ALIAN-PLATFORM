@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ImageUpload } from "@/components/media/ImageUpload";
 
 export const Route = createFileRoute("/_authenticated/dashboard/profile")({
   component: ProfilePage,
@@ -79,12 +80,12 @@ function ProfilePage() {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="avatarUrl">رابط الصورة (Avatar URL)</Label>
-          <Input
-            id="avatarUrl"
-            dir="ltr"
-            value={avatarUrl}
-            onChange={(e) => setAvatarUrl(e.target.value)}
-            placeholder="https://..."
+          <ImageUpload
+            value={avatarUrl || null}
+            onChange={(v) => setAvatarUrl(v ?? "")}
+            aspect="1/1"
+            maxSizeMb={2}
+            previewAlt="معاينة الصورة"
           />
         </div>
         <Button type="submit" disabled={busy}>
