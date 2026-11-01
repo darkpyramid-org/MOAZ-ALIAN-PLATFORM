@@ -30,7 +30,11 @@ bun install --frozen-lockfile
 bun run dev
 ```
 
-Set `VITE_API_URL` (browser) and `API_URL` (SSR) if the API is not on `http://localhost:5199`.
+Set `API_URL` (SSR) if the API is not on `http://localhost:5199`. The browser needs
+no variable in production: it stays same-origin under `/proxy-api`, which the
+`vercel.json` rewrite tunnels to the backend, so the HTTPS frontend never fetches
+the HTTP API directly (browsers block that as mixed content). Don't set
+`VITE_API_URL` in production — it would override the same-origin proxy.
 
 ## Validation
 

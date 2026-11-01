@@ -174,7 +174,9 @@ docker run -p 5199:5199 \
   moaz-alian-api
 ```
 
-Then set the frontend's `VITE_API_URL` / `API_URL` to the API's public URL and redeploy.
+Then set the SSR-side `API_URL` to the API's public URL and redeploy. Browser calls
+don't use that variable: they stay same-origin under `/proxy-api`, rewritten by the
+frontend's `vercel.json` — the browser never talks to the API cross-origin.
 
 ### Deploy: bare / systemd
 
@@ -219,11 +221,16 @@ would outrank nothing: filling the user file is enough; both rank below explicit
 environment variables (`ASPNETCORE_ENVIRONMENT` ordering — see configuration precedence, the
 user file sits last).
 
-Frontend side (Vercel): set **`VITE_API_URL`** and **`API_URL`** to
-`https://moaz-alian.runasp.net` in Project Settings → Environment Variables, then redeploy —
-the built browser bundle and the SSR server both bake the base URL at build time.
+Frontend side (Vercel): set **`API_URL`** (SSR only) to `http://moaz-alian.runasp.net` in
+Project Settings → Environment Variables, then redeploy. Do **not** set `VITE_API_URL` in
+production — the browser bundle uses it if present, and an HTTPS page must not call the
+HTTP API directly (browsers block that as mixed content). Instead, `vercel.json` on the
+frontend rewrites `/proxy-api/api/*` to `http://moaz-alian.runasp.net/api/*`, so browser
+calls are same-origin and CORS doesn't even come into play for them.
 
-CORS: `Cors:AllowVercelOrigins=true` (the default in `appsettings.Production.json`) accepts the
+CORS still matters only for direct cross-origin callers (curl, mobile apps, SSR on other
+hosts): `Cors:AllowVercelOrigins=true` (the default in `appsettings.Production.json`) accepts
+the
 platform's per-deployment `*.vercel.app` subdomains. When the frontend has a final custom
 domain, pin it exactly in `Cors:AllowedOrigins__0` (user or panel config) and set the flag to
 `false`.

@@ -22,7 +22,10 @@ export type { CategoryDto, ContentItemDto } from "@/lib/api-mapping";
 const RAW_BASE =
   (typeof process !== "undefined" ? process.env["API_URL"] : undefined) ??
   import.meta.env["VITE_API_URL"] ??
-  "http://localhost:5199";
+  // Development talks to the local API directly; production stays same-origin
+  // ("/proxy-api", rewritten by vercel.json to the backend) so the HTTPS page
+  // never calls the HTTP backend directly — browsers block that mixed content.
+  (import.meta.env.DEV ? "http://localhost:5199" : "/proxy-api");
 const BASE = RAW_BASE.replace(/\/+$/, "");
 
 /** A backend rejection, carrying the field-level messages from its problem details. */
