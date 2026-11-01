@@ -1,11 +1,5 @@
 {
   "buildCommand": "bun install --frozen-lockfile && bun run build",
   "outputDirectory": ".vercel/output",
-  "framework": null,
-  "rewrites": [
-    {
-      "source": "/proxy-api/api/:path*",
-      "destination": "http://moaz-alian.runasp.net/api/:path*"
-    }
-  ]
+  "framework": null
 }
