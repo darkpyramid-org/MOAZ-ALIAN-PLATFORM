@@ -229,7 +229,7 @@ try
             ""PasswordHash"" character varying(1000) NOT NULL,
             ""Roles"" text[] NOT NULL DEFAULT ARRAY[]::text[],
             ""DisplayName"" character varying(80),
-            ""AvatarUrl"" character varying(500),
+            ""AvatarUrl"" character varying(500000),
             ""PasswordResetToken"" character varying(200),
             ""PasswordResetExpiresAt"" timestamp(3) with time zone,
             ""CreatedAt"" timestamp(3) with time zone NOT NULL DEFAULT NOW(),
@@ -238,7 +238,8 @@ try
         CREATE UNIQUE INDEX IF NOT EXISTS ""IX_users_Email"" ON library.users (""Email"");
         -- Backfill columns on pre-existing databases.
         ALTER TABLE library.users ADD COLUMN IF NOT EXISTS ""DisplayName"" character varying(80);
-        ALTER TABLE library.users ADD COLUMN IF NOT EXISTS ""AvatarUrl"" character varying(500);
+        ALTER TABLE library.users ADD COLUMN IF NOT EXISTS ""AvatarUrl"" character varying(500000);
+        ALTER TABLE library.users ALTER COLUMN ""AvatarUrl"" TYPE character varying(500000);
         ALTER TABLE library.users ADD COLUMN IF NOT EXISTS ""PasswordResetToken"" character varying(200);
         ALTER TABLE library.users ADD COLUMN IF NOT EXISTS ""PasswordResetExpiresAt"" timestamp(3) with time zone;
         ALTER TABLE library.users ADD COLUMN IF NOT EXISTS ""UpdatedAt"" timestamp(3) with time zone;

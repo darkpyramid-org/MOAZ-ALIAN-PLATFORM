@@ -6,7 +6,7 @@ public sealed class AppUser
 {
     public const int EmailMaxLength = 255;
     public const int DisplayNameMaxLength = 80;
-    public const int AvatarUrlMaxLength = 500;
+    public const int AvatarUrlMaxLength = 500000;
 
     public Guid Id { get; private set; }
     public string Email { get; private set; } = default!;
