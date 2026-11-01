@@ -1,7 +1,8 @@
 import type { UIMessage } from "ai";
 
 const RAW_BASE =
-  (typeof process !== "undefined" ? process.env["API_URL"] : undefined) ?? "http://localhost:5199";
+  (typeof process !== "undefined" ? process.env["API_URL"] : undefined) ??
+  (import.meta.env.DEV ? "http://localhost:5199" : "http://moaz-alian.runasp.net");
 const BASE = RAW_BASE.replace(/\/+$/, "");
 
 export type RouteUser = { userId: string };

@@ -19,13 +19,15 @@ export type { CategoryDto, ContentItemDto } from "@/lib/api-mapping";
  * Server calls (SSR, server functions) read `API_URL`; the browser reads the
  * build-time `VITE_API_URL`.
  */
+const isServer = typeof window === "undefined";
 const RAW_BASE =
   (typeof process !== "undefined" ? process.env["API_URL"] : undefined) ??
-  import.meta.env["VITE_API_URL"] ??
-  // Development talks to the local API directly; production stays same-origin
-  // ("/proxy-api", rewritten by vercel.json to the backend) so the HTTPS page
-  // never calls the HTTP backend directly — browsers block that mixed content.
-  (import.meta.env.DEV ? "http://localhost:5199" : "/proxy-api");
+  (isServer
+    ? import.meta.env.DEV
+      ? "http://localhost:5199"
+      : "http://moaz-alian.runasp.net"
+    : (import.meta.env["VITE_API_URL"] ??
+      (import.meta.env.DEV ? "http://localhost:5199" : "/proxy-api")));
 const BASE = RAW_BASE.replace(/\/+$/, "");
 
 /** A backend rejection, carrying the field-level messages from its problem details. */
