@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { ApiError, saveContentItem } from "@/lib/api";
 import { slugify, useAdminCategories } from "@/lib/admin-data";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
@@ -161,19 +161,24 @@ export function ContentForm({
       return;
     }
     setBusy(true);
-    const id = initial?.id ?? `${type[0]}-${crypto.randomUUID().slice(0, 8)}`;
-    const item = toItem(type, f, id, initial);
-    if (!item.slug) item.slug = id;
-    const { error } = await supabase
-      .from("content_items")
-      .upsert({ id, type, slug: item.slug, data: item as never });
-    setBusy(false);
-    if (error) {
-      toast.error(error.code === "23505" ? "الرابط المختصر مستخدم من قبل" : error.message);
-      return;
+    // The id and the server-side timestamps belong to the API; an edit addresses
+    // the existing record, a new item simply omits it.
+    const item = toItem(type, f, initial?.id ?? "");
+    try {
+      await saveContentItem(item, item.slug, initial?.id);
+      setBusy(false);
+      toast.success(initial ? "تم حفظ التعديلات" : "تمت الإضافة");
+      onSaved();
+    } catch (error) {
+      setBusy(false);
+      toast.error(
+        error instanceof ApiError
+          ? error.isConflict
+            ? "الرابط المختصر مستخدم من قبل"
+            : error.message
+          : "تعذّر الحفظ، حاول مجددًا",
+      );
     }
-    toast.success(initial ? "تم حفظ التعديلات" : "تمت الإضافة");
-    onSaved();
   }
 
   return (

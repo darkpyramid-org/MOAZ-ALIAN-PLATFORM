@@ -1,0 +1,29 @@
+# Local development database for api-server — mirrors the Supabase-hosted PostgreSQL shape
+# (library schema, ICU collations, jsonb) so local runs exercise exactly what production does.
+#   docker compose up -d
+#   dotnet ef database update --project src/ApiServer.Infrastructure --startup-project src/ApiServer.WebApi
+#
+# The password below is a local-dev placeholder and matches appsettings.Development.json and
+# the design-time factory — never reuse it outside localhost.
+services:
+  postgres:
+    # Debian-based image: ICU (needed for the ar-x-icu collation) is compiled in; alpine is not.
+    image: postgres:17-bookworm
+    container_name: moaz-alian-postgres
+    environment:
+      POSTGRES_DB: moaz_alian_library
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "Local.Postgres.Password_1"
+    ports:
+      # 5433, not 5432: many Windows machines already run a native PostgreSQL service there.
+      - "5433:5432"
+    volumes:
+      - moaz_alian_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d moaz_alian_library"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  moaz_alian_pg_data:

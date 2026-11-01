@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Application layer: use cases + ports (interfaces).
+    Depends only on Domain. Never references EF Core or ASP.NET Core,
+    which is what keeps the dependency rule intact (DIP).
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\ApiServer.Domain\ApiServer.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Validation of inbound data, kept out of both Domain and HTTP concerns. -->
+    <PackageReference Include="FluentValidation" Version="11.11.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+
+    <!-- Versions pinned to the .NET 9 shared framework to avoid runtime interface mismatch. -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.9" />
+  </ItemGroup>
+
+</Project>

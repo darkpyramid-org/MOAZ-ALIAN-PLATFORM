@@ -1,0 +1,29 @@
+<Project>
+
+  <!--
+    Shared compiler settings for every project in api-server.
+    Keep per-project .csproj files free of duplicated boilerplate.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+
+    <!-- Quality gate: warnings fail the build so debt cannot silently accumulate. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+
+    <!--
+      ICU globalization must stay ON. Content titles are Arabic and listing pages sort
+      with locale-aware comparison (frontend parity: localeCompare(title, "ar")).
+      Invariant mode would silently break Arabic ordering and casing.
+    -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+</Project>

@@ -1,18 +1,16 @@
 /**
  * Drizzle schema mirroring applied SQL migrations under drizzle/migrations/.
  * Keep aligned when adding migrations. Auth users live in auth.users (Supabase).
+ *
+ * `categories` and `content_items` used to live here as jsonb blob tables that the
+ * browser read through PostgREST. The ASP.NET API in ../api-server now owns that
+ * data in the `library` schema — typed columns, real constraints, one writer — so
+ * they are out of this schema. The legacy public tables are still in Supabase and
+ * can be dropped once nothing reads them:
+ *   drop table if exists public.content_items;
+ *   drop table if exists public.categories;
  */
-import {
-  date,
-  integer,
-  jsonb,
-  pgEnum,
-  pgTable,
-  text,
-  timestamp,
-  unique,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { date, jsonb, pgEnum, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 export const appRoleEnum = pgEnum("app_role", ["admin", "editor"]);
 
@@ -31,27 +29,6 @@ export const userRoles = pgTable(
     role: appRoleEnum("role").notNull(),
   },
   (t) => [unique().on(t.userId, t.role)],
-);
-
-export const categories = pgTable("categories", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description").notNull().default(""),
-  sortOrder: integer("sort_order").notNull().default(0),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
-export const contentItems = pgTable(
-  "content_items",
-  {
-    id: text("id").primaryKey(),
-    type: text("type").notNull(),
-    slug: text("slug").notNull(),
-    data: jsonb("data").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [unique().on(t.type, t.slug)],
 );
 
 export const siteSettings = pgTable("site_settings", {

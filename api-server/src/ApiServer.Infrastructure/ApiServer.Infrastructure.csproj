@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Infrastructure layer: adapters that implement the Application ports.
+    EF Core / PostgreSQL (Supabase), Supabase JWT validation, caching, clock.
+    This is the outermost layer and the only place third-party concerns live.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\ApiServer.Application\ApiServer.Application.csproj" />
+    <ProjectReference Include="..\ApiServer.Domain\ApiServer.Domain.csproj" />
+  </ItemGroup>
+
+  <!--
+    ASP.NET Core shared framework: gives access to authentication handlers,
+    MemoryCache and HttpContext without pulling duplicate Extensions packages.
+    Only the outer layers are allowed to know about it.
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The Postgres provider the Supabase-hosted database speaks. -->
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.9" />
+
+    <!-- Not in the shared framework; ships the Supabase JWKS token validator. -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.9" />
+
+    <!-- Migration generation only; never reaches the production binary. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.9">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="9.0.9" />
+  </ItemGroup>
+
+</Project>

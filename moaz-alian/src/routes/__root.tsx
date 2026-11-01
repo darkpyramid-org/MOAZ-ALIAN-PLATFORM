@@ -63,10 +63,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       hydrateLibrary(data);
       return data;
     } catch (error) {
-      // The bundled seed keeps pages rendering, but never silently: log the
-      // database failure so outages are visible instead of looking like
-      // normal fallback content.
-      console.error("[library] failed to load library from the database", error);
+      // The API is the only copy of the corpus, so a failure here renders an empty
+      // library. Loud on purpose: pages must not quietly look healthy on stale data.
+      console.error("[library] failed to load the library from the API", error);
       return undefined;
     }
   },

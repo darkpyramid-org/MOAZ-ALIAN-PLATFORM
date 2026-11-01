@@ -1,13 +1,12 @@
 import { categories, categoryById } from "@/data/categories";
-import { seedItems } from "@/data/seed";
 import type { Category, ContentItem, ContentType } from "@/types/content";
 
 /**
- * Live library store. Starts with the bundled seed so pages never render empty,
- * then is replaced in place with database rows via hydrateLibrary() (called
- * from the root route on both server and client).
+ * Live library store. It starts empty and is filled in place from the API by
+ * hydrateLibrary() (called from the root route on both server and client), so
+ * the backend is the only copy of the corpus the running app ever reads.
  */
-export const allItems: ContentItem[] = [...seedItems];
+export const allItems: ContentItem[] = [];
 
 export function hydrateLibrary(data: { items: ContentItem[]; categories: Category[] } | undefined) {
   if (!data || data.items.length === 0) return;

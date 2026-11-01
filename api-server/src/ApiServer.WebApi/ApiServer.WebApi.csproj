@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web"><PropertyGroup>  <UserSecretsId>95cfbf38-4caf-45c8-b648-3b9b949d371f</UserSecretsId>
+  </PropertyGroup>
+
+  <!--
+    WebApi layer: composition root + HTTP transport concerns.
+    References Application (ports) and Infrastructure (adapters) so the DI
+    container can wire the two together here, and only here.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\ApiServer.Application\ApiServer.Application.csproj" />
+    <ProjectReference Include="..\ApiServer.Infrastructure\ApiServer.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Built-in .NET 9 OpenAPI document generation + lightweight Scalar UI. -->
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.18.7" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Required by `dotnet ef` when WebApi is the startup project. Never ships:
+         PrivateAssets keeps it out of the publish output and dependency flow. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.9">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

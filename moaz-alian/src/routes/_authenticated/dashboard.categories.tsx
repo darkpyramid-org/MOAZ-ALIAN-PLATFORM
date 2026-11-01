@@ -3,7 +3,7 @@ import { Pagination, SortSelect, ViewToggle, usePaged } from "@/components/dashb
 import { createFileRoute } from "@tanstack/react-router";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { ApiError, deleteCategory, saveCategory } from "@/lib/api";
 import { slugify, useAdminCategories, useAdminItems, useRefreshLibrary } from "@/lib/admin-data";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,7 +26,13 @@ export const Route = createFileRoute("/_authenticated/dashboard/categories")({
   component: CategoriesPage,
 });
 
-type Edit = { id: string; name: string; description: string; isNew: boolean };
+type Edit = {
+  id: string;
+  name: string;
+  description: string;
+  sortOrder: number;
+  isNew: boolean;
+};
 
 function CategoriesPage() {
   const { data: cats = [] } = useAdminCategories();
@@ -53,34 +59,49 @@ function CategoriesPage() {
       toast.error("الاسم والمعرّف مطلوبان");
       return;
     }
-    const row = {
-      id,
-      name: edit.name.trim(),
-      description: edit.description.trim(),
-      ...(edit.isNew ? { sort_order: cats.length } : {}),
-    };
-    const { error } = edit.isNew
-      ? await supabase.from("categories").insert(row)
-      : await supabase.from("categories").update(row).eq("id", id);
-    if (error) {
-      toast.error(error.code === "23505" ? "المعرّف مستخدم" : error.message);
-      return;
+    try {
+      await saveCategory(
+        {
+          id,
+          name: edit.name.trim(),
+          description: edit.description.trim(),
+          // A new row joins at the end of the display order; an edit keeps its place.
+          sortOrder: edit.isNew ? cats.length : edit.sortOrder,
+        },
+        !edit.isNew,
+      );
+      toast.success("تم الحفظ");
+      setEdit(null);
+      refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof ApiError
+          ? error.isConflict
+            ? "المعرّف مستخدم"
+            : error.message
+          : "تعذّر الحفظ",
+      );
     }
-    toast.success("تم الحفظ");
-    setEdit(null);
-    refresh();
   }
 
-  async function remove(id: string) {
-    const used = items.filter((i) => i.categoryIds.includes(id)).length;
-    if (used && !confirm(`هذا التصنيف مستخدم في ${used} مادة. حذفه؟`)) return;
-    const { error } = await supabase.from("categories").delete().eq("id", id);
-    if (error) {
-      toast.error(error.message);
+  async function remove(id: string, name: string) {
+    // The API refuses to delete a category that still has content, so say the
+    // same thing here instead of offering a delete that can only fail.
+    const used = countOf(id);
+    if (used) {
+      toast.error(
+        `«${name}» مستخدم في ${used.toLocaleString("ar-EG")} مادة — أزل منه المواد أولًا`,
+      );
       return;
     }
-    toast.success("تم الحذف");
-    refresh();
+    if (!confirm(`حذف التصنيف «${name}»؟`)) return;
+    try {
+      await deleteCategory(id);
+      toast.success("تم الحذف");
+      refresh();
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "تعذّر الحذف");
+    }
   }
 
   return (
@@ -94,7 +115,9 @@ function CategoriesPage() {
         </div>
         <button
           className="btn-gold"
-          onClick={() => setEdit({ id: "", name: "", description: "", isNew: true })}
+          onClick={() =>
+            setEdit({ id: "", name: "", description: "", sortOrder: cats.length, isNew: true })
+          }
         >
           <Plus className="size-4" /> تصنيف جديد
         </button>
@@ -129,13 +152,21 @@ function CategoriesPage() {
             <p className="mt-1 flex-1 text-sm text-muted-foreground">{c.description}</p>
             <div className="mt-3 flex gap-1">
               <button
-                onClick={() => setEdit({ ...c, isNew: false })}
+                onClick={() =>
+                  setEdit({
+                    id: c.id,
+                    name: c.name,
+                    description: c.description,
+                    sortOrder: c.sort_order,
+                    isNew: false,
+                  })
+                }
                 className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm hover:bg-accent"
               >
                 <Pencil className="size-4" /> تعديل
               </button>
               <button
-                onClick={() => remove(c.id)}
+                onClick={() => remove(c.id, c.name)}
                 className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm text-destructive hover:bg-accent"
               >
                 <Trash2 className="size-4" /> حذف

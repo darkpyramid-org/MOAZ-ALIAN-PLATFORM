@@ -1,0 +1,242 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
+using ApiServer.Application;
+using ApiServer.Infrastructure;
+using ApiServer.WebApi;
+using ApiServer.WebApi.Auth;
+using ApiServer.WebApi.Endpoints;
+using ApiServer.WebApi.Middleware;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.ResponseCompression;
+using Scalar.AspNetCore;
+
+// ============================================================================
+// Composition root. The ONLY place that references both Application (ports) and
+// Infrastructure (adapters) — everything else depends on abstractions, which is
+// the dependency rule made physical by the project references.
+// ============================================================================
+
+var builder = WebApplication.CreateBuilder(args);
+
+// ---- Application + Infrastructure (the two Add* calls wire every service,
+// repository, reader, cache, clock, and the Supabase JWT validation) ----
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
+
+// ---- JSON surface: enums travel as the lower-case names the frontend uses ----
+// Property naming is already camelCase (JsonSerializerDefaults.Web); this adds the
+// string enum representation so "video"/"owned"/"youtube" match src/types/content.ts.
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+});
+
+// ---- Errors: one Problem Details pipeline (GlobalExceptionHandler does the mapping) ----
+builder.Services.AddProblemDetails(options =>
+{
+    options.CustomizeProblemDetails = context =>
+    {
+        // Lets a user report a failure and an operator find the matching log line.
+        context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
+    };
+});
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+// ---- Authorization: policies delegate to ICurrentUser (see Auth/ for the why) ----
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy(AuthorizationPolicies.ContentEditor, p => p.AddRequirements(new ContentEditorRequirement()))
+    .AddPolicy(AuthorizationPolicies.SiteAdmin, p => p.AddRequirements(new SiteAdminRequirement()));
+
+builder.Services.AddScoped<IAuthorizationHandler, ContentEditorRequirementHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, SiteAdminRequirementHandler>();
+
+// ---- CORS: browser calls from the frontend only. Deliberately NO credentials
+// policy: the access token rides in the Authorization header, never a cookie,
+// which keeps this API inert against CSRF by construction. ----
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+
+builder.Services.AddCors(options => options.AddPolicy(
+    "frontend",
+    policy =>
+    {
+        if (allowedOrigins is { Length: > 0 })
+        {
+            policy.WithOrigins(allowedOrigins);
+        }
+        else if (builder.Environment.IsDevelopment())
+        {
+            // Vite dev-server ports move around; any localhost origin is fine locally.
+            policy.SetIsOriginAllowed(origin =>
+                Uri.TryCreate(origin, UriKind.Absolute, out var uri)
+                && (uri.Host == "localhost" || uri.Host == "127.0.0.1"));
+        }
+        else
+        {
+            return; // production with no configured origins: cross-origin is simply refused
+        }
+
+        policy.WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS").AllowAnyHeader();
+    }));
+
+// ---- Rate limiting: cheap DDoS damping at the edge. Numbers are generous on
+// purpose — they stop abuse, not users; the public site's traffic pattern is a
+// handful of list calls per page view. ----
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // Global budget per visitor, keyed by user id when authenticated, IP otherwise.
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(http =>
+    {
+        var identity = http.User.Identity?.Name ?? "ip:" + (http.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+
+        return RateLimitPartition.GetFixedWindowLimiter(identity, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 300,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        });
+    });
+
+    // Writes get their own, tighter bucket (a dashboard burst is scripted, not human).
+    options.AddPolicy(RateLimitPolicies.Editorial, http =>
+        RateLimitPartition.GetFixedWindowLimiter(http.User.Identity?.Name ?? "anon", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 30,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        }));
+});
+
+// ---- Compression: listings and (when present) Markdown bodies are text-heavy.
+// Smart mode keeps streaming working for chunked responses; static files would
+// need a smarter provider we do not have, and we serve none. ----
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(["application/json", "application/problem+json"]);
+});
+builder.Services.Configure<BrotliCompressionProviderOptions>(options => options.Level = System.IO.Compression.CompressionLevel.Fastest);
+builder.Services.Configure<GzipCompressionProviderOptions>(options => options.Level = System.IO.Compression.CompressionLevel.Fastest);
+
+// ---- Forwarded headers: behind any reverse proxy (the production norm), the
+// real client IP — our rate-limit partition key — arrives in X-Forwarded-For. ----
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto);
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "MOAZ ALIAN Library API",
+        Version = "v1",
+        Description = "ASP.NET Core Minimal APIs for MOAZ ALIAN platform"
+    });
+
+    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "Enter Supabase JWT token."
+    });
+
+    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
+builder.Services.AddOpenApi();
+
+var app = builder.Build();
+
+// Order matters: errors outermost so even a middleware rejection is Problem Details,
+// then transport concerns (compression, TLS, CORS), then identity, then throttle.
+app.UseExceptionHandler();
+
+// Challenges (bare 401/403 from the auth middleware) and API-routed 404s skip the
+// exception pipeline; give them the same JSON shape so the frontend has one parser.
+app.UseStatusCodePages(async context =>
+{
+    var response = context.HttpContext.Response;
+    response.ContentType = "application/problem+json";
+
+    await response.WriteAsJsonAsync(
+        new
+        {
+            title = response.StatusCode switch
+            {
+                StatusCodes.Status401Unauthorized => "Authentication required.",
+                StatusCodes.Status403Forbidden => "Not allowed.",
+                StatusCodes.Status404NotFound => "Not found.",
+                StatusCodes.Status429TooManyRequests => "Too many requests.",
+                _ => $"Request failed with status {response.StatusCode}.",
+            },
+            status = response.StatusCode,
+            traceId = context.HttpContext.TraceIdentifier,
+        });
+});
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+    app.UseHttpsRedirection();
+}
+
+// Must run before anything that reads RemoteIpAddress (the rate limiter's partition key).
+// Defaults trust only loopback proxies; set ForwardedHeaders:KnownProxies in production
+// config when hosted behind a known gateway rather than blanket-trusting headers.
+app.UseForwardedHeaders();
+
+app.UseResponseCompression();
+app.UseCors("frontend");
+app.UseRateLimiter();
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapContentEndpoints();
+app.MapCategoryEndpoints();
+
+// Liveness/readiness for the host (container probes, uptime checks). Anonymous on
+// purpose: it reports only "ok", never schema, counts, or connection details.
+app.MapHealthChecks("/health");
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/openapi/v1.json", "MOAZ ALIAN Library API v1");
+        c.RoutePrefix = "swagger";
+    });
+    app.MapScalarApiReference();
+
+    // In development, navigating to root redirects straight to Swagger UI
+    app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
+}
+else
+{
+    app.MapGet("/", () => Results.Ok(new { status = "online", service = "MOAZ ALIAN API", health = "/health" })).ExcludeFromDescription();
+}
+
+app.Run();

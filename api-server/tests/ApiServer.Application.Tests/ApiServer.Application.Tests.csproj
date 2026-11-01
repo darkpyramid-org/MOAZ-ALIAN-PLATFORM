@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Unit tests for the two innermost layers. Hand-written fakes instead of a
+    mocking library: fewer dependencies, and the fakes document the ports.
+  -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+
+    <!-- Unit-test naming (Method_Condition_Expectation) is the accepted convention and
+         documents behaviour like a sentence; CA1707 is meant for public API surfaces. -->
+    <NoWarn>$(NoWarn);CA1707</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.2" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ApiServer.Application\ApiServer.Application.csproj" />
+    <ProjectReference Include="..\..\src\ApiServer.Domain\ApiServer.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

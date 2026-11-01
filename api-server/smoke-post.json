@@ -1,0 +1,23 @@
+{
+  "type": "book",
+  "slug": "شرح-الأربعين",
+  "title": "شرح الأربعين",
+  "description": "سجل اختبار للكتابة عبر PostgreSQL",
+  "body": "متن تجريبي",
+  "categoryIds": ["aqeedah"],
+  "tags": ["شرح", "أربعين", "شرح"],
+  "featured": true,
+  "verified": true,
+  "demo": true,
+  "rightsStatus": "owned",
+  "publishedAt": "2026-03-01T10:00:00+00:00",
+  "isbn": "978 3 16 148410 0",
+  "publisher": "دار الاختبار",
+  "publicationYear": 2025,
+  "availability": "digital",
+  "authorizedLinks": [
+    { "label": "نسخة الناشر", "url": "https://example.org/arbaeen" }
+  ],
+  "readingTimeMinutes": 12,
+  "references": ["مرجع واحد"]
+}

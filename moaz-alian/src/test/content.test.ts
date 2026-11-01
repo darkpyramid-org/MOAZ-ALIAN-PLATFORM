@@ -3,6 +3,12 @@ import { describe, expect, it } from "vitest";
 import { allItems, countByType, hydrateLibrary, normalizeArabic, searchItems } from "@/lib/content";
 import { applyListing, parseListingSearch } from "@/lib/listing";
 import { tableOfContents } from "@/components/content/Detail";
+import { seedItems } from "@/data/seed";
+import { categories } from "@/data/categories";
+
+// The live store starts empty — the API is the only source at runtime — so the
+// suite fills it the same way the root loader does before asserting on it.
+hydrateLibrary({ items: seedItems, categories });
 
 describe("Arabic search", () => {
   it("treats alef variants, ta marbuta and diacritics as equal", () => {
@@ -21,7 +27,7 @@ describe("Arabic search", () => {
 });
 
 describe("Library hydration", () => {
-  it("reflects database rows in live counts, not just the bundled seed", () => {
+  it("replaces the store wholesale, so live rows win over any earlier content", () => {
     const original = [...allItems];
     const before = countByType("video");
     const video = original.find((i) => i.type === "video")!;

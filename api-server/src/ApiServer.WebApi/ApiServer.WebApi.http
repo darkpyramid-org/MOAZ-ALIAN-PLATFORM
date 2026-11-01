@@ -1,0 +1,48 @@
+### API smoke tests — run after `dotnet run` with the http profile.
+### Replace {{token}} with a Supabase access token whose app_metadata.roles
+### includes "editor" or "admin" to exercise the write endpoints.
+### Slugs/ids contain Arabic: percent-encode them in the URL (browsers and
+### HTTP clients do this for you; a raw UTF-8 request line is rejected).
+
+@base = http://localhost:5092
+@token = PASTE_SUPABASE_ACCESS_TOKEN
+
+### Health
+GET {{base}}/health
+
+### OpenAPI document (Development only)
+GET {{base}}/openapi/v1.json
+
+### Listings
+GET {{base}}/api/content?page=1&pageSize=12&sort=newest
+
+### Books only, by title (culture-aware Arabic sort)
+GET {{base}}/api/content?type=book&sort=title
+
+### Per-type counts for the library tabs
+GET {{base}}/api/content/counts
+
+### Detail, addressed like the frontend routes
+GET {{base}}/api/content/book/example-slug
+
+### Categories
+GET {{base}}/api/categories
+
+### Create (requires editor/admin token)
+POST {{base}}/api/content
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "type": "article",
+  "title": "اختبار",
+  "description": "سجل تجريبي للاختبار",
+  "categoryIds": ["aqeedah"],
+  "tags": ["test"],
+  "rightsStatus": "external",
+  "sourceUrl": "https://example.com/article"
+}
+
+### Delete (requires editor/admin token)
+DELETE {{base}}/api/content/SOME_ID
+Authorization: Bearer {{token}}

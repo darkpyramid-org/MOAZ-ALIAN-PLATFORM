@@ -60,6 +60,11 @@ Thumbs.db
 # Build tools
 .next/
 out/
+bin/
+obj/
+TestResults/
+*.user
+*.suo
 
 # Misc
 *.swp

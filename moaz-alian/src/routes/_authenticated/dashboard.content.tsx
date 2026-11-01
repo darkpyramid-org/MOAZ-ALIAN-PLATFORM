@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { ApiError, deleteContentItem } from "@/lib/api";
 import { useAdminItems, useRefreshLibrary } from "@/lib/admin-data";
 import { ContentForm } from "@/components/dashboard/ContentForm";
 import { Input } from "@/components/ui/input";
@@ -95,14 +95,14 @@ function ContentPage() {
 
   async function confirmDelete() {
     if (!toDelete) return;
-    const { error } = await supabase.from("content_items").delete().eq("id", toDelete.id);
-    if (error) {
-      toast.error(error.message);
-      return;
+    try {
+      await deleteContentItem(toDelete.id);
+      toast.success("تم الحذف");
+      setToDelete(null);
+      refresh();
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "تعذّر الحذف");
     }
-    toast.success("تم الحذف");
-    setToDelete(null);
-    refresh();
   }
 
   return (
