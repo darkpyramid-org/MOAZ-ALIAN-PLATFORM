@@ -141,6 +141,46 @@ public static class AuthEndpoints
             .WithSummary("Change the authenticated user's password.")
             .Produces(StatusCodes.Status204NoContent);
 
+        group.MapPost(
+            "/forgot-password",
+            async (
+                ForgotPasswordRequest request,
+                IAuthService authService,
+                CancellationToken cancellationToken) =>
+            {
+                var token = await authService.ForgotPasswordAsync(request.Email, cancellationToken);
+                // Token is returned for development convenience; in production it should be emailed.
+                return Results.Ok(new { message = "إذا كان البريد مسجلاً، تم إرسال رابط إعادة التعيين.", token });
+            })
+            .WithName("AuthForgotPassword")
+            .WithSummary("Request a password reset token.")
+            .Produces(StatusCodes.Status200OK);
+
+        group.MapPost(
+            "/reset-password",
+            async (
+                ResetPasswordRequest request,
+                IAuthService authService,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    await authService.ResetPasswordAsync(request.Token, request.NewPassword, cancellationToken);
+                    return Results.NoContent();
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest, title: "رمز غير صالح");
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { title = ex.Message, status = 400 });
+                }
+            })
+            .WithName("AuthResetPassword")
+            .WithSummary("Reset password using a reset token.")
+            .Produces(StatusCodes.Status204NoContent);
+
         return group;
     }
 }

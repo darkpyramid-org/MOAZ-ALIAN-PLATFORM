@@ -33,6 +33,11 @@ public sealed class AppUserConfiguration : IEntityTypeConfiguration<AppUser>
         builder.Property(user => user.AvatarUrl)
             .HasMaxLength(AppUser.AvatarUrlMaxLength);
 
+        builder.Property(user => user.PasswordResetToken)
+            .HasMaxLength(200);
+
+        builder.Property(user => user.PasswordResetExpiresAt).HasPrecision(3);
+
         builder.Property(user => user.CreatedAt).HasPrecision(3);
         builder.Property(user => user.UpdatedAt).HasPrecision(3);
     }

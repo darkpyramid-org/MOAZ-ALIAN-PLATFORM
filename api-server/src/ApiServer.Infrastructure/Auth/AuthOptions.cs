@@ -30,6 +30,9 @@ public sealed class AuthOptions
 
     public string ServiceRole { get; set; } = "service_role";
 
+    /// <summary>Emails that are always granted the admin role on registration/OAuth.</summary>
+    public List<string> AdminEmails { get; set; } = new();
+
     public string UserIdClaimType { get; set; } = "sub";
 
     /// <summary>Where to send the browser after a successful OAuth callback.</summary>

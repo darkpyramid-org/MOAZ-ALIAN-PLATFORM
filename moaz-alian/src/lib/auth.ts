@@ -187,6 +187,26 @@ class AuthService {
     if (typeof window !== "undefined") window.localStorage.setItem(TOKEN_KEY, token);
   }
 
+  async forgotPassword(email: string): Promise<string | null> {
+    const res = await fetch(`${BASE}/api/auth/forgot-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ email: email.trim().toLowerCase() }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { token?: string };
+    return data.token ?? null;
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<boolean> {
+    const res = await fetch(`${BASE}/api/auth/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ token, newPassword }),
+    });
+    return res.ok;
+  }
+
   logout(): void {
     this.setSession(null, null);
     this.notify("SIGNED_OUT", null);

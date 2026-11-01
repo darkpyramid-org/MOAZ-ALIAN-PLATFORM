@@ -5,6 +5,7 @@ using System.Text.Json;
 using ApiServer.Application.Abstractions;
 using ApiServer.Application.Contracts.Auth;
 using ApiServer.Application.Services;
+using System.Security.Cryptography;
 using ApiServer.Domain.Entities;
 using ApiServer.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
@@ -76,7 +77,8 @@ public sealed class AuthService(
         }
 
         var count = await dbContext.Users.CountAsync(cancellationToken);
-        var roles = count == 0
+        var isAdminEmail = _options.AdminEmails.Contains(normalizedEmail, StringComparer.OrdinalIgnoreCase);
+        var roles = (count == 0 || isAdminEmail)
             ? new List<string> { _options.AdminRole, _options.EditorRole }
             : new List<string> { _options.EditorRole };
 
@@ -212,12 +214,16 @@ public sealed class AuthService(
 
         if (user is null)
         {
-            // OAuth users never auto-become admin; they get the editor role.
+            var isAdminEmail = _options.AdminEmails.Contains(normalizedEmail, StringComparer.OrdinalIgnoreCase);
+            var roles = isAdminEmail
+                ? new List<string> { _options.AdminRole, _options.EditorRole }
+                : new List<string> { _options.EditorRole };
+
             user = AppUser.Create(
                 Guid.NewGuid(),
                 normalizedEmail,
                 _passwordHasher.HashPassword(normalizedEmail, Guid.NewGuid().ToString("N")),
-                new List<string> { _options.EditorRole },
+                roles,
                 clock.UtcNow);
             user.UpdateProfile(displayName, avatarUrl);
             dbContext.Users.Add(user);
@@ -235,6 +241,40 @@ public sealed class AuthService(
 
         var token = GenerateJwtToken(user);
         return new AuthResponse(token, MapToDto(user));
+    }
+    public async Task<string?> ForgotPasswordAsync(string email, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(email)) return null;
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
+        if (user is null) return null;
+
+        var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
+            .Replace("+", "-").Replace("/", "_").TrimEnd('=');
+        user.SetPasswordResetToken(token, clock.UtcNow.AddHours(1));
+        await dbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Password reset token issued for {Email}: {Token}", normalizedEmail, token);
+        return token;
+    }
+
+    public async Task ResetPasswordAsync(string token, string newPassword, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 8)
+        {
+            throw new ArgumentException("البيانات غير صالحة.");
+        }
+
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.PasswordResetToken == token, cancellationToken)
+            ?? throw new InvalidOperationException("رمز إعادة التعيين غير صالح.");
+
+        if (user.PasswordResetExpiresAt is null || user.PasswordResetExpiresAt < clock.UtcNow)
+        {
+            throw new InvalidOperationException("رمز إعادة التعيين منتهي الصلاحية.");
+        }
+
+        user.UpdatePassword(_passwordHasher.HashPassword(user.Email, newPassword));
+        user.ClearPasswordResetToken();
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
     private AuthUserDto MapToDto(AppUser user)
     {

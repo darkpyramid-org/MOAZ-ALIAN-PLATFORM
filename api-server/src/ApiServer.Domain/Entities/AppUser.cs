@@ -14,6 +14,8 @@ public sealed class AppUser
     public List<string> Roles { get; private set; } = [];
     public string? DisplayName { get; private set; }
     public string? AvatarUrl { get; private set; }
+    public string? PasswordResetToken { get; private set; }
+    public DateTimeOffset? PasswordResetExpiresAt { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset? UpdatedAt { get; private set; }
 
@@ -55,6 +57,20 @@ public sealed class AppUser
             var trimmed = avatarUrl.Trim();
             AvatarUrl = string.IsNullOrWhiteSpace(trimmed) ? null : Guard.Required(trimmed, "AvatarUrl", AvatarUrlMaxLength);
         }
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void SetPasswordResetToken(string token, DateTimeOffset expiresAt)
+    {
+        PasswordResetToken = Guard.Required(token, "PasswordResetToken", 200);
+        PasswordResetExpiresAt = expiresAt;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void ClearPasswordResetToken()
+    {
+        PasswordResetToken = null;
+        PasswordResetExpiresAt = null;
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 }

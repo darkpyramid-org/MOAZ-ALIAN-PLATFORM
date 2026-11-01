@@ -66,7 +66,12 @@ function AuthPage() {
         toast.success("تم إنشاء الحساب وتسجيل الدخول بنجاح");
         navigate({ to: "/dashboard", replace: true });
       } else {
-        toast.info("لإعادة تعيين كلمة المرور، يرجى التواصل مع مسؤول النظام.");
+        const token = await authClient.forgotPassword(normalizedEmail);
+        if (token) {
+          toast.success(`تم إنشاء رابط إعادة التعيين (dev): ${token}`);
+        } else {
+          toast.info("إذا كان البريد مسجلاً، تم إرسال رابط إعادة التعيين.");
+        }
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "حدث خطأ أثناء تسجيل الدخول");
