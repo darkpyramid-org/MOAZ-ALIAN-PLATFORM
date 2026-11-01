@@ -13,11 +13,10 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
-using Scalar.AspNetCore;
 
 // ============================================================================
 // Composition root. The ONLY place that references both Application (ports) and
-// Infrastructure (adapters) — everything else depends on abstractions, which is
+// Infrastructure (adapters) â€” everything else depends on abstractions, which is
 // the dependency rule made physical by the project references.
 // ============================================================================
 
@@ -84,7 +83,7 @@ builder.Services.AddCors(options => options.AddPolicy(
     }));
 
 // ---- Rate limiting: cheap DDoS damping at the edge. Numbers are generous on
-// purpose — they stop abuse, not users; the public site's traffic pattern is a
+// purpose â€” they stop abuse, not users; the public site's traffic pattern is a
 // handful of list calls per page view. ----
 builder.Services.AddRateLimiter(options =>
 {
@@ -127,47 +126,22 @@ builder.Services.Configure<BrotliCompressionProviderOptions>(options => options.
 builder.Services.Configure<GzipCompressionProviderOptions>(options => options.Level = System.IO.Compression.CompressionLevel.Fastest);
 
 // ---- Forwarded headers: behind any reverse proxy (the production norm), the
-// real client IP — our rate-limit partition key — arrives in X-Forwarded-For. ----
+// real client IP â€” our rate-limit partition key â€” arrives in X-Forwarded-For. ----
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto);
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
+// ---- API docs: the native OpenAPI endpoint (/openapi/v1.json) + Swagger UI.
+// Development-only by default; `Swagger:Enabled` lets a staging environment turn the
+// live docs surface on without code changes. Production should not ship a public docs
+// UI: consumers get the OpenAPI artifact from the build/deploy pipeline instead. ----
+var swaggerEnabled =
+    builder.Environment.IsDevelopment()
+    || builder.Configuration.GetValue<bool>("Swagger:Enabled", false);
+
+if (swaggerEnabled)
 {
-    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
-    {
-        Title = "MOAZ ALIAN Library API",
-        Version = "v1",
-        Description = "ASP.NET Core Minimal APIs for MOAZ ALIAN platform"
-    });
-
-    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
-        Scheme = "Bearer",
-        BearerFormat = "JWT",
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Description = "Enter JWT Bearer token."
-    });
-
-    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
-    {
-        {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-            {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
-});
-
-builder.Services.AddOpenApi();
+    builder.Services.AddOpenApi();
+}
 
 var app = builder.Build();
 
@@ -265,7 +239,7 @@ catch (Exception ex)
 // purpose: it reports only "ok", never schema, counts, or connection details.
 app.MapHealthChecks("/health");
 
-if (app.Environment.IsDevelopment())
+if (swaggerEnabled)
 {
     app.MapOpenApi();
     app.UseSwaggerUI(c =>
@@ -273,9 +247,8 @@ if (app.Environment.IsDevelopment())
         c.SwaggerEndpoint("/openapi/v1.json", "MOAZ ALIAN Library API v1");
         c.RoutePrefix = "swagger";
     });
-    app.MapScalarApiReference();
 
-    // In development, navigating to root redirects straight to Swagger UI
+    // With the docs surface on, navigating to root lands in Swagger UI
     app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
 }
 else

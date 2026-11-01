@@ -32,6 +32,8 @@ lerna-debug.log*
 # IDE
 .vscode/*
 !.vscode/extensions.json
+.vs/
+.idea/
 .idea/
 .project
 .classpath
@@ -39,6 +41,9 @@ lerna-debug.log*
 *.launch
 .settingings/
 *.sublime-workspace
+
+# Visual Studio deploy credentials (machine-local, secrets inside)
+*.pubxml.user
 
 # OS
 Thumbs.db

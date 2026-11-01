@@ -95,7 +95,7 @@ API instance would need the version token in a shared store (trivial port).
 
 ```bash
 cd api-server
-dotnet run --project src/ApiServer.WebApi    # Swagger UI at /swagger, Scalar at /scalar
+dotnet run --project src/ApiServer.WebApi    # Swagger UI at /swagger, OpenAPI at /openapi/v1.json
 ```
 
 The connection string already points at the hosted PostgreSQL database
@@ -142,13 +142,85 @@ the ≤2-minute item TTL) to see fresh data.
 
 Environment variables only — the same keys as user-secrets with `__`:
 `ConnectionStrings__Postgres`, `Auth__JwtSecret`, `Auth__Issuer` (optional pin),
-`Cors__AllowedOrigins__0`. The API refuses to start with an empty connection string and refuses
-cross-origin writes when no origins are configured.
+`Cors__AllowedOrigins__0`. The API refuses to start with an empty connection string, refuses to
+start with a missing/short JWT secret, and refuses cross-origin writes when no origins are
+configured (`Cors__AllowedOrigins__n` enumerates them).
 
 Never commit database passwords or JWT secrets. `appsettings.json` carries placeholders; the
 development credentials currently live in `appsettings.Development.json` — move them into
 user-secrets before sharing the repo. If credentials were ever pasted into a chat, issue, or
 ticket: rotate the database password and the JWT secret first, then update user-secrets/env.
+
+### What production mode changes
+
+| Concern | Development | Production (`appsettings.Production.json`) |
+| --- | --- | --- |
+| Swagger UI + OpenAPI JSON | served at `/swagger`, `/openapi/v1.json` | off by default; `Swagger:Enabled=true` opts a staging environment in |
+| Token validation (`RequireHttpsMetadata`) | `false` | `true` |
+| Startup validation | same | JWT secret must exist and be ≥ 32 chars, connection string must be present, or the process exits |
+| `root` | redirects to Swagger | `{ status, service, health }` status document |
+| HTTPS | plain local loopback | `UseHsts` + `UseHttpsRedirection`; terminate TLS at your edge |
+
+### Deploy: Docker
+
+```bash
+cd api-server
+docker build -t moaz-alian-api .
+docker run -p 5199:5199 \
+  -e ConnectionStrings__Postgres="Server=...;Database=...;User Id=...;Password=...;SSL Mode=Require;Trust Server Certificate=true" \
+  -e Auth__JwtSecret="<32+ characters>" \
+  -e Auth__Issuer="https://api.example.com" \
+  -e Cors__AllowedOrigins__0="https://your-frontend.example.com" \
+  moaz-alian-api
+```
+
+Then set the frontend's `VITE_API_URL` / `API_URL` to the API's public URL and redeploy.
+
+### Deploy: bare / systemd
+
+```bash
+dotnet publish src/ApiServer.WebApi -c Release -o out
+# out/ is self-describing; run behind your reverse proxy:
+ASPNETCORE_ENVIRONMENT=Production dotnet out/ApiServer.WebApi.dll
+```
+
+Set the same environment variables as above; point `/health` at your readiness probe.
+
+### Deploy: IIS / runasp.net (WebDeploy — the publish profile path)
+
+`src/ApiServer.WebApi/Properties/PublishProfiles/site103859-WebDeploy.pubxml` targets the hosted
+IIS site (`moaz-alian.runasp.net`). Use it from Visual Studio (Publish → profile) or:
+
+```bash
+dotnet publish src/ApiServer.WebApi -c Release /p:PublishProfile=site103859-WebDeploy
+```
+
+The profile is self-contained (`win-x86`) and deploys through MSDeploy/WMSVC. The companion
+`*.pubxml.user` file (encrypted deploy password, connection-string prompt) is machine-local and
+git-ignored — never commit it.
+
+On IIS, set the environment variables at the site level so the app sees production values
+(IIS Manager → your site → Configuration Editor → `environmentVariables`, or a local-only
+`web.config` transform):
+
+- `ASPNETCORE_ENVIRONMENT=Production`
+- `ConnectionStrings__Postgres` — the production database (the dev pooler string must not ship)
+- `Auth__JwtSecret` — a fresh 32+ character random value
+- `Auth__Issuer` — the site's public URL (`https://moaz-alian.runasp.net`) so issued tokens validate against it
+- `Cors__AllowedOrigins__0` — the frontend's exact production origin
+
+Note: TLS also terminates at the host here, plain HTTP inside IIS is expected, and
+`UseForwardedHeaders` already trusts loopback proxies in front of Kestrel.
+
+### Deploy checklist
+
+1. `ConnectionStrings__Postgres` → real database (migrations: `apply-supabase.sql` already applied, or `dotnet ef database update` — see Database section).
+2. `Auth__JwtSecret` → a fresh 32+ character random value (`openssl rand -hex 32`).
+3. `Auth__Issuer` + `Auth:Audience` match what the frontend expects (defaults are fine).
+4. `Cors__AllowedOrigins__0..n` → the frontend's exact origins, scheme included.
+5. Rate limiter keys off `X-Forwarded-For` behind the proxy — set
+   `ForwardedHeaders:KnownProxies` to the proxy's IPs so spoofed headers cannot bypass limits.
+6. `/health` must return 200 before routing traffic; consider it for your load-balancer probes.
 
 ## Tests
 

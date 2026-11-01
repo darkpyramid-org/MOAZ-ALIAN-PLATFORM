@@ -19,7 +19,21 @@ public static class JwtAuthentication
         ArgumentNullException.ThrowIfNull(configuration);
 
         var authSection = configuration.GetSection(AuthOptions.SectionName);
-        services.Configure<AuthOptions>(authSection);
+
+        // Fail fast on a misconfigured identity layer instead of failing on the first
+        // login attempt (worse: on the first validation call with a weak secret). The
+        // 32-character floor is 256 bits of HMAC-SHA256 key material; anything shorter
+        // is brute-force territory.
+        services
+            .AddOptions<AuthOptions>()
+            .Bind(authSection)
+            .Validate(
+                options => !string.IsNullOrWhiteSpace(options.JwtSecret),
+                "Auth:JwtSecret must be configured. Set it via user-secrets or the Auth__JwtSecret environment variable.")
+            .Validate(
+                options => options.JwtSecret is { Length: >= 32 },
+                "Auth:JwtSecret must be at least 32 characters (256 bits of HMAC-SHA256 key material).")
+            .ValidateOnStart();
 
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
