@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ArrowUpLeft, BookOpen, ChevronLeft, Menu, Search, X } from "lucide-react";
+import { ArrowUpLeft, BookOpen, ChevronLeft, Menu, Search, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useStaff } from "@/hooks/use-staff";
+import { authClient } from "@/lib/auth";
 
 import { SearchOverlay } from "@/components/search/SearchOverlay";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -20,11 +23,15 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const home = pathname === "/";
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const accountRef = useRef<HTMLDivElement>(null);
+  const staff = useStaff();
+  const user = staff.data?.user ?? null;
   const {
     mounted: drawerMounted,
     visible: drawerVisible,
@@ -47,6 +54,16 @@ export function Header() {
 
   // Close the drawer on navigation
   useEffect(() => setMenuOpen(false), [pathname]);
+  useEffect(() => {
+    if (!accountOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (accountRef.current && !accountRef.current.contains(e.target as Node)) {
+        setAccountOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [accountOpen]);
 
   useEffect(() => {
     const desktop = window.matchMedia("(min-width: 1280px)");
@@ -118,6 +135,87 @@ export function Header() {
               </span>
             </Link>
           </Button>
+          {/* Account avatar / login */}
+          <div className="relative" ref={accountRef}>
+            <button
+              type="button"
+              onClick={() => setAccountOpen((o) => !o)}
+              aria-label={user ? "حسابي" : "تسجيل الدخول"}
+              aria-expanded={accountOpen}
+              className="grid size-9 place-items-center rounded-full border border-border bg-surface text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+            >
+              {user ? (
+                <Avatar className="size-9">
+                  <AvatarImage
+                    src={user.avatarUrl ?? undefined}
+                    alt={user.displayName ?? user.email}
+                  />
+                  <AvatarFallback className="text-xs">
+                    {(user.displayName || user.email).slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <User className="size-4" aria-hidden />
+              )}
+            </button>
+            {accountOpen && (
+              <div className="absolute end-0 top-11 z-50 w-56 rounded-2xl border border-border bg-surface p-2 shadow-float">
+                {user ? (
+                  <>
+                    <div className="px-3 py-2 text-sm">
+                      <p className="font-semibold">{user.displayName || user.email}</p>
+                      <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                    </div>
+                    <div className="my-1 h-px bg-border" />
+                    <Link
+                      to="/dashboard/profile"
+                      onClick={() => setAccountOpen(false)}
+                      className="block rounded-xl px-3 py-2 text-sm hover:bg-accent"
+                    >
+                      الملف الشخصي
+                    </Link>
+                    {user.canEditContent && (
+                      <Link
+                        to="/dashboard"
+                        onClick={() => setAccountOpen(false)}
+                        className="block rounded-xl px-3 py-2 text-sm hover:bg-accent"
+                      >
+                        لوحة التحكم
+                      </Link>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        authClient.logout();
+                        setAccountOpen(false);
+                      }}
+                      className="block w-full rounded-xl px-3 py-2 text-start text-sm text-destructive hover:bg-accent"
+                    >
+                      تسجيل الخروج
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/auth"
+                      onClick={() => setAccountOpen(false)}
+                      className="block rounded-xl px-3 py-2 text-sm hover:bg-accent"
+                    >
+                      تسجيل الدخول
+                    </Link>
+                    <Link
+                      to="/auth"
+                      onClick={() => setAccountOpen(false)}
+                      className="block rounded-xl px-3 py-2 text-sm hover:bg-accent"
+                    >
+                      إنشاء حساب
+                    </Link>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
           <Button
             variant="ghost"
             size="icon"
