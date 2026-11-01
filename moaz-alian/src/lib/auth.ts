@@ -6,6 +6,8 @@ export type AuthUser = {
   roles: AppRole[];
   isAdmin: boolean;
   canEditContent: boolean;
+  displayName?: string | null;
+  avatarUrl?: string | null;
 };
 
 export type AuthChangeEvent = "SIGNED_IN" | "SIGNED_OUT" | "USER_UPDATED";
@@ -137,6 +139,52 @@ class AuthService {
     this.setSession(data.token, data.user);
     this.notify("SIGNED_IN", data.user);
     return data;
+  }
+
+  async updateProfile(
+    displayName?: string | null,
+    avatarUrl?: string | null,
+  ): Promise<AuthUser | null> {
+    const token = this.getAccessToken();
+    if (!token) return null;
+    const res = await fetch(`${BASE}/api/auth/me`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ displayName, avatarUrl }),
+    });
+    if (!res.ok) return null;
+    const user = (await res.json()) as AuthUser;
+    this.setSession(token, user);
+    this.notify("USER_UPDATED", user);
+    return user;
+  }
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<boolean> {
+    const token = this.getAccessToken();
+    if (!token) return false;
+    const res = await fetch(`${BASE}/api/auth/change-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    return res.ok;
+  }
+
+  /** URL to start an OAuth flow (Google/Facebook). Navigates the browser. */
+  oauthUrl(provider: "google" | "facebook"): string {
+    return `${BASE}/api/auth/oauth/${provider}`;
+  }
+
+  setAccessToken(token: string): void {
+    if (typeof window !== "undefined") window.localStorage.setItem(TOKEN_KEY, token);
   }
 
   logout(): void {

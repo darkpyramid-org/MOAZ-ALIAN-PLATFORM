@@ -9,7 +9,17 @@ public sealed record AuthUserDto(
     string Email,
     IReadOnlyList<string> Roles,
     bool IsAdmin,
-    bool CanEditContent);
+    bool CanEditContent,
+    string? DisplayName = null,
+    string? AvatarUrl = null);
+
+public sealed record UpdateProfileRequest(
+    string? DisplayName = null,
+    string? AvatarUrl = null);
+
+public sealed record ChangePasswordRequest(
+    string CurrentPassword,
+    string NewPassword);
 
 public sealed record AuthResponse(
     string Token,

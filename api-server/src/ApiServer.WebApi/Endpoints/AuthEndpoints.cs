@@ -89,6 +89,58 @@ public static class AuthEndpoints
             .Produces<AuthUserDto>()
             .ProducesProblem(StatusCodes.Status401Unauthorized);
 
+        group.MapPut(
+            "/me",
+            async (
+                UpdateProfileRequest request,
+                IAuthService authService,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    var user = await authService.UpdateProfileAsync(request.DisplayName, request.AvatarUrl, cancellationToken);
+                    return Results.Ok(user);
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    return Results.Problem(detail: ex.Message, statusCode: StatusCodes.Status401Unauthorized, title: "غير مصرح");
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { title = ex.Message, status = 400 });
+                }
+            })
+            .RequireAuthorization()
+            .WithName("AuthUpdateProfile")
+            .WithSummary("Update the authenticated user's profile (display name, avatar URL).")
+            .Produces<AuthUserDto>();
+
+        group.MapPost(
+            "/change-password",
+            async (
+                ChangePasswordRequest request,
+                IAuthService authService,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    await authService.ChangePasswordAsync(request.CurrentPassword, request.NewPassword, cancellationToken);
+                    return Results.NoContent();
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    return Results.Problem(detail: ex.Message, statusCode: StatusCodes.Status401Unauthorized, title: "غير مصرح");
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { title = ex.Message, status = 400 });
+                }
+            })
+            .RequireAuthorization()
+            .WithName("AuthChangePassword")
+            .WithSummary("Change the authenticated user's password.")
+            .Produces(StatusCodes.Status204NoContent);
+
         return group;
     }
 }

@@ -27,39 +27,30 @@ public sealed class AuthService(
 
     public async Task<AuthResponse> LoginAsync(string email, string password, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            throw new UnauthorizedAccessException("البريد الإلكتروني أو كلمة المرور غير صحيحة.");
+        }
+
         var normalizedEmail = email.Trim().ToLowerInvariant();
         var user = await dbContext.Users
             .FirstOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
 
         if (user is null)
         {
-            // If no user exists at all in the database, seed this user as the first admin!
-            var count = await dbContext.Users.CountAsync(cancellationToken);
-            if (count == 0)
-            {
-                user = AppUser.Create(
-                    Guid.NewGuid(),
-                    normalizedEmail,
-                    _passwordHasher.HashPassword(normalizedEmail, password),
-                    [_options.AdminRole, _options.EditorRole],
-                    clock.UtcNow);
-
-                dbContext.Users.Add(user);
-                await dbContext.SaveChangesAsync(cancellationToken);
-                logger.LogInformation("Seeded initial admin user: {Email}", normalizedEmail);
-            }
-            else
-            {
-                throw new UnauthorizedAccessException("البريد الإلكتروني أو كلمة المرور غير صحيحة.");
-            }
+            throw new UnauthorizedAccessException("البريد الإلكتروني أو كلمة المرور غير صحيحة.");
         }
-        else
+
+        var result = _passwordHasher.VerifyHashedPassword(user.Email, user.PasswordHash, password);
+        if (result == PasswordVerificationResult.Failed)
         {
-            var result = _passwordHasher.VerifyHashedPassword(user.Email, user.PasswordHash, password);
-            if (result == PasswordVerificationResult.Failed)
-            {
-                throw new UnauthorizedAccessException("البريد الإلكتروني أو كلمة المرور غير صحيحة.");
-            }
+            throw new UnauthorizedAccessException("البريد الإلكتروني أو كلمة المرور غير صحيحة.");
+        }
+
+        if (result == PasswordVerificationResult.SuccessRehashNeeded)
+        {
+            user.UpdatePassword(_passwordHasher.HashPassword(user.Email, password));
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
 
         var token = GenerateJwtToken(user);
@@ -68,6 +59,15 @@ public sealed class AuthService(
 
     public async Task<AuthResponse> RegisterAsync(string email, string password, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(email) || !email.Contains('@'))
+        {
+            throw new ArgumentException("البريد الإلكتروني غير صالح.");
+        }
+        if (string.IsNullOrWhiteSpace(password) || password.Length < 8)
+        {
+            throw new ArgumentException("كلمة المرور يجب أن تكون 8 أحرف على الأقل.");
+        }
+
         var normalizedEmail = email.Trim().ToLowerInvariant();
         var exists = await dbContext.Users.AnyAsync(u => u.Email == normalizedEmail, cancellationToken);
         if (exists)
@@ -157,6 +157,85 @@ public sealed class AuthService(
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    public async Task<AuthUserDto> UpdateProfileAsync(string? displayName, string? avatarUrl, CancellationToken cancellationToken = default)
+    {
+        if (!currentUser.IsAuthenticated || string.IsNullOrWhiteSpace(currentUser.UserId)
+            || !Guid.TryParse(currentUser.UserId, out var guid))
+        {
+            throw new UnauthorizedAccessException("غير مصرح.");
+        }
+
+        var user = await dbContext.Users.FindAsync([guid], cancellationToken)
+            ?? throw new UnauthorizedAccessException("المستخدم غير موجود.");
+
+        user.UpdateProfile(displayName, avatarUrl);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return MapToDto(user);
+    }
+
+    public async Task ChangePasswordAsync(string currentPassword, string newPassword, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(currentPassword) || string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 8)
+        {
+            throw new ArgumentException("كلمة المرور غير صالحة.");
+        }
+
+        if (!currentUser.IsAuthenticated || string.IsNullOrWhiteSpace(currentUser.UserId)
+            || !Guid.TryParse(currentUser.UserId, out var guid))
+        {
+            throw new UnauthorizedAccessException("غير مصرح.");
+        }
+
+        var user = await dbContext.Users.FindAsync([guid], cancellationToken)
+            ?? throw new UnauthorizedAccessException("المستخدم غير موجود.");
+
+        var result = _passwordHasher.VerifyHashedPassword(user.Email, user.PasswordHash, currentPassword);
+        if (result == PasswordVerificationResult.Failed)
+        {
+            throw new UnauthorizedAccessException("كلمة المرور الحالية غير صحيحة.");
+        }
+
+        user.UpdatePassword(_passwordHasher.HashPassword(user.Email, newPassword));
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<AuthResponse> ExternalLoginAsync(string email, string? displayName, string? avatarUrl, string provider, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(email) || !email.Contains('@'))
+        {
+            throw new ArgumentException("البريد الإلكتروني غير صالح.");
+        }
+
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
+
+        if (user is null)
+        {
+            // OAuth users never auto-become admin; they get the editor role.
+            user = AppUser.Create(
+                Guid.NewGuid(),
+                normalizedEmail,
+                _passwordHasher.HashPassword(normalizedEmail, Guid.NewGuid().ToString("N")),
+                new List<string> { _options.EditorRole },
+                clock.UtcNow);
+            user.UpdateProfile(displayName, avatarUrl);
+            dbContext.Users.Add(user);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            logger.LogInformation("Created OAuth user via {Provider}: {Email}", provider, normalizedEmail);
+        }
+        else
+        {
+            // Link profile fields if missing.
+            user.UpdateProfile(
+                string.IsNullOrWhiteSpace(user.DisplayName) ? displayName : null,
+                string.IsNullOrWhiteSpace(user.AvatarUrl) ? avatarUrl : null);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        var token = GenerateJwtToken(user);
+        return new AuthResponse(token, MapToDto(user));
+    }
     private AuthUserDto MapToDto(AppUser user)
     {
         var isAdmin = user.Roles.Contains(_options.AdminRole, StringComparer.OrdinalIgnoreCase);
@@ -167,6 +246,8 @@ public sealed class AuthService(
             user.Email,
             user.Roles,
             isAdmin,
-            canEdit);
+            canEdit,
+            user.DisplayName,
+            user.AvatarUrl);
     }
 }
