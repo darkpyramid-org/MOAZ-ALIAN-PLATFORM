@@ -27,7 +27,14 @@ public sealed class AppUserConfiguration : IEntityTypeConfiguration<AppUser>
         builder.Property(user => user.Roles)
             .HasColumnType("text[]");
 
+        builder.Property(user => user.DisplayName)
+            .HasMaxLength(AppUser.DisplayNameMaxLength);
+
+        builder.Property(user => user.AvatarUrl)
+            .HasMaxLength(AppUser.AvatarUrlMaxLength);
+
         builder.Property(user => user.CreatedAt).HasPrecision(3);
+        builder.Property(user => user.UpdatedAt).HasPrecision(3);
     }
 }
 

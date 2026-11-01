@@ -5,7 +5,11 @@ import { authClient } from "@/lib/auth";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-type Search = { redirect?: string | undefined };
+type Search = {
+  redirect?: string | undefined;
+  token?: string | undefined;
+  oauth_error?: string | undefined;
+};
 
 function safePath(p?: string) {
   if (!p) return "/dashboard";
@@ -20,6 +24,8 @@ function safePath(p?: string) {
 export const Route = createFileRoute("/auth")({
   validateSearch: (s: Record<string, unknown>): Search => ({
     redirect: typeof s["redirect"] === "string" ? s["redirect"] : undefined,
+    token: typeof s["token"] === "string" ? s["token"] : undefined,
+    oauth_error: typeof s["oauth_error"] === "string" ? s["oauth_error"] : undefined,
   }),
   head: () => ({
     meta: [
@@ -36,7 +42,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const { redirect } = Route.useSearch();
+  const { redirect, token, oauth_error } = Route.useSearch();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"in" | "up" | "forgot">("in");
   const [email, setEmail] = useState("");
@@ -78,6 +84,22 @@ function AuthPage() {
     }
     void checkExistingAuth();
   }, [navigate, target]);
+
+  useEffect(() => {
+    if (oauth_error) toast.error(`فشل تسجيل الدخول عبر OAuth: ${oauth_error}`);
+  }, [oauth_error]);
+
+  useEffect(() => {
+    if (!token) return;
+    (async () => {
+      authClient.setAccessToken(token);
+      const user = await authClient.getMe();
+      if (user) {
+        toast.success("تم تسجيل الدخول بنجاح");
+        navigate({ to: target as "/dashboard", replace: true });
+      }
+    })();
+  }, [token, navigate, target]);
 
   const titles = { in: "تسجيل الدخول", up: "إنشاء حساب جديد", forgot: "استعادة كلمة المرور" };
 
@@ -126,6 +148,20 @@ function AuthPage() {
                   ? "إنشاء الحساب"
                   : "إرسال الطلب"}
           </button>
+
+          <div className="flex items-center gap-2 pt-2">
+            <span className="h-px flex-1 bg-border" />
+            <span className="text-xs text-muted-foreground">أو</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <a href={authClient.oauthUrl("google")} className="btn-outline w-full justify-center">
+              Google
+            </a>
+            <a href={authClient.oauthUrl("facebook")} className="btn-outline w-full justify-center">
+              Facebook
+            </a>
+          </div>
         </form>
 
         <div className="mt-6 flex flex-wrap justify-between gap-2 text-sm">

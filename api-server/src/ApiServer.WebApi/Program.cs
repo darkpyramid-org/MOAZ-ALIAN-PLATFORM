@@ -213,6 +213,7 @@ app.UseAuthorization();
 
 app.MapAuthEndpoints();
 app.MapAdminEndpoints();
+app.MapOAuthEndpoints();
 app.MapContentEndpoints();
 app.MapCategoryEndpoints();
 
@@ -227,9 +228,16 @@ try
             ""Email"" character varying(255) NOT NULL,
             ""PasswordHash"" character varying(1000) NOT NULL,
             ""Roles"" text[] NOT NULL DEFAULT ARRAY[]::text[],
-            ""CreatedAt"" timestamp(3) with time zone NOT NULL DEFAULT NOW()
+            ""DisplayName"" character varying(80),
+            ""AvatarUrl"" character varying(500),
+            ""CreatedAt"" timestamp(3) with time zone NOT NULL DEFAULT NOW(),
+            ""UpdatedAt"" timestamp(3) with time zone
         );
         CREATE UNIQUE INDEX IF NOT EXISTS ""IX_users_Email"" ON library.users (""Email"");
+        -- Backfill columns on pre-existing databases.
+        ALTER TABLE library.users ADD COLUMN IF NOT EXISTS ""DisplayName"" character varying(80);
+        ALTER TABLE library.users ADD COLUMN IF NOT EXISTS ""AvatarUrl"" character varying(500);
+        ALTER TABLE library.users ADD COLUMN IF NOT EXISTS ""UpdatedAt"" timestamp(3) with time zone;
 
         CREATE TABLE IF NOT EXISTS library.site_settings (
             ""Id"" text PRIMARY KEY,

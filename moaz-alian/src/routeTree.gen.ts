@@ -26,6 +26,7 @@ import { Route as CategoriesIndexRouteImport } from './routes/categories.index'
 import { Route as CategoriesIdRouteImport } from './routes/categories.$id'
 import { Route as ChatIndexRouteImport } from './routes/chat.index'
 import { Route as ChatThreadIdRouteImport } from './routes/chat.$threadId'
+import { Route as ProxyApiSplatRouteImport } from './routes/proxy-api.$'
 import { Route as ResearchIndexRouteImport } from './routes/research.index'
 import { Route as ResearchSlugRouteImport } from './routes/research.$slug'
 import { Route as VideosIndexRouteImport } from './routes/videos.index'
@@ -35,6 +36,7 @@ import { Route as AuthenticatedDashboardCategoriesRouteImport } from './routes/_
 import { Route as AuthenticatedDashboardContentRouteImport } from './routes/_authenticated/dashboard.content'
 import { Route as AuthenticatedDashboardDebatesRouteImport } from './routes/_authenticated/dashboard.debates'
 import { Route as AuthenticatedDashboardPagesRouteImport } from './routes/_authenticated/dashboard.pages'
+import { Route as AuthenticatedDashboardProfileRouteImport } from './routes/_authenticated/dashboard.profile'
 import { Route as AuthenticatedDashboardUsersRouteImport } from './routes/_authenticated/dashboard.users'
 import { Route as ApiMediaSplatRouteImport } from './routes/api/media.$'
 
@@ -122,6 +124,11 @@ const ChatThreadIdRoute = ChatThreadIdRouteImport.update({
   path: '/chat/$threadId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProxyApiSplatRoute = ProxyApiSplatRouteImport.update({
+  id: '/proxy-api/$',
+  path: '/proxy-api/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResearchIndexRoute = ResearchIndexRouteImport.update({
   id: '/research/',
   path: '/research/',
@@ -172,6 +179,12 @@ const AuthenticatedDashboardPagesRoute =
     path: '/pages',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedDashboardProfileRoute =
+  AuthenticatedDashboardProfileRouteImport.update({
+    id: '/profile',
+    path: '/profile',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 const AuthenticatedDashboardUsersRoute =
   AuthenticatedDashboardUsersRouteImport.update({
     id: '/users',
@@ -197,6 +210,7 @@ export interface FileRoutesByFullPath {
   '/books/$slug': typeof BooksSlugRoute
   '/categories/$id': typeof CategoriesIdRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
+  '/proxy-api/$': typeof ProxyApiSplatRoute
   '/research/$slug': typeof ResearchSlugRoute
   '/videos/$slug': typeof VideosSlugRoute
   '/articles/': typeof ArticlesIndexRoute
@@ -209,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/content': typeof AuthenticatedDashboardContentRoute
   '/dashboard/debates': typeof AuthenticatedDashboardDebatesRoute
   '/dashboard/pages': typeof AuthenticatedDashboardPagesRoute
+  '/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
   '/dashboard/users': typeof AuthenticatedDashboardUsersRoute
   '/api/media/$': typeof ApiMediaSplatRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
@@ -225,6 +240,7 @@ export interface FileRoutesByTo {
   '/books/$slug': typeof BooksSlugRoute
   '/categories/$id': typeof CategoriesIdRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
+  '/proxy-api/$': typeof ProxyApiSplatRoute
   '/research/$slug': typeof ResearchSlugRoute
   '/videos/$slug': typeof VideosSlugRoute
   '/articles': typeof ArticlesIndexRoute
@@ -237,6 +253,7 @@ export interface FileRoutesByTo {
   '/dashboard/content': typeof AuthenticatedDashboardContentRoute
   '/dashboard/debates': typeof AuthenticatedDashboardDebatesRoute
   '/dashboard/pages': typeof AuthenticatedDashboardPagesRoute
+  '/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
   '/dashboard/users': typeof AuthenticatedDashboardUsersRoute
   '/api/media/$': typeof ApiMediaSplatRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
@@ -256,6 +273,7 @@ export interface FileRoutesById {
   '/books/$slug': typeof BooksSlugRoute
   '/categories/$id': typeof CategoriesIdRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
+  '/proxy-api/$': typeof ProxyApiSplatRoute
   '/research/$slug': typeof ResearchSlugRoute
   '/videos/$slug': typeof VideosSlugRoute
   '/articles/': typeof ArticlesIndexRoute
@@ -268,6 +286,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/content': typeof AuthenticatedDashboardContentRoute
   '/_authenticated/dashboard/debates': typeof AuthenticatedDashboardDebatesRoute
   '/_authenticated/dashboard/pages': typeof AuthenticatedDashboardPagesRoute
+  '/_authenticated/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
   '/_authenticated/dashboard/users': typeof AuthenticatedDashboardUsersRoute
   '/api/media/$': typeof ApiMediaSplatRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
@@ -287,6 +306,7 @@ export interface FileRouteTypes {
     | '/books/$slug'
     | '/categories/$id'
     | '/chat/$threadId'
+    | '/proxy-api/$'
     | '/research/$slug'
     | '/videos/$slug'
     | '/articles/'
@@ -299,6 +319,7 @@ export interface FileRouteTypes {
     | '/dashboard/content'
     | '/dashboard/debates'
     | '/dashboard/pages'
+    | '/dashboard/profile'
     | '/dashboard/users'
     | '/api/media/$'
     | '/dashboard/'
@@ -315,6 +336,7 @@ export interface FileRouteTypes {
     | '/books/$slug'
     | '/categories/$id'
     | '/chat/$threadId'
+    | '/proxy-api/$'
     | '/research/$slug'
     | '/videos/$slug'
     | '/articles'
@@ -327,6 +349,7 @@ export interface FileRouteTypes {
     | '/dashboard/content'
     | '/dashboard/debates'
     | '/dashboard/pages'
+    | '/dashboard/profile'
     | '/dashboard/users'
     | '/api/media/$'
     | '/dashboard'
@@ -345,6 +368,7 @@ export interface FileRouteTypes {
     | '/books/$slug'
     | '/categories/$id'
     | '/chat/$threadId'
+    | '/proxy-api/$'
     | '/research/$slug'
     | '/videos/$slug'
     | '/articles/'
@@ -357,6 +381,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/content'
     | '/_authenticated/dashboard/debates'
     | '/_authenticated/dashboard/pages'
+    | '/_authenticated/dashboard/profile'
     | '/_authenticated/dashboard/users'
     | '/api/media/$'
     | '/_authenticated/dashboard/'
@@ -375,6 +400,7 @@ export interface RootRouteChildren {
   BooksSlugRoute: typeof BooksSlugRoute
   CategoriesIdRoute: typeof CategoriesIdRoute
   ChatThreadIdRoute: typeof ChatThreadIdRoute
+  ProxyApiSplatRoute: typeof ProxyApiSplatRoute
   ResearchSlugRoute: typeof ResearchSlugRoute
   VideosSlugRoute: typeof VideosSlugRoute
   ArticlesIndexRoute: typeof ArticlesIndexRoute
@@ -507,6 +533,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatThreadIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/proxy-api/$': {
+      id: '/proxy-api/$'
+      path: '/proxy-api/$'
+      fullPath: '/proxy-api/$'
+      preLoaderRoute: typeof ProxyApiSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/research/': {
       id: '/research/'
       path: '/research'
@@ -570,6 +603,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardPagesRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/dashboard/profile': {
+      id: '/_authenticated/dashboard/profile'
+      path: '/profile'
+      fullPath: '/dashboard/profile'
+      preLoaderRoute: typeof AuthenticatedDashboardProfileRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
     '/_authenticated/dashboard/users': {
       id: '/_authenticated/dashboard/users'
       path: '/users'
@@ -592,6 +632,7 @@ interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardContentRoute: typeof AuthenticatedDashboardContentRoute
   AuthenticatedDashboardDebatesRoute: typeof AuthenticatedDashboardDebatesRoute
   AuthenticatedDashboardPagesRoute: typeof AuthenticatedDashboardPagesRoute
+  AuthenticatedDashboardProfileRoute: typeof AuthenticatedDashboardProfileRoute
   AuthenticatedDashboardUsersRoute: typeof AuthenticatedDashboardUsersRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
 }
@@ -603,6 +644,7 @@ const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
     AuthenticatedDashboardContentRoute: AuthenticatedDashboardContentRoute,
     AuthenticatedDashboardDebatesRoute: AuthenticatedDashboardDebatesRoute,
     AuthenticatedDashboardPagesRoute: AuthenticatedDashboardPagesRoute,
+    AuthenticatedDashboardProfileRoute: AuthenticatedDashboardProfileRoute,
     AuthenticatedDashboardUsersRoute: AuthenticatedDashboardUsersRoute,
     AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
   }
@@ -636,6 +678,7 @@ const rootRouteChildren: RootRouteChildren = {
   BooksSlugRoute: BooksSlugRoute,
   CategoriesIdRoute: CategoriesIdRoute,
   ChatThreadIdRoute: ChatThreadIdRoute,
+  ProxyApiSplatRoute: ProxyApiSplatRoute,
   ResearchSlugRoute: ResearchSlugRoute,
   VideosSlugRoute: VideosSlugRoute,
   ArticlesIndexRoute: ArticlesIndexRoute,

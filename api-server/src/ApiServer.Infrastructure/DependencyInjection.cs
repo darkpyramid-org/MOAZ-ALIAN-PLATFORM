@@ -69,6 +69,7 @@ public static class DependencyInjection
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, ClaimsCurrentUser>();
         services.AddJwtAuthentication(configuration);
+        services.AddHttpClient();
 
         // Liveness of the real dependency, used by /health and container readiness probes.
         services.AddHealthChecks().AddDbContextCheck<ApplicationDbContext>("postgres", tags: ["ready"]);
