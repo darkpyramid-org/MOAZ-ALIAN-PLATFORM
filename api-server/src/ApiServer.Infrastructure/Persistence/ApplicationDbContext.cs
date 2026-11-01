@@ -10,16 +10,17 @@ namespace ApiServer.Infrastructure.Persistence;
 public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
 {
     /// <summary>
-    /// All API tables live in the <c>library</c> schema. The Supabase project's <c>public</c>
-    /// schema already holds the frontend's own tables (<c>content_items</c> as jsonb, chat,
-    /// debates, ...); an isolated schema lets the API and that data coexist without a name
-    /// collision and keeps PostgREST (which serves <c>public</c> only) out of the API's tables.
+    /// All API tables live in the <c>library</c> schema, isolated from the frontend's
+    /// <c>public</c> schema tables (<c>content_items</c> as jsonb, chat, debates, …).
+    /// An isolated schema prevents name collisions and keeps PostgREST out of the API's tables.
     /// </summary>
     public const string Schema = "library";
 
     public DbSet<ContentItem> ContentItems => Set<ContentItem>();
 
     public DbSet<Category> Categories => Set<Category>();
+
+    public DbSet<AppUser> Users => Set<AppUser>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

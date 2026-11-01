@@ -2,26 +2,32 @@
 
 ## Prerequisites
 
-- [Bun](https://bun.sh) (primary package manager used by CI)
+- [Bun](https://bun.sh) (frontend package manager; CI uses it)
+- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) (backend)
 - Git
-- A Supabase project (Auth + Postgres)
-- Optional: Lovable AI API key for `/api/chat`
+- A PostgreSQL database (the API's connection string already points at the hosted dev DB)
+- Optional: AI gateway key for `/api/chat`
 
 ## Install
 
 ```sh
 git clone https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM.git
-cd MOAZ-ALIAN-PLATFORM/moaz-alian
-bun install
-cp .env.example .env.local
-```
+cd MOAZ-ALIAN-PLATFORM
 
-Edit `.env.local` using the names in `.env.example`. **Never** put service-role keys in `VITE_*` variables.
+# backend — serves PostgreSQL data on http://localhost:5199
+cd api-server
+dotnet run --project src/ApiServer.WebApi
+
+# frontend
+cd ../moaz-alian
+bun install
+```
 
 ## Develop
 
 ```sh
-bun run dev
+bun run dev        # frontend
+# api-server: dotnet run --project src/ApiServer.WebApi  (Swagger at /swagger)
 ```
 
 ## Quality checks
@@ -33,40 +39,33 @@ bun run test
 bun run build
 ```
 
+Backend: `dotnet build` and `dotnet test` inside `api-server/` (47 unit tests).
+
 ## Environment variables
 
-### Client (browser)
+### Frontend (`moaz-alian/.env`)
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `VITE_SUPABASE_URL` | Yes | Supabase project URL |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Yes | Supabase anon/publishable key |
+| `VITE_API_URL` | Yes (browser) | API base, e.g. `http://localhost:5199` |
+| `API_URL` | Yes (SSR) | Same for server-side calls |
+| `AI_API_KEY` | For chat | AI gateway key |
 
-### Server only
+### Backend (`api-server/src/ApiServer.WebApi`)
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `SUPABASE_URL` | Yes | Same project URL for SSR/server routes |
-| `SUPABASE_PUBLISHABLE_KEY` | Yes | Publishable key for user-scoped server clients |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes* | Service role for privileged server operations |
-| `LOVABLE_API_KEY` | For chat | Lovable AI gateway |
-| `LOVABLE_DB_MIGRATION_URL` | Optional | Postgres URL for Drizzle migrations |
-| `LOVABLE_CRON_SECRET` | Optional | Cron authentication |
+Configured in `appsettings*.json` / user-secrets:
 
-\*Required for routes/integrations that use the service-role client.
+| Key | Description |
+|-----|-------------|
+| `ConnectionStrings:Postgres` | PostgreSQL connection string |
+| `Auth:JwtSecret` | HMAC secret the API signs its JWTs with |
+| `Auth:Issuer` | Expected `iss` (default `http://localhost:5199`) |
+| `Cors:AllowedOrigins` | Explicit frontend origins in production |
 
-## Notes
-
-- There is **no** `api-server/` package. HTTP handlers live under `src/routes/api/`.
-- Database schema and migrations live under `moaz-alian/drizzle/`.
+**Never** commit real database passwords or JWT secrets — use user-secrets / environment variables.
 
 ## Admin bootstrap
 
-New signups only create a `profiles` row. They are **not** auto-promoted to admin (migration `0012_remove_first_user_auto_admin`).
-
-To grant the first admin after deploy, run as a privileged operator (service role / SQL editor), for example:
-
-```sql
-insert into public.user_roles (user_id, role)
-values ('<auth-user-uuid>', 'admin');
-```
+The first account registered via `POST /api/auth/register` (on an empty `library.users` table) is
+seeded with `admin` + `editor`. Later signups get `editor` and stay invisible to the dashboard until
+an admin toggles their roles in `المستخدمون والصلاحيات` (dashboard users page).

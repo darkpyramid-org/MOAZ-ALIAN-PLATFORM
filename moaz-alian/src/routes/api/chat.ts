@@ -9,7 +9,7 @@ import {
   requireRouteUser,
   verifyThreadOwnership,
 } from "@/lib/chat/chat.server";
-import { withLovableAiGatewayRunIdHeader } from "@/lib/chat/run-id";
+import { withAiGatewayRunIdHeader } from "@/lib/chat/run-id";
 
 const MAX_MESSAGES = 40;
 
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/chat")({
         if (!threadId) {
           return Response.json({ error: "missing_thread" }, { status: 400 });
         }
-        if (!(await verifyThreadOwnership(user.supabase, threadId))) {
+        if (!(await verifyThreadOwnership(user, threadId))) {
           return Response.json({ error: "thread_not_found" }, { status: 404 });
         }
 
@@ -50,20 +50,19 @@ export const Route = createFileRoute("/api/chat")({
         if (body.trigger !== "regenerate-message") {
           const lastUser = [...messages].reverse().find((m) => m.role === "user");
           if (lastUser) {
-            await persistUserMessage(user.supabase, threadId, lastUser);
+            await persistUserMessage(user, threadId, lastUser);
           }
         }
 
-        const apiKey = process.env["LOVABLE_API_KEY"];
+        const apiKey = process.env["OPENAI_API_KEY"] ?? process.env["AI_API_KEY"];
         if (!apiKey) {
-          console.error("[chat] LOVABLE_API_KEY missing");
           return Response.json({ error: "ai_unavailable" }, { status: 503 });
         }
 
         try {
           const { result, gateway } = createResponsesCall(
             request,
-            { apiKey, model: "openai/gpt-6-astra" },
+            { apiKey, model: process.env["AI_MODEL"] ?? "gpt-4o" },
             await convertToModelMessages(messages),
             buildSystemPrompt(),
           );
@@ -78,12 +77,12 @@ export const Route = createFileRoute("/api/chat")({
             onFinish: async ({ messages: completed }) => {
               const last = completed[completed.length - 1];
               if (last?.role === "assistant") {
-                await persistAssistantMessage(user.supabase, threadId, last);
+                await persistAssistantMessage(user, threadId, last);
               }
             },
           });
 
-          return withLovableAiGatewayRunIdHeader(stream, gateway);
+          return stream;
         } catch (error) {
           console.error("[chat] failed to start stream", error);
           return Response.json({ error: "ai_unavailable" }, { status: 502 });

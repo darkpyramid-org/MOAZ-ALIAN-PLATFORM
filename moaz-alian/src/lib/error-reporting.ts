@@ -26,13 +26,17 @@ function describeThrown(error: unknown): string {
     return `Response ${error.status}${error.url ? ` at ${error.url}` : ""}`;
   }
   if (error instanceof Error) {
-    return error.stack ? `${error.name}: ${error.message}\n${error.stack}` : `${error.name}: ${error.message}`;
+    return error.stack
+      ? `${error.name}: ${error.message}\n${error.stack}`
+      : `${error.name}: ${error.message}`;
   }
   if (typeof error === "string") return error;
   if (error != null && typeof error === "object") {
     try {
       const json = JSON.stringify(error);
-      return json.length > MAX_SERIALIZED_LENGTH ? `${json.slice(0, MAX_SERIALIZED_LENGTH)}...` : json;
+      return json.length > MAX_SERIALIZED_LENGTH
+        ? `${json.slice(0, MAX_SERIALIZED_LENGTH)}...`
+        : json;
     } catch {
       // circular or non-serializable
     }

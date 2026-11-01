@@ -5,8 +5,7 @@ import { FormSkeleton } from "@/components/skeletons";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { ArrowDown, ArrowUp, ExternalLink, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import type { Json } from "@/integrations/supabase/types";
+import { authClient } from "@/lib/auth";
 import {
   defaultSiteSettings,
   heroFromSlide,
@@ -55,17 +54,21 @@ const sections = {
   articles: "أحدث المقالات",
   recent: "أُضيف مؤخرًا والموضوعات",
 };
+
+const RAW_BASE =
+  (typeof process !== "undefined" ? process.env["API_URL"] : undefined) ??
+  import.meta.env["VITE_API_URL"] ??
+  "http://localhost:5199";
+const BASE = RAW_BASE.replace(/\/+$/, "");
+
 function Pages() {
   const query = useQuery({
     queryKey: ["admin", "settings"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("site_settings")
-        .select("data,updated_at")
-        .eq("id", "main")
-        .maybeSingle();
-      if (error) throw error;
-      return { settings: resolveSiteSettings(data?.data), version: data?.updated_at ?? "default" };
+      const res = await fetch(`${BASE}/api/settings/main`);
+      if (!res.ok) throw new Error("تعذر جلب الإعدادات");
+      const json = await res.json();
+      return { settings: resolveSiteSettings(json.data), version: json.version ?? "default" };
     },
   });
   if (query.isPending) return <FormSkeleton fields={6} />;
@@ -153,10 +156,16 @@ function SettingsForm({ initial }: { initial: SiteSettings }) {
     }
     setBusy(true);
     try {
-      const { error } = await supabase
-        .from("site_settings")
-        .upsert({ id: "main", data: parsed.data as unknown as Json });
-      if (error) throw error;
+      const token = authClient.getAccessToken();
+      const res = await fetch(`${BASE}/api/settings/main`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(parsed.data),
+      });
+      if (!res.ok) throw new Error("تعذر الحفظ");
       await qc.invalidateQueries({ queryKey: ["library"] });
       await router.invalidate();
       setSaved(structuredClone(parsed.data) as PagesForm);

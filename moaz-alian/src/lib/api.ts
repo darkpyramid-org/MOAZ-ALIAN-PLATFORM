@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { authClient } from "@/lib/auth";
 import type { Category, ContentItem } from "@/types/content";
 import { toCategory, toContentItem, toUpsertRequest } from "@/lib/api-mapping";
 import type { CategoryDto, ContentItemDto } from "@/lib/api-mapping";
@@ -17,8 +17,7 @@ export type { CategoryDto, ContentItemDto } from "@/lib/api-mapping";
 
 /**
  * Server calls (SSR, server functions) read `API_URL`; the browser reads the
- * build-time `VITE_API_URL`. Same fallback order the Supabase client already
- * uses, so one variable per environment is enough.
+ * build-time `VITE_API_URL`.
  */
 const RAW_BASE =
   (typeof process !== "undefined" ? process.env["API_URL"] : undefined) ??
@@ -78,18 +77,16 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
-/** Writes carry the signed-in Supabase session; the API validates it as a JWT. */
+/** Writes carry the signed-in JWT token; the API validates it directly. */
 async function apiWrite<T>(path: string, method: string, body: unknown): Promise<T> {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session) throw new ApiError(401, "الجلسة منتهية، سجّل الدخول من جديد");
+  const token = authClient.getAccessToken();
+  if (!token) throw new ApiError(401, "الجلسة منتهية، سجّل الدخول من جديد");
 
   return apiRequest<T>(path, {
     method,
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${session.access_token}`,
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(body),
   });

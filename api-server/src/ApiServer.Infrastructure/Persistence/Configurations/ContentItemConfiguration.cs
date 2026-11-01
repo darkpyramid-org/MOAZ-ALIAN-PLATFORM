@@ -14,7 +14,7 @@ namespace ApiServer.Infrastructure.Persistence.Configurations;
 public sealed class ContentItemConfiguration : IEntityTypeConfiguration<ContentItem>
 {
     /// <summary>
-    /// ICU Arabic collation, available on any ICU-built PostgreSQL (Supabase included).
+    /// ICU Arabic collation, available on any ICU-built PostgreSQL.
     /// Case-insensitive, accent-aware ordering so <c>ORDER BY title</c> matches the frontend's
     /// <c>localeCompare(title, "ar")</c> the way the old SQL Server <c>Arabic_100_CI_AS</c> did.
     /// </summary>

@@ -2,7 +2,7 @@
 
   <!--
     Infrastructure layer: adapters that implement the Application ports.
-    EF Core / PostgreSQL (Supabase), Supabase JWT validation, caching, clock.
+    EF Core / PostgreSQL, JWT auth, caching, clock.
     This is the outermost layer and the only place third-party concerns live.
   -->
 
@@ -21,11 +21,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The Postgres provider the Supabase-hosted database speaks. -->
+    <!-- The Postgres provider the database speaks. -->
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.9" />
 
-    <!-- Not in the shared framework; ships the Supabase JWKS token validator. -->
+    <!-- Not in the shared framework; ships the JWT bearer handler. -->
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.9" />
 
     <!-- Migration generation only; never reaches the production binary. -->

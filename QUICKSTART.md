@@ -66,18 +66,21 @@ MOAZ-ALIAN-PLATFORM/
 
 ## Environment Variables
 
-### Frontend (.env.local)
+### Frontend (moaz-alian/.env)
 ```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_OPENAI_API_KEY=your_openai_api_key
+VITE_API_URL=http://localhost:5199
+API_URL=http://localhost:5199
+# AI_API_KEY=your_ai_api_key
 ```
 
-### Backend (.env.local)
-```env
-DATABASE_URL=postgresql://...
-OPENAI_API_KEY=your_openai_api_key
-JWT_SECRET=your_secret_key
+### Backend (api-server/src/ApiServer.WebApi/appsettings.Development.json or user-secrets)
+```json
+{
+  "ConnectionStrings": {
+    "Postgres": "Server=...;Database=...;User Id=...;Password=...;SSL Mode=Require;Trust Server Certificate=true"
+  },
+  "Auth": { "Issuer": "http://localhost:5199", "JwtSecret": "your_secret_key" }
+}
 ```
 
 ## Common Issues

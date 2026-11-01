@@ -8,34 +8,43 @@ An Arabic knowledge platform for videos, books, articles, and research, with a t
 
 ```
 .
-├── moaz-alian/          # Full app (TanStack Start + React 19 + Supabase + Bun)
-├── docs/                # Documentation
-├── .github/             # GitHub Actions and templates
+├── api-server/            # Backend: ASP.NET Core (.NET 9) minimal APIs + EF Core + PostgreSQL
+├── moaz-alian/            # Frontend: TanStack Start + React 19 (the public site & dashboard)
+├── docs/                  # Documentation
+├── .github/               # GitHub Actions and templates
 ├── README.md
 ├── CONTRIBUTING.md
 └── LICENSE
 ```
 
-There is **no** separate `api-server/` package. Server routes live under `moaz-alian/src/routes/api/` (for example `/api/chat` and `/api/media/$`).
+Everything passes through the API in `api-server/` — content, categories, auth (its own JWTs),
+users/roles, site settings and debates — backed by a PostgreSQL `library` schema. The frontend
+talks to it over HTTP via `moaz-alian/src/lib/api.ts`; the only remaining server route in the
+frontend itself is the AI chat proxy (`/api/chat`) and media serving.
 
 ## Quick start
 
 ```sh
+# 1 — backend (http://localhost:5199)
+cd api-server
+dotnet run --project src/ApiServer.WebApi
+
+# 2 — frontend
 cd moaz-alian
 bun install
-cp .env.example .env.local   # fill in real values
 bun run dev
 ```
 
-App runs at `http://localhost:5173` (or the port Vite prints).
+App runs at the port Vite prints; set `VITE_API_URL` / `API_URL` if the API is not on
+`http://localhost:5199`.
 
 ## Tech stack
 
-- **Runtime / package manager:** Bun
-- **UI:** React 19, TanStack Start & Router, Tailwind CSS, Radix UI
-- **Data / auth:** Supabase (Postgres + Auth + RLS)
-- **ORM / migrations:** Drizzle
-- **AI:** Lovable AI gateway (`LOVABLE_API_KEY`) via `/api/chat`
+- **Frontend:** Bun, React 19, TanStack Start & Router, Tailwind CSS, Radix UI
+- **Backend:** ASP.NET Core (.NET 9) minimal APIs, clean-architecture layering
+  (Domain → Application → Infrastructure → WebApi), EF Core 9 + Npgsql
+- **Database:** PostgreSQL (schema `library`; connection string in `api-server/src/ApiServer.WebApi/appsettings*.json`)
+- **AI:** Lovable AI gateway (`AI_API_KEY`) via `/api/chat`
 
 ## Scripts (`moaz-alian/`)
 
@@ -50,20 +59,23 @@ App runs at `http://localhost:5173` (or the port Vite prints).
 
 ## Documentation
 
+- [Backend](./api-server/README.md) — architecture, auth, database, endpoints
 - [Setup](./docs/SETUP.md)
 - [Architecture](./docs/ARCHITECTURE.md)
 - [API](./docs/API.md) — real routes only
 - [Contributing](./CONTRIBUTING.md)
-- [Roadmap](./docs/ROADMAP.md)
 
 ## Environment
 
-See `moaz-alian/.env.example` for client (`VITE_*`) and server variables.  
-**Never** expose `SUPABASE_SERVICE_ROLE_KEY` under a `VITE_` prefix.
+See `moaz-alian/.env.example` for the frontend variables (`VITE_API_URL`, `API_URL`, optional AI
+keys) and `api-server/src/ApiServer.WebApi/appsettings.json` for the database and JWT secret.
+**Never** commit real passwords or secrets — use user-secrets / environment variables in production.
 
 ## CI
 
-GitHub Actions (`.github/workflows/ci.yml`) uses **Bun** only: install, lint, format check, test, and build. There is no backend job.
+GitHub Actions (`.github/workflows/ci.yml`) uses **Bun** only: install, lint, format check, test,
+and build for the frontend. The backend builds and tests with `dotnet build` / `dotnet test`
+inside `api-server/`.
 
 ## License
 

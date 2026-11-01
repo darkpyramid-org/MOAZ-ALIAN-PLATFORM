@@ -20,7 +20,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { THEME_BOOT_SCRIPT } from "@/components/layout/ThemeToggle";
 import { libraryQuery } from "@/lib/library.functions";
 import { hydrateLibrary } from "@/lib/content";
-import { supabase } from "@/integrations/supabase/client";
+import { authClient } from "@/lib/auth";
 
 function NotFoundComponent() {
   return <NotFoundScreen />;
@@ -102,7 +102,7 @@ function RootComponent() {
     pathname.startsWith("/reset-password");
 
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((event) => {
+    const { data } = authClient.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();
       if (event !== "SIGNED_OUT") queryClient.invalidateQueries();

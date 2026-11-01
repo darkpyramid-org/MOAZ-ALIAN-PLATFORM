@@ -10,17 +10,18 @@ is the only place the API's shapes become the UI's, and the root loader hydrates
 store (`src/lib/content.ts`) from `/api/content/snapshot` before any page renders. Nothing reads
 `content_items` or `categories` through PostgREST any more.
 
-Auth, profiles/roles, site settings, debates and chat still live in Supabase; the API validates
-the same Supabase access token for its editorial writes, so the dashboard signs in once.
+Auth (login/register/JWT), roles, site settings and debates are served by the same API (`/api/auth/*`,
+`/api/users*`, `/api/settings/*`, `/api/debates*`) against its PostgreSQL database (`library` schema) —
+there is no Supabase anywhere in the stack. Writes carry the API-issued JWT shown once by `src/lib/auth.ts`.
 
 `src/data/seed.ts` and `src/data/library/` are **not** bundled into the running app. They are the
 dataset's origin, used by `api-server/tools/generate-seed.mjs` to build SQL and by the test suite
 as a fixture. After changing them, regenerate and re-apply the seed, then restart the API (SQL
 writes do not bump its cache version).
 
-Supabase's legacy `public.content_items` and `public.categories` tables are now dead weight — the
-API keeps the same corpus in the `library` schema with typed columns. Drop them once nothing is
-reading them any more (see `drizzle/schema.ts` for the statements).
+The database's schema and seed travel as two generated bundles: `api-server/apply-supabase.sql`
+(schema + seed + verification, one paste into any SQL console) and `api-server/supabase-schema.sql`
+(the initial schema snapshot). Regenerate them from the seed data with `node tools/generate-seed.mjs`.
 
 ## Development
 

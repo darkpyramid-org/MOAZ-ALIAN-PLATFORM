@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { authClient } from "@/lib/auth";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -37,141 +37,49 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const { redirect } = Route.useSearch();
-  const authRedirectUrl =
-    import.meta.env["VITE_DEV_SUPABASE_REDIRECT_URL"] ||
-    import.meta.env["VITE_NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL"] ||
-    `${window.location.origin}/auth`;
   const navigate = useNavigate();
   const [mode, setMode] = useState<"in" | "up" | "forgot">("in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [unconfirmed, setUnconfirmed] = useState(false);
-  const [resent, setResent] = useState(false);
   const target = safePath(redirect);
-
-  async function resend(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    try {
-      const { error } = await supabase.auth.resend({
-        type: "signup",
-        email,
-        options: { emailRedirectTo: authRedirectUrl },
-      });
-      if (error) throw error;
-      setResent(true);
-      toast.success("أعدنا إرسال رابط التأكيد إلى بريدك.");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "حدث خطأ");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  function authErrorMessage(error: { code?: string; message?: string }) {
-    const code = error.code ?? "";
-    const message = error.message ?? "";
-    if (code === "email_not_confirmed" || /not (yet )?confirmed/i.test(message)) {
-      setUnconfirmed(true);
-      return "يجب تأكيد بريدك الإلكتروني أولًا. تحقق من صندوق الوارد أو أعد إرسال الرابط.";
-    }
-    if (code === "invalid_credentials" || /invalid login credentials/i.test(message)) {
-      return "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
-    }
-    if (code === "over_request_rate_limit" || /rate limit/i.test(message)) {
-      return "محاولات كثيرة. انتظر قليلًا ثم حاول مرة أخرى.";
-    }
-    return "تعذر إتمام تسجيل الدخول. تحقق من الاتصال وحاول مرة أخرى.";
-  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const normalizedEmail = email.trim().toLowerCase();
     setEmail(normalizedEmail);
     setBusy(true);
-    setUnconfirmed(false);
+
     try {
       if (mode === "in") {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: normalizedEmail,
-          password,
-        });
-        if (error) {
-          toast.error(authErrorMessage(error));
-          return;
-        }
+        await authClient.login(normalizedEmail, password);
+        toast.success("تم تسجيل الدخول بنجاح");
         navigate({ to: target as "/dashboard", replace: true });
       } else if (mode === "up") {
-        const { data, error } = await supabase.auth.signUp({
-          email: normalizedEmail,
-          password,
-          options: { emailRedirectTo: authRedirectUrl },
-        });
-        if (error) throw error;
-        if (data.session) navigate({ to: "/dashboard" });
-        else {
-          setUnconfirmed(true);
-          setResent(false);
-          toast.success("تم إنشاء الحساب. راجع بريدك لتأكيد العنوان ثم سجّل الدخول.");
-        }
+        await authClient.register(normalizedEmail, password);
+        toast.success("تم إنشاء الحساب وتسجيل الدخول بنجاح");
+        navigate({ to: "/dashboard", replace: true });
       } else {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: window.location.origin + "/reset-password",
-        });
-        if (error) throw error;
-        toast.success("أرسلنا رابط إعادة تعيين كلمة المرور إلى بريدك.");
+        toast.info("لإعادة تعيين كلمة المرور، يرجى التواصل مع مسؤول النظام.");
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "حدث خطأ");
+      toast.error(err instanceof Error ? err.message : "حدث خطأ أثناء تسجيل الدخول");
     } finally {
       setBusy(false);
     }
   }
 
-  async function google() {
-    setBusy(true);
-    sessionStorage.setItem("post_auth", target);
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: authRedirectUrl },
-    });
-    if (error) {
-      sessionStorage.removeItem("post_auth");
-      setBusy(false);
-      toast.error("تعذّر بدء الدخول عبر Google. تحقق من إعدادات Google OAuth ثم حاول مرة أخرى.");
-      return;
-    }
-    if (data.url) window.location.assign(data.url);
-  }
-
-  // Complete a PKCE callback before redirecting to the requested page.
   useEffect(() => {
-    async function restoreAuth() {
-      const code = new URLSearchParams(window.location.search).get("code");
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (error) {
-          sessionStorage.removeItem("post_auth");
-          toast.error("تعذّر إكمال الدخول عبر Google. أعد المحاولة.");
-          return;
-        }
-        window.history.replaceState({}, document.title, window.location.pathname);
+    async function checkExistingAuth() {
+      const user = await authClient.getMe();
+      if (user) {
+        navigate({ to: target as "/dashboard", replace: true });
       }
-
-      const { data } = await supabase.auth.getSession();
-      const saved = sessionStorage.getItem("post_auth");
-      if (data.session && saved) {
-        sessionStorage.removeItem("post_auth");
-        navigate({ to: safePath(saved) as "/dashboard", replace: true });
-      }
-      setBusy(false);
     }
+    void checkExistingAuth();
+  }, [navigate, target]);
 
-    void restoreAuth();
-  }, [navigate]);
-
-  const titles = { in: "تسجيل الدخول", up: "إنشاء حساب", forgot: "استعادة كلمة المرور" };
+  const titles = { in: "تسجيل الدخول", up: "إنشاء حساب جديد", forgot: "استعادة كلمة المرور" };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-deep px-4 py-10">
@@ -180,7 +88,7 @@ function AuthPage() {
           ← العودة إلى المكتبة
         </Link>
         <h1 className="mt-4 text-2xl font-bold">{titles[mode]}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">لوحة إدارة المكتبة — للفريق فقط.</p>
+        <p className="mt-1 text-sm text-muted-foreground">لوحة إدارة المكتبة — منصة معاذ عليان.</p>
 
         <form onSubmit={submit} className="mt-6 space-y-4">
           <div className="space-y-1.5">
@@ -192,6 +100,7 @@ function AuthPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@example.com"
             />
           </div>
           {mode !== "forgot" && (
@@ -210,50 +119,20 @@ function AuthPage() {
           )}
           <button type="submit" disabled={busy} className="btn-gold w-full justify-center">
             {busy
-              ? "جارٍ..."
+              ? "جارٍ المعالجة..."
               : mode === "in"
                 ? "دخول"
                 : mode === "up"
                   ? "إنشاء الحساب"
-                  : "إرسال الرابط"}
+                  : "إرسال الطلب"}
           </button>
         </form>
-
-        {unconfirmed && (
-          <div className="mt-4 rounded-xl border border-border bg-muted/50 p-4 text-sm">
-            <p className="font-medium">لم يصلك رابط التأكيد؟</p>
-            <p className="mt-1 text-muted-foreground">
-              تفقّد مجلد الرسائل غير المرغوبة (Spam)، ثم أعد الإرسال من هنا.
-            </p>
-            <button
-              type="button"
-              onClick={resend}
-              disabled={busy || !email || resent}
-              className="btn-outline mt-3 px-4 py-1.5 text-sm"
-            >
-              {resent ? "تم الإرسال ✓" : busy ? "جارٍ الإرسال…" : "إعادة إرسال رابط التأكيد"}
-            </button>
-          </div>
-        )}
-
-        {mode !== "forgot" && (
-          <>
-            <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="h-px flex-1 bg-border" />
-              أو
-              <span className="h-px flex-1 bg-border" />
-            </div>
-            <button type="button" onClick={google} className="btn-outline w-full justify-center">
-              المتابعة عبر Google
-            </button>
-          </>
-        )}
 
         <div className="mt-6 flex flex-wrap justify-between gap-2 text-sm">
           {mode === "in" ? (
             <>
               <button className="text-primary hover:underline" onClick={() => setMode("up")}>
-                إنشاء حساب
+                إنشاء حساب جديد
               </button>
               <button
                 className="text-muted-foreground hover:text-primary"

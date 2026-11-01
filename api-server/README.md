@@ -1,10 +1,9 @@
 # api-server — the platform's read/write API
 
-ASP.NET Core (.NET 9) minimal APIs over **Supabase-hosted PostgreSQL**, verifying the Supabase
-access tokens the frontend already holds. The TanStack Start app in `../moaz-alian` talks to this
-API instead of touching the database directly; the response contracts mirror
-`../moaz-alian/src/types/content.ts` (camelCase, stringified enums) so the frontend consumes
-them with no translation layer.
+ASP.NET Core (.NET 9) minimal APIs over **PostgreSQL**, issuing and validating its own JWT access
+tokens. The TanStack Start app in `../moaz-alian` talks to this API instead of touching the database
+directly; the response contracts mirror `../moaz-alian/src/types/content.ts` (camelCase, stringified
+enums) so the frontend consumes them with no translation layer.
 
 ## Architecture
 
@@ -12,7 +11,7 @@ them with no translation layer.
 src/
   ApiServer.Domain          entities, value objects, enums, invariants — zero dependencies
   ApiServer.Application     use cases + ports (readers, repositories, cache, clock, identity)
-  ApiServer.Infrastructure  adapters: EF Core/Npgsql, Supabase JWT, memory cache, clock
+  ApiServer.Infrastructure  adapters: EF Core/Npgsql, JWT auth, memory cache, clock
   ApiServer.WebApi          endpoints, transport binding, middleware, composition root
 tests/
   ApiServer.Application.Tests  45 unit tests with hand-written fakes (no mocking library)
@@ -31,10 +30,10 @@ Layering is enforced mechanically: `TreatWarningsAsErrors` plus `AnalysisLevel l
 EF Core 9 + Npgsql, targeting the same Supabase Postgres project as the frontend, but under a
 dedicated **`library` schema**:
 
-- `public` already holds the frontend's Drizzle tables (`content_items` as a jsonb blob,
-  `categories`, chat, debates). `library.*` coexists without name collisions.
-- PostgREST exposes `public` only, so the API's normalized tables are not accidentally queryable
-  with the anon key.
+- `public` still holds the legacy tables left over from the Supabase era (`content_items` as a
+  jsonb blob, `categories`, chat, debates); `library.*` owns the API's normalized tables and
+  coexists without name collisions. The legacy tables are read by nothing and can be dropped
+  once the export is safely stored.
 - Arabic behaves like the old frontend expectations: ICU collation `ar-x-icu` on the text columns
   that were `Arabic_100_CI_AS_SC_UTF8` on SQL Server, and `EF.Functions.ILike` for search
   (case-insensitive by definition; wildcards escaped with backslashes).
@@ -49,29 +48,18 @@ expressions or a `tsvector` generated column with a GIN index — the schema doe
 
 Writes use `EnableRetryOnFailure(3, 5s)` for transient pooler blips.
 
-## Supabase auth
+## Auth
 
-The API is a pure resource server: Supabase signs tokens, this verifies them. No passwords, no
-sessions, no user table of its own.
+The API is its own identity provider: `POST /api/auth/register` and `POST /api/auth/login` issue
+HMAC-SHA256 JWTs signed with `Auth:JwtSecret` (7-day expiry), and every write validates that token
+locally — no external identity service, no sessions. The first registered account is seeded with
+the `admin` + `editor` roles; later registrations get `editor` and stay board-invisible until an
+admin promotes or demotes them with `POST /api/users/{id}/roles`.
 
-Two validation modes, selected by configuration:
-
-- **`SupabaseAuth:JwtSecret` set** — HMAC-SHA256 (legacy Supabase projects; `jhdahdzlzhtgzebldmmz`
-  is one). One shared secret, zero network calls. Get the value from
-  Dashboard → Settings → API → JWT Secret.
-- **`JwtSecret` unset** — asymmetric mode: fetches `{issuer}/.well-known/jwks.json`, matches the
-  token's `kid`, caches keys, serves stale keys during short outages. Switches over automatically
-  when the project is upgraded to the new JWT signing.
-
-Issuers `"{ProjectUrl}/auth/v1"` and the literal `"supabase"` are both accepted (GoTrue has used
-each historically); pin `SupabaseAuth:Issuer` to narrow it. `MapInboundClaims = false` keeps
-`sub`, `role`, `app_metadata` byte-for-byte.
-
-Authorization: `ContentEditor` policy accepts `app_metadata.roles` containing `admin` or `editor`;
-`SiteAdmin` accepts `admin` (or the `service_role` token role). **Roles are read from the signed
-token only.** The frontend's `user_roles` table must therefore be mirrored into the user's
-`app_metadata` on Supabase — a database trigger or an edge function on role changes is the usual
-mechanism. Without mirroring, editors get 403.
+Authorization: `ContentEditor` requires a `roles` claim containing `admin` or `editor`;
+`SiteAdmin` requires `admin`. Roles live in the `library.users` table and are stamped into the
+signed token at login, so a role change takes effect on the next login (or `GET /api/auth/me`,
+which re-reads the database).
 
 Rate limits: 300 req/min per user (or IP when anonymous) globally, 30 req/min for the editorial
 writes. CORS allows only the origins listed in `Cors:AllowedOrigins` (no credentials — the bearer
@@ -89,6 +77,11 @@ header is CSRF-inert).
 | `DELETE /api/content/{id}` | editor/admin |
 | `GET /api/categories` | includes `contentCount` |
 | `POST/PUT/DELETE /api/categories/{id}` | admin only for delete-with-content → 409 |
+| `POST /api/auth/register`, `POST /api/auth/login` | issue the API's own JWT; first account ever registered is admin+editor |
+| `GET /api/auth/me` | profile + roles of the token's user, re-read from the database |
+| `GET /api/users`, `POST /api/users/{id}/roles` | admin only; dashboard user management |
+| `GET/PUT /api/settings/{id}` | site settings blob (PUT editor/admin) |
+| `GET/POST/PUT/DELETE /api/debates` | debates archive (writes editor/admin) |
 
 Errors are RFC 7807 Problem Details everywhere, including the 401/403 from middleware
 (`{title, status, traceId}`, plus `errors` field-wise for validation). Slugs and ids are Arabic —
@@ -102,58 +95,31 @@ API instance would need the version token in a shared store (trivial port).
 
 ```bash
 cd api-server
-docker compose up -d                      # local Postgres 17 on host port 5433
-dotnet user-secrets init -p src/ApiServer.WebApi   # once per machine
+dotnet run --project src/ApiServer.WebApi    # Swagger UI at /swagger, Scalar at /scalar
 ```
 
-Point the API at your real Supabase project with **user-secrets** (stored outside the repo):
+The connection string already points at the hosted PostgreSQL database
+(`db77224.public.databaseasp.net`) via `appsettings*.json`; override it anywhere in the chain
+(user-secrets, environment variables) without code changes:
 
 ```bash
 cd src/ApiServer.WebApi
-dotnet user-secrets set "ConnectionStrings:Postgres" "<see the two forms below>"
-dotnet user-secrets set "SupabaseAuth:ProjectUrl" "https://<ref>.supabase.co"
-dotnet user-secrets set "SupabaseAuth:JwtSecret" "<Dashboard → Settings → API → JWT Secret>"
+dotnet user-secrets set "ConnectionStrings:Postgres" "<Server=...;Database=...;User Id=...;Password=...;SSL Mode=...;Trust Server Certificate=true>"
 ```
 
-### Connection string: session pooler vs direct
+Npgsql accepts either the key-value form or a `postgres://` URI; the key-value form is preferred
+because hosted poolers often need `Trust Server Certificate=true`, which is what makes
+`SSL Mode=Require` work when the certificate is not issued for the proxy hostname.
+`EnableRetryOnFailure(3, 5s)` absorbs transient pooler resets.
 
-Supabase's .NET snippet uses the **session pooler**, and that is the right choice for this API
-at runtime. Use the key-value form, not the `postgres://` URI, because the pooler's certificate
-is not issued for its hostname — `Trust Server Certificate=true` is what makes `SSL Mode=Require`
-work instead of failing the handshake:
-
-```
-Host=aws-0-<region>.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.<ref>;Password=<db-password>;SSL Mode=Require;Trust Server Certificate=true
-```
-
-Two pooler facts that actually bite, both already handled here:
-
-The session pooler is IPv4-proxied, so a host on an IPv6-only network cannot reach it — use the
-direct (`db.<ref>.supabase.co:5432`) connection from IPv6 networks instead. And EF Core's prepared
-statements are unsafe behind a *transaction*-mode pooler; this project targets session mode, and
-`EnableRetryOnFailure(3, 5s)` absorbs the transient resets.
-
-Migrations are the exception: `dotnet ef database update` must not go through a pooler, so point
-it at the direct connection for that one command, or skip EF entirely and run
-[`supabase-schema.sql`](supabase-schema.sql) in the Dashboard SQL editor (idempotent, and the
-recommended path).
-
-No new packages are needed for either form — `Npgsql` and the JSON configuration provider already
-arrive transitively with `Npgsql.EntityFrameworkCore.PostgreSQL` and the ASP.NET Core shared
-framework. Supabase's `dotnet add package Npgsql` step exists for plain console apps.
-
-Apply the schema to Supabase — either from here:
+For migrations, apply [`apply-supabase.sql`](apply-supabase.sql) / [`supabase-schema.sql`](supabase-schema.sql)
+in the database's SQL console (idempotent — the recommended path against a hosted instance), or run
 
 ```bash
 dotnet ef database update --project src/ApiServer.Infrastructure --startup-project src/ApiServer.WebApi
 ```
 
-or paste [`supabase-schema.sql`](supabase-schema.sql) into the Dashboard SQL editor (idempotent;
-safer than routing the pooler through EF). Then:
-
-```bash
-dotnet run --project src/ApiServer.WebApi    # Scalar UI at /scalar, OpenAPI at /openapi/v1.json
-```
+against a connection that bypasses a transaction-mode pooler.
 
 ### Seed data
 
@@ -175,14 +141,14 @@ the ≤2-minute item TTL) to see fresh data.
 ## Production configuration
 
 Environment variables only — the same keys as user-secrets with `__`:
-`ConnectionStrings__Postgres`, `SupabaseAuth__ProjectUrl`, `SupabaseAuth__JwtSecret`,
-`SupabaseAuth__Issuer` (optional pin), `Cors__AllowedOrigins__0`. The API refuses to start with an
-empty connection string and refuses cross-origin writes when no origins are configured.
+`ConnectionStrings__Postgres`, `Auth__JwtSecret`, `Auth__Issuer` (optional pin),
+`Cors__AllowedOrigins__0`. The API refuses to start with an empty connection string and refuses
+cross-origin writes when no origins are configured.
 
-Never commit database passwords, JWT secrets, or the service-role key. `appsettings*.json` carry
-placeholders only. If credentials were ever pasted into a chat, issue, or ticket: rotate the
-database password, the JWT secret, and the publishable/secret API keys in the Supabase dashboard
-first, then update user-secrets/env.
+Never commit database passwords or JWT secrets. `appsettings.json` carries placeholders; the
+development credentials currently live in `appsettings.Development.json` — move them into
+user-secrets before sharing the repo. If credentials were ever pasted into a chat, issue, or
+ticket: rotate the database password and the JWT secret first, then update user-secrets/env.
 
 ## Tests
 

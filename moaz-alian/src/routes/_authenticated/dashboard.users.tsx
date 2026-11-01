@@ -1,9 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { useStaff, type AppRole } from "@/hooks/use-staff";
+import { authClient, type AppRole } from "@/lib/auth";
+import { useStaff } from "@/hooks/use-staff";
 import { RowsSkeleton } from "@/components/skeletons";
+
+const RAW_BASE =
+  (typeof process !== "undefined" ? process.env["API_URL"] : undefined) ??
+  import.meta.env["VITE_API_URL"] ??
+  "http://localhost:5199";
+const BASE = RAW_BASE.replace(/\/+$/, "");
 
 export const Route = createFileRoute("/_authenticated/dashboard/users")({
   head: () => ({
@@ -25,6 +31,14 @@ const ROLES: { role: AppRole; label: string; hint: string }[] = [
   { role: "editor", label: "محرّر", hint: "إدارة المحتوى والتصنيفات" },
 ];
 
+type UserRow = {
+  id: string;
+  email: string;
+  display_name: string;
+  created_at: string;
+  roles: AppRole[];
+};
+
 function UsersPage() {
   const { data: me } = useStaff();
   const qc = useQueryClient();
@@ -34,30 +48,37 @@ function UsersPage() {
     queryKey: ["admin", "users"],
     enabled: !!isAdmin,
     queryFn: async () => {
-      const [p, r] = await Promise.all([
-        supabase.from("profiles").select("id,email,display_name,created_at").order("created_at"),
-        supabase.from("user_roles").select("user_id,role"),
-      ]);
-      if (p.error) throw p.error;
-      return (p.data ?? []).map((u) => ({
-        ...u,
-        roles: (r.data ?? []).filter((x) => x.user_id === u.id).map((x) => x.role as AppRole),
-      }));
+      const token = authClient.getAccessToken();
+      const res = await fetch(`${BASE}/api/users`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("تعذر جلب المستخدمين");
+      return (await res.json()) as UserRow[];
     },
   });
 
   if (!isAdmin) return <p className="text-muted-foreground">هذه الصفحة للمشرفين فقط.</p>;
 
   async function toggle(userId: string, role: AppRole, has: boolean) {
-    const { error } = has
-      ? await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", role)
-      : await supabase.from("user_roles").insert({ user_id: userId, role });
-    if (error) {
-      toast.error(error.message);
-      return;
+    const token = authClient.getAccessToken();
+    try {
+      const res = await fetch(`${BASE}/api/users/${userId}/roles`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ role, has }),
+      });
+      if (!res.ok) {
+        toast.error("فشل تحديث الصلاحيات");
+        return;
+      }
+      toast.success("تم تحديث الصلاحيات");
+      qc.invalidateQueries({ queryKey: ["admin", "users"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "حدث خطأ");
     }
-    toast.success("تم تحديث الصلاحيات");
-    qc.invalidateQueries({ queryKey: ["admin", "users"] });
   }
 
   return (
@@ -69,48 +90,49 @@ function UsersPage() {
           ترى اللوحة.
         </p>
       </div>
-      <div className="overflow-hidden rounded-2xl border border-border bg-surface">
-        {isLoading ? (
-          <RowsSkeleton rows={5} chips={3} />
-        ) : (
-          <ul className="divide-y divide-border">
-            {users.map((u) => (
-              <li
-                key={u.id}
-                className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:px-5"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium">{u.display_name ?? u.email}</div>
-                  <div className="truncate text-xs text-muted-foreground" dir="ltr">
-                    {u.email}
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {ROLES.map(({ role, label, hint }) => {
-                    const has = u.roles.includes(role);
-                    const self = u.id === me?.user?.id && role === "admin";
-                    return (
-                      <button
-                        key={role}
-                        title={self ? "لا يمكنك إزالة صلاحيتك" : hint}
-                        disabled={self}
-                        onClick={() => toggle(u.id, role, has)}
-                        className={`rounded-full border px-3 py-1 text-sm transition disabled:opacity-60 ${has ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary"}`}
-                      >
-                        {has ? "✓ " : ""}
-                        {label}
-                      </button>
-                    );
-                  })}
-                  {u.roles.length === 0 && (
-                    <span className="self-center text-xs text-muted-foreground">بدون صلاحية</span>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+
+      {isLoading ? (
+        <RowsSkeleton rows={4} className="h-16" />
+      ) : users.length === 0 ? (
+        <p className="text-muted-foreground">لا يوجد مستخدمون مسجلون بعد.</p>
+      ) : (
+        <div className="divide-y divide-border rounded-xl border border-border bg-surface">
+          {users.map((u) => (
+            <div
+              key={u.id}
+              className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div>
+                <p className="font-medium">{u.display_name || u.email}</p>
+                <p className="text-xs text-muted-foreground" dir="ltr">
+                  {u.email}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {ROLES.map(({ role, label, hint }) => {
+                  const has = u.roles.includes(role);
+                  return (
+                    <button
+                      key={role}
+                      type="button"
+                      title={hint}
+                      onClick={() => toggle(u.id, role, has)}
+                      className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                        has
+                          ? "bg-primary text-primary-foreground"
+                          : "border border-border text-muted-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {label} {has ? "✓" : "+"}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
