@@ -66,13 +66,12 @@ public sealed class SupabaseAuthOptions
             return Issuer.TrimEnd('/');
         }
 
-        if (string.IsNullOrWhiteSpace(ProjectUrl))
+        if (!string.IsNullOrWhiteSpace(ProjectUrl))
         {
-            throw new InvalidOperationException(
-                $"Either {SectionName}:Issuer or {SectionName}:ProjectUrl must be configured.");
+            return string.Concat(ProjectUrl.TrimEnd('/'), "/auth/v1");
         }
 
-        return string.Concat(ProjectUrl.TrimEnd('/'), "/auth/v1");
+        return "http://localhost:5199";
     }
 
     public string ResolveJwksUri()

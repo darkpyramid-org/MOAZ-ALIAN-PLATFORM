@@ -16,7 +16,7 @@ import {
   SearchX,
   WifiOff,
 } from "lucide-react";
-import { reportLovableError } from "@/lib/lovable-error-reporting";
+import { reportAppError } from "@/lib/error-reporting";
 
 const QUICK_LINKS = [
   { to: "/videos", label: "الفيديوهات" },
@@ -203,7 +203,7 @@ export function ErrorScreen({
 
   useEffect(() => {
     console.error(error);
-    reportLovableError(error, { boundary, ref: code });
+    reportAppError(error, { boundary, ref: code });
   }, [error, boundary, code]);
 
   const retry = async () => {

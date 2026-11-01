@@ -20,10 +20,14 @@ public static class SupabaseJwtAuthentication
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
 
-        services.Configure<SupabaseAuthOptions>(configuration.GetSection(SupabaseAuthOptions.SectionName));
+        var authSection = configuration.GetSection("Auth").Exists()
+            ? configuration.GetSection("Auth")
+            : configuration.GetSection(SupabaseAuthOptions.SectionName);
+
+        services.Configure<SupabaseAuthOptions>(authSection);
 
         // Fail at startup rather than at the first protected request when config is missing.
-        var startupOptions = configuration.GetSection(SupabaseAuthOptions.SectionName).Get<SupabaseAuthOptions>()
+        var startupOptions = authSection.Get<SupabaseAuthOptions>()
             ?? new SupabaseAuthOptions();
         _ = startupOptions.ResolveIssuer();
 
