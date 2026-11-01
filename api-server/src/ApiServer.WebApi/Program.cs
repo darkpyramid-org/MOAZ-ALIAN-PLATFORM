@@ -230,6 +230,8 @@ try
             ""Roles"" text[] NOT NULL DEFAULT ARRAY[]::text[],
             ""DisplayName"" character varying(80),
             ""AvatarUrl"" character varying(500),
+            ""PasswordResetToken"" character varying(200),
+            ""PasswordResetExpiresAt"" timestamp(3) with time zone,
             ""CreatedAt"" timestamp(3) with time zone NOT NULL DEFAULT NOW(),
             ""UpdatedAt"" timestamp(3) with time zone
         );
@@ -237,6 +239,8 @@ try
         -- Backfill columns on pre-existing databases.
         ALTER TABLE library.users ADD COLUMN IF NOT EXISTS ""DisplayName"" character varying(80);
         ALTER TABLE library.users ADD COLUMN IF NOT EXISTS ""AvatarUrl"" character varying(500);
+        ALTER TABLE library.users ADD COLUMN IF NOT EXISTS ""PasswordResetToken"" character varying(200);
+        ALTER TABLE library.users ADD COLUMN IF NOT EXISTS ""PasswordResetExpiresAt"" timestamp(3) with time zone;
         ALTER TABLE library.users ADD COLUMN IF NOT EXISTS ""UpdatedAt"" timestamp(3) with time zone;
 
         CREATE TABLE IF NOT EXISTS library.site_settings (
