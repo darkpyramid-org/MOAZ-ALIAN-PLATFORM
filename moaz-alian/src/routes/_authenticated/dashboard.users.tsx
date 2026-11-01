@@ -5,13 +5,15 @@ import { authClient, type AppRole } from "@/lib/auth";
 import { useStaff } from "@/hooks/use-staff";
 import { RowsSkeleton } from "@/components/skeletons";
 
+const isServer = typeof window === "undefined";
 const RAW_BASE =
   (typeof process !== "undefined" ? process.env["API_URL"] : undefined) ??
-  import.meta.env["VITE_API_URL"] ??
-  // Same policy as src/lib/api.ts: direct local API in dev; production stays
-  // same-origin ("/proxy-api", rewritten by vercel.json) so an HTTPS page never
-  // calls the HTTP backend directly.
-  (import.meta.env.DEV ? "http://localhost:5199" : "/proxy-api");
+  (isServer
+    ? import.meta.env.DEV
+      ? "http://localhost:5199"
+      : "http://moaz-alian.runasp.net"
+    : (import.meta.env["VITE_API_URL"] ??
+      (import.meta.env.DEV ? "http://localhost:5199" : "/proxy-api")));
 const BASE = RAW_BASE.replace(/\/+$/, "");
 
 export const Route = createFileRoute("/_authenticated/dashboard/users")({
