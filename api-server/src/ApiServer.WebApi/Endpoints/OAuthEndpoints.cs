@@ -127,7 +127,7 @@ public static class OAuthEndpoints
                         }
 
                         var auth = await authService.ExternalLoginAsync(email, name, avatar, p, cancellationToken);
-                        return Results.Redirect($"{options.Value.FrontendUrl}/auth/oauth-callback?token={Uri.EscapeDataString(auth.Token)}");
+                        return Results.Redirect($"{options.Value.FrontendUrl}/auth?token={Uri.EscapeDataString(auth.Token)}");
                     }
                     catch (Exception ex)
                     {
