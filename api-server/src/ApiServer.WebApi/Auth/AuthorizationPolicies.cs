@@ -14,9 +14,9 @@ public static class AuthorizationPolicies
 
 /// <summary>
 /// Marker requirements. The checks delegate to <see cref="ICurrentUser"/> instead of
-/// <c>RequireRole</c> because Supabase packs the real roles inside the JSON
-/// <c>app_metadata</c> claim; only the Application port knows how to read them, and this
-/// keeps the role-matching logic in exactly one place.
+/// <c>RequireRole</c> because roles can arrive both as individual <c>roles</c> claims and
+/// inside the JSON <c>app_metadata</c> claim; only the Application port knows how to read
+/// them, and this keeps the role-matching logic in exactly one place.
 /// </summary>
 public sealed class ContentEditorRequirement : IAuthorizationRequirement;
 

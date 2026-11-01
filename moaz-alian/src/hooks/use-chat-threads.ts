@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { authClient } from "@/lib/auth";
 import type { UIMessage } from "ai";
 
 export type ChatThread = {
@@ -9,32 +9,46 @@ export type ChatThread = {
   updated_at: string;
 };
 
+const THREADS_KEY = "moaz_chat_threads";
+const MESSAGES_KEY_PREFIX = "moaz_chat_messages_";
+
+function getStoredThreads(): ChatThread[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(THREADS_KEY);
+    return raw ? (JSON.parse(raw) as ChatThread[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveStoredThreads(threads: ChatThread[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(THREADS_KEY, JSON.stringify(threads));
+  } catch {
+    // Storage full or unavailable
+  }
+}
+
 /** Tracks whether the visitor has a signed-in session (for the chat gate). */
 export function useChatSession() {
   const [state, setState] = useState<{ loading: boolean; signedIn: boolean }>({
-    loading: true,
-    signedIn: false,
+    loading: false,
+    signedIn: !!authClient.getAccessToken(),
   });
 
   useEffect(() => {
-    let alive = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (alive) setState({ loading: false, signedIn: !!data.session });
+    const { data } = authClient.onAuthStateChange((_, user) => {
+      setState({ loading: false, signedIn: !!user });
     });
-    const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      setState({ loading: false, signedIn: !!session });
-    });
-    return () => {
-      alive = false;
-      data.subscription.unsubscribe();
-    };
+    return () => data.subscription.unsubscribe();
   }, []);
 
   return state;
 }
 
-/** Threads live in the database and are scoped to the signed-in user by RLS. */
+/** Threads live in local storage scoped to the active session. */
 export function useChatThreads(enabled: boolean) {
   const queryClient = useQueryClient();
 
@@ -42,13 +56,7 @@ export function useChatThreads(enabled: boolean) {
     queryKey: ["chat-threads"],
     enabled,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("chat_threads")
-        .select("id, title, updated_at")
-        .order("updated_at", { ascending: false })
-        .limit(30);
-      if (error) throw error;
-      return (data ?? []) as ChatThread[];
+      return getStoredThreads();
     },
   });
 
@@ -56,21 +64,26 @@ export function useChatThreads(enabled: boolean) {
     () => ({
       ...list,
       async createThread() {
-        const { data: userData } = await supabase.auth.getUser();
-        const userId = userData.user?.id;
-        if (!userId) throw new Error("not_signed_in");
-        const { data, error } = await supabase
-          .from("chat_threads")
-          .insert({ user_id: userId })
-          .select("id, title, updated_at")
-          .single();
-        if (error) throw error;
+        const user = authClient.getUser();
+        if (!user) throw new Error("not_signed_in");
+        const newThread: ChatThread = {
+          id: `thread_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          title: "محادثة جديدة",
+          updated_at: new Date().toISOString(),
+        };
+        const threads = [newThread, ...getStoredThreads()];
+        saveStoredThreads(threads);
         await queryClient.invalidateQueries({ queryKey: ["chat-threads"] });
-        return data as ChatThread;
+        return newThread;
       },
       async deleteThread(id: string) {
-        const { error } = await supabase.from("chat_threads").delete().eq("id", id);
-        if (error) throw error;
+        const threads = getStoredThreads().filter((t) => t.id !== id);
+        saveStoredThreads(threads);
+        try {
+          localStorage.removeItem(`${MESSAGES_KEY_PREFIX}${id}`);
+        } catch {
+          // Ignore
+        }
         await queryClient.invalidateQueries({ queryKey: ["chat-threads"] });
       },
     }),
@@ -84,17 +97,13 @@ export function useThreadMessages(threadId: string | null, enabled: boolean) {
     queryKey: ["chat-messages", threadId],
     enabled: enabled && !!threadId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("chat_messages")
-        .select("id, role, parts")
-        .eq("thread_id", threadId!)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return (data ?? []).map((row) => ({
-        id: row.id,
-        role: row.role as "user" | "assistant",
-        parts: row.parts as UIMessage["parts"],
-      }));
+      if (!threadId || typeof window === "undefined") return [];
+      try {
+        const raw = localStorage.getItem(`${MESSAGES_KEY_PREFIX}${threadId}`);
+        return raw ? (JSON.parse(raw) as UIMessage[]) : [];
+      } catch {
+        return [];
+      }
     },
   });
 }

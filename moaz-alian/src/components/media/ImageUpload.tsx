@@ -2,7 +2,6 @@ import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { ImagePlus, Loader2, Link2, Replace, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { supabase } from "@/integrations/supabase/client";
 import { mediaUrl } from "@/lib/media";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,28 +80,24 @@ export function ImageUpload({
     }
     setUploading(true);
     try {
-      const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extensionFor(file)}`;
-      const { error } = await supabase.storage.from(bucket).upload(path, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
-      if (error) {
-        if (error.statusCode === "403" || error.status === 403) {
-          toast.error("ليست لديك صلاحية رفع الصور. سجّل الدخول بحساب الفريق.");
-        } else {
-          toast.error("تعذّر رفع الصورة. حاول مرة أخرى.");
-        }
-        console.error("[ImageUpload] upload failed:", error.message);
-        return;
-      }
-      setPreviewFailed(false);
-      onChange(`${bucket}/${path}`);
-      toast.success("تم رفع الصورة بنجاح — لا تنسَ الحفظ");
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        setPreviewFailed(false);
+        onChange(dataUrl);
+        toast.success("تم اختيار الصورة بنجاح");
+        setUploading(false);
+      };
+      reader.onerror = () => {
+        toast.error("تعذّر قراءة الصورة. حاول مرة أخرى.");
+        setUploading(false);
+      };
+      reader.readAsDataURL(file);
     } catch (err) {
       console.error("[ImageUpload] upload crashed:", err);
       toast.error("تعذّر رفع الصورة. حاول مرة أخرى.");
-    } finally {
       setUploading(false);
+    } finally {
       if (inputRef.current) inputRef.current.value = "";
     }
   }

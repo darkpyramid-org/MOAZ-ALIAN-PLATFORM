@@ -5,7 +5,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { DashboardShellSkeleton } from "@/components/skeletons";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { useStaff } from "@/hooks/use-staff";
-import { supabase } from "@/integrations/supabase/client";
+import { authClient } from "@/lib/auth";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -34,7 +34,7 @@ function DashboardLayout() {
     await qc.cancelQueries();
     qc.removeQueries({ queryKey: ["me"] });
     qc.removeQueries({ queryKey: ["admin"] });
-    await supabase.auth.signOut();
+    authClient.logout();
     navigate({ to: "/auth", replace: true });
   }
 

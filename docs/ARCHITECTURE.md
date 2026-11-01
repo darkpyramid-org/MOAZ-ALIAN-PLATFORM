@@ -2,27 +2,28 @@
 
 ## System shape
 
-Single application package: `moaz-alian/`.
+Two packages, one clean-architecture backend:
 
-- **UI:** React 19 + TanStack Start/Router + Tailwind + Radix
-- **Data:** Supabase (Postgres, Auth, RLS, Storage)
-- **Server routes:** TanStack file routes under `src/routes/api/` (no separate `api-server/` package)
-- **ORM / SQL:** Drizzle under `moaz-alian/drizzle/`
+- **Frontend:** `moaz-alian/` — React 19 + TanStack Start/Router + Tailwind + Radix
+- **Backend:** `api-server/` — ASP.NET Core (.NET 9) minimal APIs, layered
+  Domain → Application → Infrastructure → WebApi, EF Core 9 + Npgsql
+- **Database:** PostgreSQL (`library` schema); the API owns all reads and writes
 - **Package manager:** Bun (CI uses `bun install --frozen-lockfile`)
 
 ## Request flow
 
 1. Browser loads the TanStack Start app.
-2. Public content reads use the Supabase client (publishable key + RLS).
-3. Authenticated dashboard routes use session middleware.
-4. Privileged server operations use the service-role client (`SUPABASE_SERVICE_ROLE_KEY`) only on the server.
-5. `/api/chat` proxies to the Lovable AI gateway with ownership checks.
-6. `/api/media/$` serves validated storage object paths.
+2. Public content hydrates from `GET /api/content/snapshot` (see `src/lib/api.ts`, the only API client).
+3. Dashboard writes carry the API-issued JWT (`Authorization: Bearer`, from `src/lib/auth.ts`).
+4. The API validates the JWT locally, applies role policies (`ContentEditor`, `SiteAdmin`),
+   and serves Problem Details errors the frontend parses in one place.
+5. `/api/chat` proxies to the AI gateway on the server.
+6. `/api/media/$` serves validated media paths.
 
 ## Auth and roles
 
-- Supabase Auth for sessions.
-- App roles in `user_roles` (see SQL migrations).
+- The backend is its own identity provider: `POST /api/auth/register` / `login` issue 7-day JWTs.
+- Roles live in `library.users`; the first account ever registered is seeded admin+editor.
 - First-user auto-admin behavior is a known risk tracked in issue #6; prefer controlled bootstrap.
 
 ## Frontend structure
@@ -30,12 +31,15 @@ Single application package: `moaz-alian/`.
 ```
 moaz-alian/src/
   components/
-  routes/            # pages + api/
-  integrations/supabase/
-  lib/
+  routes/            # pages + api/ (chat, media)
+  lib/               # api.ts = the only API client; api-mapping.ts = the only shape translation
+  hooks/
   test/
 ```
 
+Backend layering and endpoints: see `api-server/README.md`.
+
 ## CI
 
-`.github/workflows/ci.yml`: Bun install, lint, format check, test, build. Security scan (Trivy) is documented but disabled until org `security-events` permissions allow it (issue #9).
+`.github/workflows/ci.yml`: frontend Bun install, lint, format check, test, build; Trivy security
+scan. The backend gates on `dotnet build` / `dotnet test` locally or in an additional job.

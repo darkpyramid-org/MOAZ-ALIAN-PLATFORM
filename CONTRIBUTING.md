@@ -36,12 +36,12 @@ moaz-alian/src/
 ├── components/       # UI and domain components
 ├── routes/           # TanStack file routes (pages + api/)
 │   └── api/          # Server routes: chat, media, …
-├── integrations/     # Supabase client / auth middleware
-├── lib/              # Shared helpers and server logic
+├── lib/              # Shared helpers and server logic (api.ts is the only API client)
 └── test/             # Vitest suites
 ```
 
-There is **no** `api-server/` directory and no `pages/` tree — routing is file-based under `src/routes/`.
+The backend lives in `api-server/` (ASP.NET Core + EF Core + PostgreSQL) — see its README for
+layering, auth and endpoints.
 
 ## Commit style
 

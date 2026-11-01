@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { authClient } from "@/lib/auth";
 import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
@@ -80,18 +80,23 @@ const EMPTY: Row = {
 };
 const KEY = ["admin", "debates"];
 
+const RAW_BASE =
+  (typeof process !== "undefined" ? process.env["API_URL"] : undefined) ??
+  import.meta.env["VITE_API_URL"] ??
+  "http://localhost:5199";
+const BASE = RAW_BASE.replace(/\/+$/, "");
+
 function DebatesPage() {
   const qc = useQueryClient();
   const { data: rows = [], isLoading } = useQuery({
     queryKey: KEY,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("debates")
-        .select("*")
-        .order("debate_date", { ascending: false, nullsFirst: false })
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data as (Row & { id: string })[];
+      const token = authClient.getAccessToken();
+      const res = await fetch(`${BASE}/api/debates`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("تعذر جلب سجل المحاورين");
+      return (await res.json()) as (Row & { id: string })[];
     },
   });
   const [edit, setEdit] = useState<Row | null>(null);
@@ -149,11 +154,17 @@ function DebatesPage() {
         .filter(Boolean),
       notes: clean(edit.notes),
     };
-    const { error } = edit.id
-      ? await supabase.from("debates").update(row).eq("id", edit.id)
-      : await supabase.from("debates").insert(row);
-    if (error) {
-      toast.error(error.message);
+    const token = authClient.getAccessToken();
+    const res = await fetch(edit.id ? `${BASE}/api/debates/${edit.id}` : `${BASE}/api/debates`, {
+      method: edit.id ? "PUT" : "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(row),
+    });
+    if (!res.ok) {
+      toast.error("تعذر حفظ المحاورة");
       return;
     }
     toast.success("تم الحفظ");
@@ -163,9 +174,13 @@ function DebatesPage() {
 
   async function confirmDelete() {
     if (!toDelete) return;
-    const { error } = await supabase.from("debates").delete().eq("id", toDelete.id);
-    if (error) {
-      toast.error(error.message);
+    const token = authClient.getAccessToken();
+    const res = await fetch(`${BASE}/api/debates/${toDelete.id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      toast.error("تعذر الحذف");
       return;
     }
     toast.success("تم الحذف");

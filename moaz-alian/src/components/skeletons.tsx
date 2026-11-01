@@ -1,3 +1,5 @@
+import { cn } from "@/lib/utils";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { TableCell, TableRow } from "@/components/ui/table";
 
@@ -271,10 +273,18 @@ export function ContentPageSkeleton() {
 /* ---------- Dashboard skeletons ---------- */
 
 /** Row list matching dashboard content/users lists. */
-export function RowsSkeleton({ rows = 8, chips = 2 }: { rows?: number; chips?: number }) {
+export function RowsSkeleton({
+  rows = 8,
+  chips = 2,
+  className,
+}: {
+  rows?: number;
+  chips?: number;
+  className?: string;
+}) {
   return (
     <div
-      className="overflow-hidden rounded-2xl border border-border bg-surface"
+      className={cn("overflow-hidden rounded-2xl border border-border bg-surface", className)}
       role="status"
       aria-busy="true"
     >

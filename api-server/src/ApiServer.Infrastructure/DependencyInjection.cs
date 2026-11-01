@@ -1,6 +1,7 @@
 using ApiServer.Application.Abstractions;
 using ApiServer.Application.Abstractions.Persistence;
 using ApiServer.Application.Common;
+using ApiServer.Application.Services;
 using ApiServer.Infrastructure.Auth;
 using ApiServer.Infrastructure.Caching;
 using ApiServer.Infrastructure.Persistence;
@@ -14,9 +15,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace ApiServer.Infrastructure;
 
 /// <summary>
-/// Composition of the outer world: PostgreSQL (Supabase), memory cache, clock, identity. Every
-/// port the Application layer declares gets exactly one adapter here, and this is the only
-/// assembly that knows these implementations exist.
+/// Composition of the outer world: PostgreSQL, memory cache, clock, identity. Every
+/// port the Application layer declares gets exactly one adapter here, and this is the
+/// only assembly that knows these implementations exist.
 /// </summary>
 public static class DependencyInjection
 {
@@ -32,7 +33,7 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("Postgres") is { Length: > 0 } postgres
             ? postgres
             : throw new InvalidOperationException(
-                "Missing connection string 'ConnectionStrings:Postgres'. The API cannot start without the Supabase database.");
+                "Missing connection string 'ConnectionStrings:Postgres'. The API cannot start without its database.");
 
         services
             .AddDbContext<ApplicationDbContext>(
@@ -41,8 +42,8 @@ public static class DependencyInjection
                         connectionString,
                         npgsql =>
                         {
-                            // The migration ledger lives with the API's own tables: Supabase's
-                            // public schema belongs to the frontend's Drizzle setup.
+                            // The migration ledger lives with the API's own tables, isolated
+                            // from the legacy third-party tables in the public schema.
                             npgsql.MigrationsHistoryTable("__EFMigrationsHistory", ApplicationDbContext.Schema);
 
                             // Transient network faults against a hosted database are normal;
@@ -54,6 +55,7 @@ public static class DependencyInjection
         services.AddScoped<IContentReader, ContentReader>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IAuthService, AuthService>();
 
         services.AddSingleton<IClock, SystemClock>();
 
@@ -66,7 +68,7 @@ public static class DependencyInjection
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, ClaimsCurrentUser>();
-        services.AddSupabaseJwtAuthentication(configuration);
+        services.AddJwtAuthentication(configuration);
 
         // Liveness of the real dependency, used by /health and container readiness probes.
         services.AddHealthChecks().AddDbContextCheck<ApplicationDbContext>("postgres", tags: ["ready"]);

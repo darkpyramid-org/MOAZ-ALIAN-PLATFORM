@@ -46,18 +46,16 @@ const ShimmerComponent = ({
           duration,
           ease: "linear",
         }}
-        style={
-          {
-            backgroundImage:
-              "linear-gradient(90deg, transparent calc(50% - var(--spread)), currentColor, transparent calc(50% + var(--spread)))",
-            backgroundSize: "250% 100%",
-            backgroundClip: "text",
-            WebkitBackgroundClip: "text",
-            color: "transparent",
-            display: "inline-block",
-            width: "100%",
-          } as CSSProperties
-        }
+        style={{
+          backgroundImage:
+            "linear-gradient(90deg, transparent calc(50% - var(--spread)), currentColor, transparent calc(50% + var(--spread)))",
+          backgroundSize: "250% 100%",
+          backgroundClip: "text",
+          WebkitBackgroundClip: "text",
+          color: "transparent",
+          display: "inline-block",
+          width: "100%",
+        }}
       >
         {children}
       </motion.span>

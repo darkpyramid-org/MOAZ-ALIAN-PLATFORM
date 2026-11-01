@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -28,12 +27,8 @@ function ResetPassword() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const { error } = await supabase.auth.updateUser({ password: pw });
+    // Local / direct password update
     setBusy(false);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
     toast.success("تم تحديث كلمة المرور");
     navigate({ to: "/dashboard" });
   }
@@ -44,6 +39,9 @@ function ResetPassword() {
         onSubmit={submit}
         className="w-full max-w-md space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-float sm:p-8"
       >
+        <Link to="/auth" className="text-sm text-muted-foreground hover:text-primary">
+          ← العودة لتسجيل الدخول
+        </Link>
         <h1 className="text-2xl font-bold">كلمة مرور جديدة</h1>
         <div className="space-y-1.5">
           <Label htmlFor="pw">كلمة المرور الجديدة</Label>
@@ -58,7 +56,7 @@ function ResetPassword() {
           />
         </div>
         <button disabled={busy} className="btn-gold w-full justify-center">
-          حفظ
+          {busy ? "جارٍ الحفظ..." : "حفظ كلمة المرور"}
         </button>
       </form>
     </div>

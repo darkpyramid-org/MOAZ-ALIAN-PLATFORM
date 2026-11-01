@@ -18,7 +18,7 @@ import {
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
-import { supabase } from "@/integrations/supabase/client";
+import { authClient } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import type { UIMessage } from "ai";
 
@@ -58,10 +58,10 @@ export function ChatPanel({ threadId, initialMessages, className, autoFocus }: C
         api: "/api/chat",
         body: { threadId },
         fetch: async (input, init) => {
-          const { data } = await supabase.auth.getSession();
+          const token = authClient.getAccessToken();
           const headers = new Headers(init?.headers);
-          if (data.session) {
-            headers.set("Authorization", `Bearer ${data.session.access_token}`);
+          if (token) {
+            headers.set("Authorization", `Bearer ${token}`);
           }
           return fetch(input, { ...init, headers });
         },

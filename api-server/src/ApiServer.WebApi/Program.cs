@@ -8,6 +8,7 @@ using ApiServer.WebApi.Auth;
 using ApiServer.WebApi.Endpoints;
 using ApiServer.WebApi.Middleware;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
@@ -23,7 +24,7 @@ using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // ---- Application + Infrastructure (the two Add* calls wire every service,
-// repository, reader, cache, clock, and the Supabase JWT validation) ----
+// repository, reader, cache, clock, and the JWT authentication) ----
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
@@ -147,7 +148,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Description = "Enter Supabase JWT token."
+        Description = "Enter JWT Bearer token."
     });
 
     options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
@@ -214,8 +215,51 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapAuthEndpoints();
+app.MapAdminEndpoints();
 app.MapContentEndpoints();
 app.MapCategoryEndpoints();
+
+// Ensure users, site_settings, and debates tables exist in the library schema
+try
+{
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApiServer.Infrastructure.Persistence.ApplicationDbContext>();
+    await dbContext.Database.ExecuteSqlRawAsync(@"
+        CREATE TABLE IF NOT EXISTS library.users (
+            ""Id"" UUID PRIMARY KEY,
+            ""Email"" character varying(255) NOT NULL,
+            ""PasswordHash"" character varying(1000) NOT NULL,
+            ""Roles"" text[] NOT NULL DEFAULT ARRAY[]::text[],
+            ""CreatedAt"" timestamp(3) with time zone NOT NULL DEFAULT NOW()
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS ""IX_users_Email"" ON library.users (""Email"");
+
+        CREATE TABLE IF NOT EXISTS library.site_settings (
+            ""Id"" text PRIMARY KEY,
+            ""Data"" text NOT NULL DEFAULT '{{}}',
+            ""UpdatedAt"" timestamp(3) with time zone NOT NULL DEFAULT NOW()
+        );
+
+        CREATE TABLE IF NOT EXISTS library.debates (
+            ""Id"" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+            ""GuestName"" text NOT NULL,
+            ""GuestBackground"" text,
+            ""Topic"" text NOT NULL,
+            ""ReplySummary"" text,
+            ""Outcome"" text NOT NULL DEFAULT 'open',
+            ""DebateDate"" text,
+            ""VideoUrl"" text,
+            ""Tags"" text[] NOT NULL DEFAULT ARRAY[]::text[],
+            ""Notes"" text,
+            ""CreatedAt"" timestamp(3) with time zone NOT NULL DEFAULT NOW()
+        );
+    ");
+}
+catch (Exception ex)
+{
+    app.Logger.LogWarning(ex, "Could not ensure library tables exist during startup.");
+}
 
 // Liveness/readiness for the host (container probes, uptime checks). Anonymous on
 // purpose: it reports only "ok", never schema, counts, or connection details.

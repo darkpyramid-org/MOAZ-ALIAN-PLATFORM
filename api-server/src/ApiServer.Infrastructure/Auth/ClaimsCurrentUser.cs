@@ -6,19 +6,18 @@ using Microsoft.Extensions.Options;
 namespace ApiServer.Infrastructure.Auth;
 
 /// <summary>
-/// Reads identity from the validated Supabase JWT.
+/// Reads identity from the validated JWT issued by the platform's own auth service.
 /// <para>
-/// Roles come from the token's <c>app_metadata.roles</c> array (the platform's
-/// <c>user_roles</c> table mirrored into Supabase app metadata). Anything read from the
-/// request headers or database after the fact could drift from the signature that authorised
-/// this call, so nothing here consults any other source.
+/// Roles come from the token's <c>roles</c> claim array (set at login by <c>AuthService</c>).
+/// Anything read from the request headers after the fact could drift from the signature that
+/// authorised this call, so nothing here consults any other source.
 /// </para>
 /// </summary>
 public sealed class ClaimsCurrentUser(
     IHttpContextAccessor httpContextAccessor,
-    IOptions<SupabaseAuthOptions> authOptions) : ICurrentUser
+    IOptions<AuthOptions> authOptions) : ICurrentUser
 {
-    private readonly SupabaseAuthOptions _authOptions = authOptions.Value;
+    private readonly AuthOptions _authOptions = authOptions.Value;
     private IReadOnlyList<string>? _roles;
 
     public bool IsAuthenticated => httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated == true;

@@ -5,7 +5,7 @@ namespace ApiServer.Infrastructure.Persistence;
 
 /// <summary>
 /// Lets <c>dotnet ef migrations</c> build the model without booting the host. Resolution order:
-/// standard config env var, then the raw Supabase URL, then a local docker-compose Postgres —
+/// standard config env var, then a local docker-compose Postgres —
 /// migration generation never needs environment setup, while real deploys just set one variable.
 /// </summary>
 public sealed class ApplicationDbContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>
