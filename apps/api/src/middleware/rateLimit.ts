@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { isIP } from 'node:net';
 import { env } from '../config/env.js';
 import { sendStatusPage } from '../lib/http.js';
+import { logger } from '../lib/logger.js';
 
 const WINDOW_MS = 60_000;
 const MAX_PARTITIONS = 50_000;
@@ -131,7 +132,7 @@ export async function globalRateLimit(req: Request, res: Response, next: NextFun
       reject(req, res);
     }
   } catch (error) {
-    console.error('Global rate-limit store unavailable; request allowed', error instanceof Error ? error.message : 'unknown error');
+    logger.error({ error: error instanceof Error ? error.message : 'unknown error' }, 'Global rate-limit store unavailable; request allowed');
     next();
   }
 }
@@ -145,7 +146,7 @@ export async function editorialRateLimit(req: Request, res: Response, next: Next
       reject(req, res);
     }
   } catch (error) {
-    console.error('Editorial rate-limit store unavailable; write rejected', error instanceof Error ? error.message : 'unknown error');
+    logger.error({ error: error instanceof Error ? error.message : 'unknown error' }, 'Editorial rate-limit store unavailable; write rejected');
     reject(req, res, 503);
   }
 }
