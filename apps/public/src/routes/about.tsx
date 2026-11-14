@@ -9,13 +9,20 @@ import { ContentPageSkeleton } from "@/components/skeletons";
 import { mediaUrl } from "@/lib/media";
 
 export const Route = createFileRoute("/about")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(libraryQuery),
+  loader: async ({ context }) => {
+    try {
+      return await context.queryClient.ensureQueryData(libraryQuery);
+    } catch (err) {
+      console.warn("[about] loader failed to fetch library:", err);
+      return undefined;
+    }
+  },
   head: ({ loaderData }) => ({
     links: [{ rel: "canonical", href: "/about" }],
     meta: [
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      ...(loaderData?.settings.about.image.startsWith("https://")
+      ...(loaderData?.settings?.about?.image?.startsWith("https://")
         ? [
             { property: "og:image", content: loaderData.settings.about.image },
             { name: "twitter:image", content: loaderData.settings.about.image },

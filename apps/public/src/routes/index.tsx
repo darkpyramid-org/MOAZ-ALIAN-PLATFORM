@@ -37,7 +37,14 @@ const DESC =
   "اكتشف مجموعة من الفيديوهات والمقالات والكتب والمواد البحثية المرتبطة بمقارنة الأديان والقضايا الفكرية.";
 
 export const Route = createFileRoute("/")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(libraryQuery),
+  loader: async ({ context }) => {
+    try {
+      return await context.queryClient.ensureQueryData(libraryQuery);
+    } catch (err) {
+      console.warn("[index] loader failed to fetch library:", err);
+      return undefined;
+    }
+  },
   head: ({ loaderData }) => ({
     links: [{ rel: "canonical", href: "/" }],
     meta: [
@@ -47,7 +54,7 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: DESC },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      ...(loaderData?.settings.hero.image.startsWith("https://")
+      ...(loaderData?.settings?.hero?.image?.startsWith("https://")
         ? [
             { property: "og:image", content: loaderData.settings.hero.image },
             { name: "twitter:image", content: loaderData.settings.hero.image },

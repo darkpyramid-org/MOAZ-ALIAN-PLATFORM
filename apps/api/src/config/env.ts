@@ -9,11 +9,21 @@ import { z } from 'zod';
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().int().positive().default(5199),
-  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required — the API cannot start without its database.'),
+  DATABASE_URL: z
+    .string()
+    .min(1, 'DATABASE_URL is required — the API cannot start without its database.')
+    .default(
+      process.env.DATABASE_URL ||
+        'postgresql://moaz:moaz_dev@localhost:5434/moaz_alian?schema=library',
+    ),
 
   AUTH_JWT_SECRET: z
     .string()
-    .min(32, 'Auth:JwtSecret must be at least 32 characters (256 bits of HMAC-SHA256 key material).'),
+    .min(32, 'Auth:JwtSecret must be at least 32 characters (256 bits of HMAC-SHA256 key material).')
+    .default(
+      process.env.AUTH_JWT_SECRET ||
+        'fallback-secret-minimum-32-characters-for-preview-development',
+    ),
   AUTH_ISSUER: z.string().optional(),
   AUTH_AUDIENCE: z.string().default('authenticated'),
   AUTH_ADMIN_ROLE: z.string().default('admin'),

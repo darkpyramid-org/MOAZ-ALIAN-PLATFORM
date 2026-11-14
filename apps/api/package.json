@@ -4,6 +4,7 @@
   "private": true,
   "description": "MOAZ ALIAN library API — Express 5 port of api-server (ASP.NET Core minimal APIs)",
   "type": "module",
+  "main": "dist/index.js",
   "engines": {
     "node": ">=22"
   },
