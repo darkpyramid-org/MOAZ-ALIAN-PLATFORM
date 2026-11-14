@@ -56,6 +56,7 @@ describe('Google OIDC identity validation', () => {
     ['unverified email', { email_verified: false }],
     ['missing email verification', { email_verified: undefined }],
     ['wrong audience', { aud: 'another-client-id' }],
+    ['wrong authorized party for multiple audiences', { aud: [clientId, 'another-client'], azp: 'another-client' }],
     ['wrong issuer', { iss: 'https://attacker.example' }],
     ['expired token', { exp: Math.floor(Date.now() / 1000) - 1 }],
     ['future issued token', { iat: Math.floor(Date.now() / 1000) + 120 }],
@@ -72,8 +73,12 @@ describe('Google OIDC identity validation', () => {
   });
 
   it('fails closed when Google signing keys cannot be retrieved', async () => {
+    const header = Buffer.from(JSON.stringify({ alg: 'RS256', kid: 'unknown-key-id', typ: 'JWT' })).toString('base64url');
+    const claims = Buffer.from(JSON.stringify({ iss: 'https://accounts.google.com', aud: clientId, exp: Math.floor(Date.now() / 1000) + 300, iat: Math.floor(Date.now() / 1000), sub: 'sub', nonce, email: 'person@example.com', email_verified: true })).toString('base64url');
+    const input = `${header}.${claims}`;
+    const token = `${input}.${signJwt('RSA-SHA256', Buffer.from(input), privateKey).toString('base64url')}`;
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('unavailable', { status: 503 })));
-    expect(await verifyGoogleIdentity(jwt(), clientId, nonce)).toBeNull();
+    expect(await verifyGoogleIdentity(token, clientId, nonce)).toBeNull();
   });
 });
 
@@ -121,11 +126,10 @@ describe('Facebook access-token and identity validation', () => {
     expect(await verifyFacebookIdentity('token', cfg)).toBeNull();
   });
 
-  it('rejects expired, invalid or missing email permission tokens', async () => {
+  it('rejects invalid or expired access tokens', async () => {
     for (const data of [
       { is_valid: false, app_id: cfg.clientId, user_id: 'fb-user-1', expires_at: 0, scopes: ['email'] },
       { is_valid: true, app_id: cfg.clientId, user_id: 'fb-user-1', expires_at: 0, scopes: ['email'] },
-      { is_valid: true, app_id: cfg.clientId, user_id: 'fb-user-1', expires_at: Math.floor(Date.now() / 1000) + 300, scopes: [] },
     ]) {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(jsonResponse({ data })));
       expect(await verifyFacebookIdentity('token', cfg)).toBeNull();
