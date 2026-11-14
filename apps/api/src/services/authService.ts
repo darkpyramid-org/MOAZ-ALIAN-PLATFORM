@@ -148,17 +148,8 @@ export async function getCurrentUser(identity: CurrentIdentity): Promise<AuthUse
     }
   }
 
-  // Token-only fallback: the token is valid but the account is gone (or the
-  // sub was never a user id). Identity claims answer instead of the database.
-  return {
-    id: '00000000-0000-0000-0000-000000000000',
-    email: identity.userId,
-    roles: identity.roles,
-    isAdmin: identity.isAdmin,
-    canEditContent: identity.canEditContent,
-    displayName: null,
-    avatarUrl: null,
-  };
+  // Unknown/deleted subjects are never promoted to token-only user identities.
+  return null;
 }
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -217,7 +208,7 @@ export async function changePassword(identity: CurrentIdentity, currentPassword:
     throw new AuthSignal('unauthorized', 'كلمة المرور الحالية غير صحيحة.');
   }
 
-  await db.user.update({ where: { id: user.id }, data: { passwordHash: hashPassword(newPassword), updatedAt: utcNow() } });
+  await db.user.update({ where: { id: user.id }, data: { passwordHash: hashPassword(newPassword), tokenVersion: { increment: 1 }, updatedAt: utcNow() } });
 }
 
 export async function forgotPassword(emailRaw: string | null): Promise<void> {
@@ -255,7 +246,7 @@ export async function resetPassword(token: string | null, newPassword: string | 
 
   await db.user.update({
     where: { id: user.id },
-    data: { passwordHash: hashPassword(newPassword), passwordResetToken: null, passwordResetExpiresAt: null, updatedAt: utcNow() },
+    data: { passwordHash: hashPassword(newPassword), passwordResetToken: null, passwordResetExpiresAt: null, tokenVersion: { increment: 1 }, updatedAt: utcNow() },
   });
 }
 
