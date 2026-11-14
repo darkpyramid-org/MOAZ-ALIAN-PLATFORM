@@ -26,7 +26,7 @@ assignees: ''
 - [ ] Critical
 
 ## Affected Component
-- [ ] Frontend (moaz-alian)
+- [ ] Frontend (apps/public / apps/dashboard)
 - [ ] Backend (apps/api)
 - [ ] Database
 - [ ] Documentation
