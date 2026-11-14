@@ -137,6 +137,20 @@ describe('Facebook access-token and identity validation', () => {
     }
   });
 
+  it('does not treat a Graph email field as verified when the email permission is absent', async () => {
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce(jsonResponse({ data: {
+        is_valid: true, app_id: cfg.clientId, user_id: 'fb-user-1',
+        expires_at: Math.floor(Date.now() / 1000) + 300, scopes: [],
+      } }))
+      .mockResolvedValueOnce(jsonResponse({
+        id: 'fb-user-1', email: 'person@example.com', email_verified: true,
+      })));
+
+    const identity = await verifyFacebookIdentity('token', cfg);
+    expect(identity).toMatchObject({ subject: 'fb-user-1', email: null, emailVerified: false });
+  });
+
   it('rejects a /me response for a different subject', async () => {
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce(jsonResponse({ data: {
