@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS "library"."oauth_identities" (
     "CreatedAt" timestamp(3) with time zone NOT NULL,
     CONSTRAINT "PK_oauth_identities" PRIMARY KEY ("id"),
     CONSTRAINT "FK_oauth_identities_users_UserId"
-      FOREIGN KEY ("UserId") REFERENCES "library"."users" ("id")
+      FOREIGN KEY ("UserId") REFERENCES "library"."users" ("Id")
       ON DELETE CASCADE ON UPDATE CASCADE
 );
 CREATE UNIQUE INDEX IF NOT EXISTS "UX_oauth_identities_Provider_Subject"
