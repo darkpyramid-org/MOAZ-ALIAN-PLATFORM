@@ -22,7 +22,7 @@ This plan converts the source-level review into independently actionable issues.
 - [ ] [#46 — Make CRITICAL/HIGH Trivy findings fail the required CI gate](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/46).
 - [ ] [#40 — Repair issue-triage workflow and provision labels safely](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/40).
 - [ ] [#47 — Add PostgreSQL-backed API integration coverage](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/47).
-- [ ] [#50 — Revoke existing JWT sessions after role changes or account deletion](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/50).
+- [ ] [#50 — Revoke existing JWT sessions after role changes or account deletion](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/50). Implementation is in draft [PR #61](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/pull/61); keep open until checks and review pass.
 - [ ] [#52 — Move password hashing off the event loop and harden login timing](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/52).
 
 ### P2 — Operational resilience and functional completeness
