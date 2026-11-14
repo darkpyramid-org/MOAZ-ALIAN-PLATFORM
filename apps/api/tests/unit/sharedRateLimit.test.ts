@@ -22,7 +22,7 @@ describe('shared Upstash fixed-window counter', () => {
       ok: true,
       json: async () => ({ result: [7, 54_000] }),
     });
-    const { incrementSharedRateLimit } = await import('../../src/middleware/rateLimit.js');
+    const { incrementSharedRateLimit } = await import('../../src/lib/rateLimitStore.js');
 
     const first = await incrementSharedRateLimit('global', 'ip:203.0.113.10');
     const second = await incrementSharedRateLimit('global', 'ip:203.0.113.10');
