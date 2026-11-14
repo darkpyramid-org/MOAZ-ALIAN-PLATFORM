@@ -224,12 +224,6 @@ export async function changePassword(identity: CurrentIdentity, currentPassword:
 }
 
 const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
-
-function passwordResetDigest(token: string): string {
-  return createHash('sha256').update(token, 'utf8').digest('hex');
-}
-
-const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
 const PASSWORD_RESET_RATE_WINDOW_MS = 60 * 60 * 1000;
 const PASSWORD_RESET_ACCOUNT_LIMIT = 5;
 const PASSWORD_RESET_IP_LIMIT = 10;
@@ -242,10 +236,6 @@ export async function forgotPassword(emailRaw: string | null, clientIpAddress: s
   if (emailRaw === null || emailRaw === undefined || emailRaw.trim() === '') return;
 
   const email = emailRaw.trim().toLowerCase();
-
-  // Apply both dimensions before looking up the account. Unknown addresses
-  // consume the same budgets and receive the same response as known accounts.
-  // The shared adapter is Redis-backed in production and bounded memory in tests.
   const accountRequests = await incrementAuxiliaryRateLimit(
     'password-reset-account',
     email,
