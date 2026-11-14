@@ -359,27 +359,3 @@ function externalProfileData(
   return data;
 }
 
-async function applyProfile(userId: string, displayName: string | null, avatarUrl: string | null): Promise<void> {
-  const data: { displayName?: string | null; avatarUrl?: string | null; updatedAt: Date } = { updatedAt: utcNow() };
-  if (displayName !== null && displayName !== undefined) {
-    const trimmed = displayName.trim();
-    if (trimmed === '') {
-      data.displayName = null;
-    } else if (trimmed.length > 80) {
-      throw new DomainError('DisplayName must be at most 80 characters (got ' + trimmed.length + ').');
-    } else {
-      data.displayName = trimmed;
-    }
-  }
-  if (avatarUrl !== null && avatarUrl !== undefined) {
-    const trimmed = avatarUrl.trim();
-    if (trimmed === '') {
-      data.avatarUrl = null;
-    } else if (trimmed.length > 500_000) {
-      throw new DomainError('AvatarUrl must be at most 500000 characters (got ' + trimmed.length + ').');
-    } else {
-      data.avatarUrl = trimmed;
-    }
-  }
-  await db.user.update({ where: { id: userId }, data });
-}
