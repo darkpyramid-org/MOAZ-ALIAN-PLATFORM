@@ -164,7 +164,6 @@ async function runExchange(
 
   const tokenJson = (await tokenResponse.json()) as Record<string, unknown>;
   const accessToken = typeof tokenJson['access_token'] === 'string' ? tokenJson['access_token'] : null;
-  if (accessToken === null) return 'no_access_token';
 
   let identity: Awaited<ReturnType<typeof verifyGoogleIdentity>>;
   if (provider === 'google') {
@@ -172,6 +171,7 @@ async function runExchange(
     if (idToken === null) return 'provider_identity_invalid';
     identity = await verifyGoogleIdentity(idToken, cfg.clientId, expectedNonce);
   } else {
+    if (accessToken === null) return 'no_access_token';
     identity = await verifyFacebookIdentity(accessToken, cfg);
   }
 
