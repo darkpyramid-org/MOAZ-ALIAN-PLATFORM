@@ -1,6 +1,6 @@
 import express from 'express';
 import request from 'supertest';
-import { describe, expect, it } from 'vitest';
+import { describe, it } from 'vitest';
 import { authRateLimit } from '../../src/middleware/authRateLimit.js';
 import { collectRawBody } from '../../src/middleware/body.js';
 
