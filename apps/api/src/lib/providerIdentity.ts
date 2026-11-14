@@ -85,7 +85,7 @@ async function getGoogleSigningKeys(forceRefresh = false): Promise<GoogleJwk[]> 
   }
 
   const cacheControl = response.headers.get('cache-control') ?? '';
-  const maxAge = Number(cacheControl.match(/max-age=(\\d+)/i)?.[1] ?? 300);
+  const maxAge = Number(cacheControl.match(/max-age=(\d+)/i)?.[1] ?? 300);
   googleJwksCache = {
     keys: body.keys,
     expiresAt: now + Math.max(60, Math.min(maxAge, 3600)) * 1000,
@@ -95,7 +95,7 @@ async function getGoogleSigningKeys(forceRefresh = false): Promise<GoogleJwk[]> 
 
 function validEmail(value: unknown): value is string {
   return typeof value === 'string' && value.length <= 255 &&
-    /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value);
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
 /**
