@@ -259,41 +259,104 @@ export async function resetPassword(token: string | null, newPassword: string | 
   });
 }
 
+export type ExternalAuthProvider = 'google' | 'facebook';
+
+/**
+ * Provider subject is the stable identity key. Email is used only for first
+ * linking when the provider has explicitly proven ownership of that address.
+ * Facebook identities without a verified email can sign in only after a
+ * provider-subject binding has already been established.
+ */
 export async function externalLogin(
+  provider: ExternalAuthProvider,
+  providerSubject: string,
   emailRaw: string | null,
+  emailVerified: boolean,
   displayName: string | null,
   avatarUrl: string | null,
-  _provider: string,
 ): Promise<{ token: string; user: AuthUserJson }> {
-  if (emailRaw === null || emailRaw === undefined || emailRaw.trim() === '' || !emailRaw.includes('@')) {
-    throw new AuthSignal('argument', 'البريد الإلكتروني غير صالح.');
+  if (providerSubject.trim() === '' || providerSubject.length > 255) {
+    throw new AuthSignal('unauthorized', 'هوية مزود تسجيل الدخول غير صالحة.');
   }
 
-  const email = emailRaw.trim().toLowerCase();
-  const existing = await db.user.findUnique({ where: { email } });
+  return db.$transaction(async (tx) => {
+    const linkedIdentity = await tx.oAuthIdentity.findUnique({
+      where: { provider_providerSubject: { provider, providerSubject } },
+      include: { user: true },
+    });
 
-  if (existing === null) {
-    const now = utcNow();
-    const user = await db.user.create({
+    if (linkedIdentity !== null) {
+      const data = externalProfileData(linkedIdentity.user.displayName, linkedIdentity.user.avatarUrl, displayName, avatarUrl);
+      const user = await tx.user.update({ where: { id: linkedIdentity.userId }, data });
+      return { token: issueToken(user), user: authUserJson(user) };
+    }
+
+    // Never create or attach an account based on an email whose ownership was
+    // not explicitly verified by the provider's signed/validated response.
+    if (emailVerified !== true || emailRaw === null || emailRaw.trim() === '' || !emailRaw.includes('@')) {
+      throw new AuthSignal('unauthorized', 'تعذر إثبات ملكية البريد الإلكتروني من مزود تسجيل الدخول.');
+    }
+
+    const email = emailRaw.trim().toLowerCase();
+    if (email.length > 255) {
+      throw new AuthSignal('unauthorized', 'البريد الإلكتروني من مزود تسجيل الدخول غير صالح.');
+    }
+
+    let user = await tx.user.findUnique({ where: { email } });
+    if (user === null) {
+      const now = utcNow();
+      user = await tx.user.create({
+        data: {
+          id: cryptoRandomUuid(),
+          email,
+          passwordHash: hashPassword(cryptoRandomUuid().replace(/-/g, '')),
+          // External identities never receive editor/admin roles at creation.
+          roles: [],
+          createdAt: now,
+          updatedAt: null,
+        },
+      });
+    }
+
+    const updatedUser = await tx.user.update({
+      where: { id: user.id },
+      data: externalProfileData(user.displayName, user.avatarUrl, displayName, avatarUrl),
+    });
+
+    await tx.oAuthIdentity.create({
       data: {
         id: cryptoRandomUuid(),
-        email,
-        passwordHash: hashPassword(cryptoRandomUuid().replace(/-/g, '')), // opaque secret the owner never uses
-        roles: rolesForEmail(email),
-        createdAt: now,
-        updatedAt: null,
+        provider,
+        providerSubject,
+        userId: updatedUser.id,
+        emailAtLink: email,
+        emailVerified: true,
+        createdAt: utcNow(),
       },
     });
-    await applyProfile(user.id, displayName, avatarUrl);
-    const fresh = await db.user.findUniqueOrThrow({ where: { id: user.id } });
-    return { token: issueToken(fresh), user: authUserJson(fresh) };
-  }
 
-  // Link profile fields only where missing — the local profile wins.
-  await applyProfile(existing.id, existing.displayName === null || existing.displayName.trim() === '' ? displayName : null,
-    existing.avatarUrl === null || existing.avatarUrl.trim() === '' ? avatarUrl : null);
-  const fresh = await db.user.findUniqueOrThrow({ where: { id: existing.id } });
-  return { token: issueToken(fresh), user: authUserJson(fresh) };
+    return { token: issueToken(updatedUser), user: authUserJson(updatedUser) };
+  });
+}
+
+function externalProfileData(
+  currentDisplayName: string | null,
+  currentAvatarUrl: string | null,
+  providerDisplayName: string | null,
+  providerAvatarUrl: string | null,
+): { displayName?: string; avatarUrl?: string; updatedAt: Date } {
+  const data: { displayName?: string; avatarUrl?: string; updatedAt: Date } = { updatedAt: utcNow() };
+  if ((currentDisplayName === null || currentDisplayName.trim() === '') && providerDisplayName !== null) {
+    const value = providerDisplayName.trim();
+    if (value.length > 80) throw new AuthSignal('argument', 'اسم المستخدم من مزود تسجيل الدخول طويل جدًا.');
+    if (value !== '') data.displayName = value;
+  }
+  if ((currentAvatarUrl === null || currentAvatarUrl.trim() === '') && providerAvatarUrl !== null) {
+    const value = providerAvatarUrl.trim();
+    if (value.length > 500_000) throw new AuthSignal('argument', 'رابط الصورة من مزود تسجيل الدخول غير صالح.');
+    if (value !== '') data.avatarUrl = value;
+  }
+  return data;
 }
 
 async function applyProfile(userId: string, displayName: string | null, avatarUrl: string | null): Promise<void> {
