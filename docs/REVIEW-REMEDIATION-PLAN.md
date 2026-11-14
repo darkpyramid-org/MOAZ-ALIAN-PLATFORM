@@ -18,7 +18,7 @@ This plan converts the source-level review into independently actionable issues.
 - [ ] [#45 — Prevent shell injection through release workflow_dispatch input](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/45). Implementation is in draft [PR #57](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/pull/57); keep open until checks pass and it is merged.
 - [ ] [#43 — Bind OAuth state to the initiating browser session and consume it once](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/43). Implementation is in draft [PR #58](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/pull/58); keep open until checks pass and it is merged.
 - [ ] [#44 — Verify provider identity before OAuth email account linking](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/44).
-- [ ] [#41 — Trust forwarded client IP metadata only from configured proxies](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/41).
+- [ ] [#41 — Trust forwarded client IP metadata only from configured proxies](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/41). Implementation is in draft [PR #59](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/pull/59); keep open until checks pass and it is merged.
 - [ ] [#46 — Make CRITICAL/HIGH Trivy findings fail the required CI gate](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/46).
 - [ ] [#40 — Repair issue-triage workflow and provision labels safely](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/40).
 - [ ] [#47 — Add PostgreSQL-backed API integration coverage](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/47).
