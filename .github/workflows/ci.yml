@@ -171,21 +171,36 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Keep scanning CRITICAL/HIGH findings visible in SARIF, then fail the
+      # required security gate after the upload step has had a chance to run.
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        id: trivy
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        continue-on-error: true
         with:
           scan-type: fs
           scan-ref: .
           format: sarif
           output: trivy-results.sarif
           severity: CRITICAL,HIGH
-          exit-code: "0"
+          exit-code: "1"
 
       - name: Upload Trivy scan results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
         if: always() && hashFiles('trivy-results.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-results.sarif
+
+      - name: Enforce Trivy policy
+        if: always()
+        env:
+          TRIVY_OUTCOME: ${{ steps.trivy.outcome }}
+        run: |
+          if [ "$TRIVY_OUTCOME" != "success" ]; then
+            echo "::error::Trivy scan failed or found CRITICAL/HIGH vulnerabilities."
+            exit 1
+          fi
+          echo "Trivy scan completed without CRITICAL/HIGH findings."
 
   ci-status:
     name: CI All Checks Status
