@@ -30,7 +30,11 @@
     "exactOptionalPropertyTypes": true,
     "noUncheckedSideEffectImports": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@moaz/shared-types": ["../../packages/shared-types/src/index.ts"],
+      "@moaz/shared-types/*": ["../../packages/shared-types/src/*"],
+      "@moaz/api-client": ["../../packages/api-client/src/index.ts"],
+      "@moaz/api-client/*": ["../../packages/api-client/src/*"]
     }
   }
 }

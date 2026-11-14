@@ -11,6 +11,10 @@ export default defineConfig({
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
   },
   resolve: {
-    alias: { "@": path.resolve(__dirname, "./src") },
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+      "@moaz/shared-types": path.resolve(__dirname, "../../packages/shared-types/src/index.ts"),
+      "@moaz/api-client": path.resolve(__dirname, "../../packages/api-client/src/index.ts"),
+    },
   },
 });
