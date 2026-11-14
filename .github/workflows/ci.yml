@@ -191,6 +191,69 @@ jobs:
         with:
           sarif_file: trivy-results.sarif
 
+      # Prove that the configured severity threshold actually blocks a known
+      # vulnerable dependency. The fixture is created in the runner temp dir,
+      # outside the repository scan above, so it cannot poison normal scans.
+      - name: Create known-vulnerable Trivy policy fixture
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/trivy-policy-fixture"
+          cat > "$RUNNER_TEMP/trivy-policy-fixture/package-lock.json" <<'JSON'
+          {
+            "name": "trivy-policy-fixture",
+            "version": "1.0.0",
+            "lockfileVersion": 2,
+            "requires": true,
+            "packages": {
+              "": {
+                "name": "trivy-policy-fixture",
+                "version": "1.0.0",
+                "dependencies": {
+                  "lodash": "4.17.20"
+                }
+              },
+              "node_modules/lodash": {
+                "version": "4.17.20",
+                "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.17.20.tgz"
+              }
+            },
+            "dependencies": {
+              "lodash": {
+                "version": "4.17.20",
+                "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.17.20.tgz"
+              }
+            }
+          }
+          JSON
+
+      - name: Verify Trivy blocks a known HIGH vulnerability
+        id: trivy-policy-fixture
+        if: always()
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        continue-on-error: true
+        with:
+          scan-type: fs
+          scan-ref: ${{ runner.temp }}/trivy-policy-fixture
+          format: table
+          output: ${{ runner.temp }}/trivy-policy-fixture-results.txt
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+
+      - name: Assert Trivy policy fixture is rejected
+        if: always()
+        env:
+          FIXTURE_OUTCOME: ${{ steps.trivy-policy-fixture.outcome }}
+        run: |
+          if [ "$FIXTURE_OUTCOME" != "failure" ]; then
+            echo "::error::Trivy did not reject the known-vulnerable fixture."
+            exit 1
+          fi
+          if ! grep -q "CVE-2021-23337" "$RUNNER_TEMP/trivy-policy-fixture-results.txt"; then
+            echo "::error::Trivy failed without reporting the expected CVE-2021-23337 finding."
+            exit 1
+          fi
+          echo "Trivy correctly rejected the known HIGH-severity fixture."
+
       - name: Enforce Trivy policy
         if: always()
         env:
