@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -65,6 +66,19 @@ describe('database-backed JWT session revocation', () => {
       isAdmin: false,
       canEditContent: false,
     });
+  });
+
+  it('accepts a pre-migration token as version zero while using current database roles', async () => {
+    mocks.findUnique.mockResolvedValue({ ...user, roles: ['editor'], tokenVersion: 0 });
+    const legacyToken = jwt.sign(
+      { sub: user.id, email: user.email, role: 'authenticated', roles: ['admin'] },
+      'user-jwt-secret-with-at-least-32-characters',
+      { issuer: 'https://api.example.test', audience: 'authenticated', expiresIn: '1h' },
+    );
+
+    const { req } = await run(legacyToken);
+
+    expect(req.auth).toMatchObject({ roles: ['editor'], isAdmin: false, canEditContent: true });
   });
 
   it('rejects an existing token immediately after its token version is incremented', async () => {
