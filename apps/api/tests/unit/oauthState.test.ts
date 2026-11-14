@@ -76,7 +76,7 @@ describe('browser-bound OAuth state', () => {
   });
 
   it('rejects a callback from a different browser session', async () => {
-    const { headers, response } = responseRecorder();
+    const { response } = responseRecorder();
     const state = await createOAuthState('google', {} as Request, response);
 
     expect(await consumeOAuthState('google', state, requestWithCookie(), response)).toBe(false);
