@@ -13,6 +13,7 @@ const settingsId = 'integration-settings-' + randomUUID();
 const categoryId = 'integration-' + randomUUID();
 const slug = 'integration-article-' + randomUUID();
 const now = new Date();
+let createdDebateId: string | null = null;
 
 describe.skipIf(!process.env.TEST_DATABASE_URL)('PostgreSQL integration: content and category authorization', () => {
   let editorToken: string;
@@ -60,6 +61,9 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('PostgreSQL integration: content
   afterAll(async () => {
     await db.contentItem.deleteMany({ where: { slug } });
     await db.category.deleteMany({ where: { id: { in: [categoryId, categoryId + '-crud'] } } });
+    if (createdDebateId !== null) {
+      await db.debate.deleteMany({ where: { id: createdDebateId } });
+    }
     await db.siteSetting.deleteMany({ where: { id: settingsId } });
     await db.user.deleteMany({ where: { id: { in: [editorId, readerId, adminId] } } });
   });
@@ -199,6 +203,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('PostgreSQL integration: content
       .send({ guestName: 'Integration Guest', topic: 'Authorization boundary' })
       .expect(200);
     const debateId = debate.body.id as string;
+    createdDebateId = debateId;
 
     await request(app)
       .put('/api/debates/' + debateId)
