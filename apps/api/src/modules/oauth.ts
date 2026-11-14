@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { env } from '../config/env.js';
-import { createOAuthState, consumeOAuthState } from '../lib/oauthState.js';
+import { createOAuthState, consumeOAuthState, getOAuthStateNonce } from '../lib/oauthState.js';
+import { verifyFacebookIdentity, verifyGoogleIdentity } from '../lib/providerIdentity.js';
 import { sendProblemFramework, sendRedirect, sendJson, traceOf } from '../lib/http.js';
 import { AuthSignal, externalLogin } from '../services/authService.js';
 import type { OAuthProvider } from '../config/env.js';
@@ -63,12 +64,20 @@ for (const provider of PROVIDERS) {
     const authorizationEndpoint = cfg.authorizationEndpoint ?? defaultAuthorizationEndpoint(provider);
     const scope = encodeURIComponent(cfg.scope ?? 'openid email profile');
 
+    const state = await createOAuthState(provider, req, res);
+    const oidcNonce = getOAuthStateNonce(state);
+    if (oidcNonce === null) {
+      sendJson(res, 500, { title: 'تعذر بدء تسجيل الدخول', status: 500 });
+      return;
+    }
+
     const url =
       `${authorizationEndpoint}?client_id=${encodeURIComponent(cfg.clientId as string)}` +
       `&redirect_uri=${encodeURIComponent(redirectUri)}` +
       `&response_type=code` +
       `&scope=${scope}` +
-      `&state=${encodeURIComponent(await createOAuthState(provider, req, res))}`;
+      `&state=${encodeURIComponent(state)}` +
+      `&nonce=${encodeURIComponent(oidcNonce)}`;
 
     sendRedirect(res, url, 302);
   });
@@ -89,7 +98,8 @@ for (const provider of PROVIDERS) {
     // Provider errors are still correlated to the initiating browser. A
     // provider cannot force an unbound redirect into the local auth flow.
     const state = single('state');
-    if (state === undefined || state === '' || !(await consumeOAuthState(provider, state, req, res))) {
+    const oidcNonce = state === undefined ? null : getOAuthStateNonce(state);
+    if (state === undefined || state === '' || oidcNonce === null || !(await consumeOAuthState(provider, state, req, res))) {
       sendJson(res, 400, { title: 'حالة OAuth غير صالحة', status: 400 });
       return;
     }
@@ -106,7 +116,7 @@ for (const provider of PROVIDERS) {
       return;
     }
 
-    runExchange(provider, code, cfg)
+    runExchange(provider, code, cfg, oidcNonce)
       .then((result) => {
         if (typeof result === 'string') {
           // Exchange failures go back to the frontend as query flags — the
@@ -136,23 +146,23 @@ function isConfigured(cfg: OAuthProvider): boolean {
   );
 }
 
-/** 'token_exchange_failed' | 'no_access_token' | 'userinfo_failed' | 'no_email' | {token} */
+/** Provider token exchange and identity verification are fail-closed. */
 async function runExchange(
   provider: ProviderName,
   code: string,
   cfg: OAuthProvider,
+  expectedNonce: string,
 ): Promise<string | { token: string }> {
   const tokenEndpoint = cfg.tokenEndpoint ?? defaultTokenEndpoint(provider);
-  const userInfoEndpoint = cfg.userInfoEndpoint ?? defaultUserInfoEndpoint(provider);
 
   const tokenResponse = await fetch(tokenEndpoint, {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      client_id: cfg.clientId as string,
-      client_secret: cfg.clientSecret as string,
+      client_id: cfg.clientId,
+      client_secret: cfg.clientSecret,
       code,
-      redirect_uri: cfg.redirectUri as string,
+      redirect_uri: cfg.redirectUri,
       grant_type: 'authorization_code',
     }),
   });
@@ -162,52 +172,33 @@ async function runExchange(
   const accessToken = typeof tokenJson['access_token'] === 'string' ? tokenJson['access_token'] : null;
   if (accessToken === null) return 'no_access_token';
 
-  const userResponse = await fetch(userInfoEndpoint, {
-    headers: { authorization: `Bearer ${accessToken}` },
-  });
-  if (!userResponse.ok) return 'userinfo_failed';
-
-  const userJson = (await userResponse.json()) as Record<string, unknown>;
-  const { email, name, avatar } = extractUserInfo(provider, userJson);
-  if (email === null || email === '') return 'no_email';
-
-  const auth = await externalLogin(email, name, avatar, provider);
-  if (auth instanceof AuthSignal) {
-    // externalLogin reports argument-shaped failures as signals; the original
-    // would let any exception here bubble to the 502 catch below.
-    throw new Error(auth.message);
-  }
-  return { token: auth.token };
-}
-
-function extractUserInfo(
-  provider: ProviderName,
-  root: Record<string, unknown>,
-): { email: string | null; name: string | null; avatar: string | null } {
-  const str = (value: unknown): string | null => (typeof value === 'string' ? value : null);
-
+  let identity;
   if (provider === 'google') {
-    return {
-      email: str(root['email']),
-      name: str(root['name']),
-      avatar: str(root['picture']),
-    };
+    const idToken = typeof tokenJson['id_token'] === 'string' ? tokenJson['id_token'] : null;
+    if (idToken === null) return 'provider_identity_invalid';
+    identity = await verifyGoogleIdentity(idToken, cfg.clientId, expectedNonce);
+  } else {
+    identity = await verifyFacebookIdentity(accessToken, cfg);
   }
 
-  // facebook nests the avatar under picture.data.url.
-  const picture = root['picture'];
-  let avatar: string | null = null;
-  if (picture !== null && typeof picture === 'object' && !Array.isArray(picture)) {
-    const data = (picture as Record<string, unknown>)['data'];
-    if (data !== null && typeof data === 'object' && !Array.isArray(data)) {
-      avatar = str((data as Record<string, unknown>)['url']);
+  if (identity === null) return 'provider_identity_invalid';
+
+  try {
+    const auth = await externalLogin(
+      provider,
+      identity.subject,
+      identity.email,
+      identity.emailVerified,
+      identity.displayName,
+      identity.avatarUrl,
+    );
+    return { token: auth.token };
+  } catch (cause) {
+    if (cause instanceof AuthSignal && cause.kind === 'unauthorized') {
+      return 'provider_email_not_verified';
     }
+    throw cause;
   }
-  return {
-    email: str(root['email']),
-    name: str(root['name']),
-    avatar,
-  };
 }
 
 export const oauthRoutes = router;
