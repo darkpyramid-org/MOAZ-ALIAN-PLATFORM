@@ -10,7 +10,7 @@ This plan converts the source-level review into independently actionable issues.
 
 ### P0 — Release blockers
 
-- [ ] [#51 — Prevent public self-registration from granting editor/admin roles](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/51). Public signup must not grant editorial write access or unverified admin access.
+- [ ] [#51 — Prevent public self-registration from granting editor/admin roles](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/51). Public signup must not grant editorial write access or unverified admin access. Implementation is in draft [PR #55](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/pull/55); keep open until checks pass and it is merged.
 - [ ] [#39 — Require a production-safe JWT signing secret](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/39). Production must fail startup if the secret is absent or equals the repository-known fallback.
 
 ### P1 — Security and delivery integrity
