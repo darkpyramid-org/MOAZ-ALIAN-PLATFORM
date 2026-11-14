@@ -15,7 +15,7 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "test:api": "pnpm --filter @moaz/api test",
-    "db:up": "docker compose -f api/docker-compose.yml up -d",
-    "db:down": "docker compose -f api/docker-compose.yml down"
+    "db:up": "docker compose -f apps/api/docker-compose.yml up -d",
+    "db:down": "docker compose -f apps/api/docker-compose.yml down"
   }
 }

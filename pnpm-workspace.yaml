@@ -1,10 +1,14 @@
 packages:
-  - "api"
+  - "apps/api"
   - "packages/*"
 
 # Postinstall scripts pnpm 10+ refuses to run by default. These four are the
 # only ones the workspace needs: Prisma generates its client + downloads query
 # engines, esbuild compiles its platform binary — all load-bearing for the API.
+minimumReleaseAgeExclude:
+  - "@ai-sdk/provider-utils@5.0.81"
+  - ai@7.0.172
+
 onlyBuiltDependencies:
   - "@prisma/client"
   - "@prisma/engines"

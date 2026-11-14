@@ -374,7 +374,7 @@ schema introspected from the live DB, destructive operations gated behind explic
 ### 10.1 Regenerated OpenAPI (decision: regenerate, do not hand-rewrite)
 
 No full request/response capture of the .NET API existed, so the OpenAPI document was
-**regenerated from the Express implementation** under `api/src/modules/docs.ts` and pinned
+**regenerated from the Express implementation** under `apps/api/src/modules/docs.ts` and pinned
 only where byte-parity is knowable:
 
 - Only the **head 100** and **tail 100** bytes of `/openapi/v1.json` were captured from the .NET

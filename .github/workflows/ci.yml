@@ -92,7 +92,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: api
+        working-directory: apps/api
 
     env:
       DATABASE_URL: postgresql://moaz:moaz_dev@localhost:5432/moaz_alian?schema=library

@@ -4,7 +4,7 @@ MOAZ ALIAN is a cultural library and research platform for publishing and explor
 
 ## Data
 
-Content and categories come from the Express library API in [`../api`](../api) —
+Content and categories come from the Express library API in [`../apps/api`](../apps/api) —
 one source, one writer. `src/lib/api.ts` is the only module that calls it, `src/lib/api-mapping.ts`
 is the only place the API's shapes become the UI's, and the root loader hydrates the in-memory
 store (`src/lib/content.ts`) from `/api/content/snapshot` before any page renders. Nothing reads
