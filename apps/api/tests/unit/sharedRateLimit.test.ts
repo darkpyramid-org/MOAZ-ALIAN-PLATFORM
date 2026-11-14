@@ -44,7 +44,7 @@ describe('shared Upstash fixed-window counter', () => {
 
   it('fails explicitly when the shared store rejects the command', async () => {
     mockedFetch.mockResolvedValue({ ok: false, status: 503 });
-    const { incrementSharedRateLimit } = await import('../../src/middleware/rateLimit.js');
+    const { incrementSharedRateLimit } = await import('../../src/lib/rateLimitStore.js');
     await expect(incrementSharedRateLimit('editorial', 'user:123')).rejects.toThrow('HTTP 503');
   });
 
