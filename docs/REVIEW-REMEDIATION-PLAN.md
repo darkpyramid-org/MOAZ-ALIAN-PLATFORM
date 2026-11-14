@@ -23,6 +23,7 @@ This plan converts the source-level review into independently actionable issues.
 - [ ] [#40 — Repair issue-triage workflow and provision labels safely](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/40).
 - [ ] [#47 — Add PostgreSQL-backed API integration coverage](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/47).
 - [ ] [#50 — Revoke existing JWT sessions after role changes or account deletion](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/50).
+- [ ] [#52 — Move password hashing off the event loop and harden login timing](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/52).
 
 ### P2 — Operational resilience and functional completeness
 
