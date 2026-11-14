@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { env } from '../config/env.js';
 import { db } from '../lib/db.js';
-import { resolvePermissions, readRoles } from '../lib/roles.js';
+import { readRoles } from '../lib/roles.js';
 import { verifyServiceToken, verifyToken } from '../lib/jwt.js';
 import { sendStatusPage, sendUnauthorizedChallenge } from '../lib/http.js';
 
@@ -94,18 +94,16 @@ export async function authenticate(req: Request, _res: Response, next: NextFunct
     // Service role is not a user privilege. Only the separate service-token
     // contract above can receive that permission.
     const roles = user.roles.filter((role) => role.toLowerCase() !== env.AUTH_SERVICE_ROLE.toLowerCase());
-    const permissions = resolvePermissions(roles, true, {
-      adminRole: env.AUTH_ADMIN_ROLE,
-      editorRole: env.AUTH_EDITOR_ROLE,
-      serviceRole: '__service_token_only__',
-    });
+    const isAdmin = roles.some((role) => role.toLowerCase() === env.AUTH_ADMIN_ROLE.toLowerCase());
+    const canEditContent = isAdmin ||
+      roles.some((role) => role.toLowerCase() === env.AUTH_EDITOR_ROLE.toLowerCase());
 
     req.auth = {
       userId: user.id,
       email: user.email,
       roles,
-      isAdmin: permissions.isAdmin,
-      canEditContent: permissions.canEditContent,
+      isAdmin,
+      canEditContent,
     };
     next();
   } catch (error) {
