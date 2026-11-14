@@ -32,7 +32,9 @@ Set these in the Vercel dashboard → Project → Settings → Environment Varia
 | `AUTH_JWT_SECRET` | 32+ random characters. Unique per environment |
 | `CORS_ALLOWED_ORIGINS` | e.g. `["https://your-vercel-app.vercel.app","https://your-domain.com"]` |
 | `CORS_ALLOW_VERCEL_ORIGINS` | set `true` temporarily to allow any `*.vercel.app` origin (e.g. for preview deployments) |
-| `FRONTEND_URL` | your public site origin (used by OAuth callback redirects) |
+| `FRONTEND_URL` | your public site origin (used by OAuth callbacks and password reset links) |
+| `RESEND_API_KEY` | Resend API key used by the password reset mail adapter |
+| `EMAIL_FROM` | Verified sender address configured in Resend, e.g. `MOAZ ALIAN <no-reply@example.com>` |
 | `AUTH_ADMIN_EMAILS` | JSON array, e.g. `["admin@example.com"]` |
 
 Optional:
@@ -46,6 +48,10 @@ Optional:
 | `CONTENT_CACHE_*`, `RATE_LIMIT_*` | cache and rate limit tuning |
 | `OAUTH_GOOGLE_*`, `OAUTH_FACEBOOK_*` | OAuth providers (all three per provider required) |
 | `AI_API_KEY`, `OPENAI_API_KEY` | if `/api/chat` is used |
+
+## Password recovery email
+
+The API sends password-reset messages through Resend. Configure `RESEND_API_KEY` and a verified `EMAIL_FROM` sender on the API service. The email links to `/reset-password?token=...` on `FRONTEND_URL`; the frontend must provide that route and submit the token to `POST /api/auth/reset-password`. If delivery fails, the API clears the pending token and keeps the same generic response for known and unknown addresses; a token-free operational error is emitted for monitoring.
 
 ## Frontend environment variables
 
