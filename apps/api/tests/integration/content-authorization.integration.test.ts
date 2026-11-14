@@ -109,6 +109,12 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('PostgreSQL integration: content
     expect(created.body.id).toEqual(expect.any(String));
     expect(created.body.slug).toBe(slug);
 
+    await request(app)
+      .post('/api/content')
+      .set('Authorization', 'Bearer ' + editorToken)
+      .send(payload)
+      .expect(409);
+
     const read = await request(app).get('/api/content/article/' + slug).expect(200);
     expect(read.body.title).toBe('Integration Article');
 
@@ -120,6 +126,15 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('PostgreSQL integration: content
 
     const updated = await request(app).get('/api/content/article/' + slug).expect(200);
     expect(updated.body.title).toBe('Updated Integration Article');
+
+    const filteredPage = await request(app)
+      .get('/api/content')
+      .query({ type: 'article', search: 'Integration Article', page: 1, pageSize: 1 })
+      .expect(200);
+    expect(filteredPage.body.totalCount).toBe(1);
+    expect(filteredPage.body.items[0].slug).toBe(slug);
+    expect(filteredPage.body.page).toBe(1);
+    expect(filteredPage.body.pageSize).toBe(1);
 
     await request(app)
       .delete('/api/content/' + created.body.id)
