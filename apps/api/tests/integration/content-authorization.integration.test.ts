@@ -70,6 +70,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('PostgreSQL integration: content
       title: 'Integration Article',
       slug,
       description: 'PostgreSQL integration fixture',
+      sourceUrl: 'https://example.test/integration-article',
       categoryIds: [categoryId],
       rightsStatus: 'unknown',
     };
