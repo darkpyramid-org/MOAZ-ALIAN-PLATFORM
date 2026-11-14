@@ -19,8 +19,6 @@
     "rolldown": "1.2.1"
   },
   "dependencies": {
-    "@moaz/api-client": "workspace:*",
-    "@moaz/shared-types": "workspace:*",
     "@ai-sdk/openai": "^4.0.104",
     "@ai-sdk/react": "^4.0.158",
     "@hookform/resolvers": "^5.2.2",
