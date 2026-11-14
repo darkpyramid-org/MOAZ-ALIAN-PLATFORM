@@ -45,6 +45,9 @@ export function createApp(): express.Express {
   // gzipped bytes differ from the response it would validate).
   app.disable('x-powered-by');
   app.set('etag', false);
+  // Forwarded client IPs are honored only when the immediate peer belongs to
+  // this explicit allowlist. An empty list trusts no proxy by default.
+  app.set('trust proxy', env.trustedProxyCidrs);
 
   app.use(trace);
   app.use(
