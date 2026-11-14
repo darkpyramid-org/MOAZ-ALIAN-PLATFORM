@@ -136,7 +136,7 @@ export async function verifyGoogleIdentity(
 
   let signatureValid = false;
   try {
-    const publicKey = createPublicKey({ key: jwk as JsonWebKey, format: 'jwk' });
+    const publicKey = createPublicKey({ key: jwk, format: 'jwk' } as Parameters<typeof createPublicKey>[0]);
     signatureValid = verifySignature(
       'RSA-SHA256',
       Buffer.from(`${segments[0]}.${segments[1]}`, 'ascii'),
