@@ -91,6 +91,17 @@ describe('password recovery', () => {
     await expect(resetPassword('replayed-token', 'new-password-123')).rejects.toBeInstanceOf(AuthSignal);
   });
 
+  it('allows only one winner when two reset requests race', async () => {
+    mocks.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
+    const outcomes = await Promise.allSettled([
+      resetPassword('same-token', 'new-password-123'),
+      resetPassword('same-token', 'new-password-456'),
+    ]);
+    expect(outcomes.filter((outcome) => outcome.status === 'fulfilled')).toHaveLength(1);
+    expect(outcomes.filter((outcome) => outcome.status === 'rejected')).toHaveLength(1);
+    expect(mocks.updateMany).toHaveBeenCalledTimes(2);
+  });
+
   it('rejects an expired or unknown token', async () => {
     mocks.findFirst.mockResolvedValue(null);
     await expect(resetPassword('expired-token', 'new-password-123')).rejects.toBeInstanceOf(AuthSignal);
