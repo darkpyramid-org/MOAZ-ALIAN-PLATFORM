@@ -32,9 +32,21 @@
       }
     },
     {
-      "source": "/(.*)",
+      "source": "/dashboard",
       "destination": {
         "service": "dashboard"
+      }
+    },
+    {
+      "source": "/dashboard/(.*)",
+      "destination": {
+        "service": "dashboard"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "public"
       }
     }
   ]
