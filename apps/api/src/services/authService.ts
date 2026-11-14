@@ -8,6 +8,7 @@ import { utcNow } from '../lib/clock.js';
 import { createHash, randomBytes } from 'node:crypto';
 import { sendPasswordResetEmail } from '../lib/passwordResetMailer.js';
 import { logger } from '../lib/logger.js';
+import { incrementAuxiliaryRateLimit } from '../lib/rateLimitStore.js';
 
 /**
  * The auth use cases — a port of Infrastructure.Auth.AuthService. Exception
