@@ -10,22 +10,22 @@ This plan converts the source-level review into independently actionable issues.
 
 ### P0 — Release blocker
 
-- [ ] [#39 — Require a production-safe JWT signing secret](../issues/39). Production must fail startup if the secret is absent or equals the repository-known fallback.
+- [ ] [#39 — Require a production-safe JWT signing secret](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/39). Production must fail startup if the secret is absent or equals the repository-known fallback.
 
 ### P1 — Security and delivery integrity
 
-- [ ] [#45 — Prevent shell injection through release workflow_dispatch input](../issues/45).
-- [ ] [#43 — Bind OAuth state to the initiating browser session and consume it once](../issues/43).
-- [ ] [#44 — Verify provider identity before OAuth email account linking](../issues/44).
-- [ ] [#41 — Trust forwarded client IP metadata only from configured proxies](../issues/41).
-- [ ] [#46 — Make CRITICAL/HIGH Trivy findings fail the required CI gate](../issues/46).
-- [ ] [#40 — Repair issue-triage workflow and provision labels safely](../issues/40).
-- [ ] [#47 — Add PostgreSQL-backed API integration coverage](../issues/47).
+- [ ] [#45 — Prevent shell injection through release workflow_dispatch input](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/45).
+- [ ] [#43 — Bind OAuth state to the initiating browser session and consume it once](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/43).
+- [ ] [#44 — Verify provider identity before OAuth email account linking](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/44).
+- [ ] [#41 — Trust forwarded client IP metadata only from configured proxies](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/41).
+- [ ] [#46 — Make CRITICAL/HIGH Trivy findings fail the required CI gate](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/46).
+- [ ] [#40 — Repair issue-triage workflow and provision labels safely](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/40).
+- [ ] [#47 — Add PostgreSQL-backed API integration coverage](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/47).
 
 ### P2 — Operational resilience and functional completeness
 
-- [ ] [#42 — Share rate-limit counters across API instances](../issues/42).
-- [ ] [#48 — Complete password recovery with secure one-time email delivery](../issues/48).
+- [ ] [#42 — Share rate-limit counters across API instances](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/42).
+- [ ] [#48 — Complete password recovery with secure one-time email delivery](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/48).
 
 ## Execution sequence
 
