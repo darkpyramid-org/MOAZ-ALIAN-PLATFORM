@@ -81,7 +81,10 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('PostgreSQL integration: content
       .post('/api/content')
       .set('Authorization', 'Bearer ' + editorToken)
       .send(payload)
-      .expect(201);
+      .then((response) => {
+        expect(response.status, JSON.stringify(response.body)).toBe(201);
+        return response;
+      });
 
     expect(created.body.id).toEqual(expect.any(String));
     expect(created.body.slug).toBe(slug);
