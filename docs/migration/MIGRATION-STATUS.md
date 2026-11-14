@@ -24,7 +24,7 @@ Legend: `NOT STARTED` · `IN PROGRESS` · `BLOCKED` · `COMPLETED` (evidence req
 | 4 | Remove first-user auto-admin; bootstrap via `Auth:AdminEmails` | Auth module | **DONE** — verified by build + 47/47 tests |
 | 5 | Chat persistence: implement in API (Prisma, with ownership) | Debates/chat scope | **DONE** — implemented 2026-11-14 (server-side threads; additive REST) |
 | 6 | pnpm as sole package manager (replaces bun + npm lockfiles) | Monorepo | **DONE** — decided 2026-11-14 (D4) |
-| 7 | Fix settings-disconnect bug so public site reads real settings | Public site correctness | **PENDING** (Phase 6) |
+| 7 | Fix settings-disconnect bug so public site reads real settings | Public site correctness | **DONE** (2026-11-14) — `getLibrary` now reads `/api/settings/main` |
 
 ## Verification log
 
