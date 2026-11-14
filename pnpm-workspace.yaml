@@ -1,5 +1,5 @@
 packages:
-  - "apps/*"
+  - "api"
   - "packages/*"
 
 # Postinstall scripts pnpm 10+ refuses to run by default. These four are the
