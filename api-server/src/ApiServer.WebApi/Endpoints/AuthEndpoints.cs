@@ -148,12 +148,14 @@ public static class AuthEndpoints
                 IAuthService authService,
                 CancellationToken cancellationToken) =>
             {
-                var token = await authService.ForgotPasswordAsync(request.Email, cancellationToken);
-                // Token is returned for development convenience; in production it should be emailed.
-                return Results.Ok(new { message = "إذا كان البريد مسجلاً، تم إرسال رابط إعادة التعيين.", token });
+                // The reset token is stored server-side only; delivering it to the user
+                // requires an out-of-band channel (email). The response is deliberately
+                // identical for known and unknown addresses so it cannot probe registration.
+                await authService.ForgotPasswordAsync(request.Email, cancellationToken);
+                return Results.Ok(new { message = "إذا كان البريد مسجلاً، تم إرسال رابط إعادة التعيين." });
             })
             .WithName("AuthForgotPassword")
-            .WithSummary("Request a password reset token.")
+            .WithSummary("Request a password reset (token stored server-side; delivered by email).")
             .Produces(StatusCodes.Status200OK);
 
         group.MapPost(

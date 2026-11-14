@@ -1,0 +1,21 @@
+{
+  "name": "moaz-alian-platform",
+  "private": true,
+  "description": "MOAZ ALIAN platform monorepo — API (Express 5) and frontend apps",
+  "packageManager": "pnpm@12.14.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @moaz/api dev",
+    "dev:api": "pnpm --filter @moaz/api dev",
+    "dev:web": "bun --cwd moaz-alian run dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "test:api": "pnpm --filter @moaz/api test",
+    "db:up": "docker compose -f apps/api/docker-compose.yml up -d",
+    "db:down": "docker compose -f apps/api/docker-compose.yml down"
+  }
+}

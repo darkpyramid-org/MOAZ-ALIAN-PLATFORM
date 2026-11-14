@@ -13,8 +13,11 @@ Full reference lives in [`api-server/README.md`](../api-server/README.md). Summa
 | `POST/PUT/DELETE /api/content[/{id}]` | editorial writes (JWT) |
 | `GET /api/categories` | includes `contentCount` |
 | `POST/PUT/DELETE /api/categories/{id}` | admin only for delete-with-content → 409 |
-| `POST /api/auth/register`, `POST /api/auth/login` | issue the API's own JWT; first account is admin+editor |
+| `POST /api/auth/register`, `POST /api/auth/login` | issue the API's own JWT; admin roles only via the `Auth:AdminEmails` allowlist |
 | `GET /api/auth/me` | profile + roles of the token's user |
+| `PUT /api/auth/me` | update profile (display name, avatar URL) |
+| `POST /api/auth/change-password` | change password (Bearer) |
+| `POST /api/auth/forgot-password`, `POST /api/auth/reset-password` | single-use reset token stored server-side only, delivered out-of-band |
 | `GET /api/users`, `POST /api/users/{id}/roles` | admin only |
 | `GET/PUT /api/settings/{id}` | site settings blob |
 | `GET/POST/PUT/DELETE /api/debates` | debates archive |

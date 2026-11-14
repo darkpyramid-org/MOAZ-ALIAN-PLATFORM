@@ -1,0 +1,191 @@
+// MOAZ ALIAN library API — Prisma schema.
+//
+// Source of truth: the live PostgreSQL `library` schema as created by EF Core
+// (api-server/src/ApiServer.Infrastructure/Migrations/20261031233722_InitialCreate.cs)
+// plus the startup DDL in Program.cs (users / site_settings / debates).
+// The baseline SQL migration under prisma/migrations/ reproduces that DDL byte
+// for byte; this model layer exists so the Express API reads/writes the same
+// physical schema with typed queries.
+//
+// The connection string carries ?schema=library, which pins the search_path:
+// no model needs an explicit @schema and the multiSchema preview stays off.
+//
+// NOTE: `prisma migrate dev` is intentionally not used with this database —
+// the schema is owned by the historical EF migrations. CI and tests apply
+// this directory with `prisma migrate deploy` only.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// library.content_items — one table for the four content shapes; type-specific
+/// columns stay NULL for unrelated types (enforced in domain code on write).
+model ContentItem {
+  id        String @id @map("Id") @db.VarChar(100)
+
+  /// JSON-serialised array (System.Text.Json compact form, e.g. ["a","b"]) in a
+  /// text column — deliberately NOT a native array; the EF configuration chose
+  /// JSON text so values survive copy-paste between columns and dumps.
+  tags      String @map("Tags") @db.Text
+  /// Same JSON-serialised-text contract as tags.
+  references String @map("References") @db.Text
+
+  type        Int     @map("Type") @db.SmallInt
+  slug        String  @map("Slug") @db.VarChar(200)
+  title       String  @map("Title") @db.VarChar(300)
+  description String  @map("Description") @db.VarChar(2000)
+
+  thumbnailUrl String? @map("ThumbnailUrl") @db.VarChar(2048)
+  authorName   String? @map("AuthorName") @db.VarChar(200)
+  sourceUrl    String? @map("SourceUrl") @db.VarChar(2048)
+  body         String? @map("Body") @db.Text
+
+  featured     Boolean @map("Featured")
+  verified     Boolean @map("Verified")
+  demo         Boolean @map("Demo")
+  rightsStatus Int     @map("RightsStatus") @db.SmallInt
+  publishedAt  DateTime? @map("PublishedAt") @db.Timestamptz(3)
+  createdAt    DateTime  @map("CreatedAt") @db.Timestamptz(3)
+  updatedAt    DateTime  @map("UpdatedAt") @db.Timestamptz(3)
+
+  // ---- video ----
+  videoId         String? @map("VideoId") @db.VarChar(64)
+  videoProvider   Int?    @map("VideoProvider") @db.SmallInt
+  durationSeconds Int?    @map("DurationSeconds")
+  seriesName      String? @map("SeriesName") @db.VarChar(200)
+
+  // ---- book ----
+  coverUrl        String? @map("CoverUrl") @db.VarChar(2048)
+  publisher       String? @map("Publisher") @db.VarChar(200)
+  isbn            String? @map("Isbn") @db.VarChar(20)
+  publicationYear Int?    @map("PublicationYear")
+  availability    Int?    @map("Availability") @db.SmallInt
+  /// jsonb array of {label,url} objects.
+  authorizedLinks Json?   @map("AuthorizedLinks") @db.JsonB
+
+  // ---- article ----
+  readingTimeMinutes Int? @map("ReadingTimeMinutes")
+
+  // ---- research ----
+  documentUrl    String? @map("DocumentUrl") @db.VarChar(2048)
+  documentFormat String? @map("DocumentFormat") @db.VarChar(20)
+
+  categories ContentItemCategory[]
+
+  @@index([featured], map: "IX_content_items_Featured")
+  @@index([publishedAt], map: "IX_content_items_PublishedAt")
+  @@index([seriesName], map: "IX_content_items_SeriesName")
+  @@index([type, publishedAt], map: "IX_content_items_Type_PublishedAt")
+  @@unique([type, slug], map: "IX_content_items_Type_Slug")
+  @@map("content_items")
+}
+
+/// library.categories — browsing sections.
+model Category {
+  id          String   @id @map("Id") @db.VarChar(100)
+  name        String   @map("Name") @db.VarChar(120)
+  description String   @map("Description") @db.VarChar(1000)
+  sortOrder   Int      @map("SortOrder")
+  createdAt   DateTime @map("CreatedAt") @db.Timestamptz(3)
+  updatedAt   DateTime @map("UpdatedAt") @db.Timestamptz(3)
+
+  contentItems ContentItemCategory[]
+
+  @@index([sortOrder, name], map: "IX_categories_SortOrder_Name")
+  @@map("categories")
+}
+
+/// Explicit join table EF Core generated for the many-to-many mapping.
+model ContentItemCategory {
+  categoriesId   String @map("CategoriesId") @db.VarChar(100)
+  contentItemsId String @map("ContentItemsId") @db.VarChar(100)
+
+  category    Category    @relation(fields: [categoriesId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  contentItem ContentItem @relation(fields: [contentItemsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([categoriesId, contentItemsId], map: "PK_content_item_categories")
+  @@index([contentItemsId], map: "IX_content_item_categories_ContentItemsId")
+  @@map("content_item_categories")
+}
+
+/// library.users — legacy table created by Program.cs startup DDL; columns are
+/// quoted PascalCase exactly as that DDL wrote them.
+model User {
+  id                    String    @id @db.Uuid
+  email                 String    @unique(map: "IX_users_Email") @db.VarChar(255)
+  passwordHash          String    @map("PasswordHash") @db.VarChar(1000)
+  /// Real text[] column — native Postgres array, unlike content tags.
+  roles                 String[]  @map("Roles") @default([])
+  displayName           String?   @map("DisplayName") @db.VarChar(80)
+  avatarUrl             String?   @map("AvatarUrl") @db.VarChar(500000)
+  passwordResetToken    String?   @map("PasswordResetToken") @db.VarChar(200)
+  passwordResetExpiresAt DateTime? @map("PasswordResetExpiresAt") @db.Timestamptz(3)
+  createdAt             DateTime  @map("CreatedAt") @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime? @map("UpdatedAt") @db.Timestamptz(3)
+
+  chatThreads ChatThread[]
+
+  @@map("users")
+}
+
+/// library.site_settings — one JSON document per settings key ("main" default).
+model SiteSetting {
+  id        String   @id @map("Id") @db.Text
+  data      String   @map("Data") @default("{}") @db.Text
+  updatedAt DateTime @map("UpdatedAt") @default(now()) @db.Timestamptz(3)
+
+  @@map("site_settings")
+}
+
+/// library.debates — legacy table created by Program.cs startup DDL.
+model Debate {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  guestName       String   @map("GuestName") @db.Text
+  guestBackground String?  @map("GuestBackground") @db.Text
+  topic           String   @map("Topic") @db.Text
+  replySummary    String?  @map("ReplySummary") @db.Text
+  outcome         String   @map("Outcome") @default("open") @db.Text
+  /// Free text on purpose (legacy): the display string may be partial ("حزیرة", "2024/05").
+  debateDate      String?  @map("DebateDate") @db.Text
+  videoUrl        String?  @map("VideoUrl") @db.Text
+  tags            String[] @map("Tags") @default([])
+  notes           String?  @map("Notes") @db.Text
+  createdAt       DateTime @map("CreatedAt") @default(now()) @db.Timestamptz(3)
+
+  @@map("debates")
+}
+
+/// New server-side chat persistence (decision D3 of the migration plan).
+/// One owner per thread; every read/write is filtered by the owner id, so a
+/// foreign thread is indistinguishable from a missing one (404 either way).
+model ChatThread {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("UserId") @db.Uuid
+  title     String?  @map("Title") @db.Text
+  createdAt DateTime @map("CreatedAt") @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @map("UpdatedAt") @default(now()) @db.Timestamptz(3)
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  messages ChatMessage[]
+
+  @@index([userId], map: "IX_chat_threads_UserId")
+  @@map("chat_threads")
+}
+
+model ChatMessage {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  threadId  String   @map("ThreadId") @db.Uuid
+  role      String   @map("Role") @db.Text
+  content   String   @map("Content") @db.Text
+  createdAt DateTime @map("CreatedAt") @default(now()) @db.Timestamptz(3)
+
+  thread ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([threadId], map: "IX_chat_messages_ThreadId")
+  @@map("chat_messages")
+}

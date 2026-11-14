@@ -187,15 +187,14 @@ class AuthService {
     if (typeof window !== "undefined") window.localStorage.setItem(TOKEN_KEY, token);
   }
 
-  async forgotPassword(email: string): Promise<string | null> {
+  /** Fires a reset request. The token is never disclosed over HTTP; delivery is via email. */
+  async forgotPassword(email: string): Promise<void> {
     const res = await fetch(`${BASE}/api/auth/forgot-password`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({ email: email.trim().toLowerCase() }),
     });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { token?: string };
-    return data.token ?? null;
+    if (!res.ok) return;
   }
 
   async resetPassword(token: string, newPassword: string): Promise<boolean> {
