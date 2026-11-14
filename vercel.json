@@ -18,10 +18,6 @@
       "bindings": [
         { "type": "service", "service": "api", "format": "url", "env": "API_URL" }
       ]
-    },
-    "ui": {
-      "root": "packages/ui",
-      "framework": "tanstack-start-lovable"
     }
   },
   "rewrites": [

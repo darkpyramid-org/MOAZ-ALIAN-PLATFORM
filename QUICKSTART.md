@@ -1,102 +1,97 @@
 # Quick Start Guide
 
-## 5-Minute Setup
+Get the MOAZ ALIAN platform up and running locally in under 5 minutes.
 
-### 1. Clone & Navigate
+---
+
+## 1. Prerequisites
+
+- **Node.js**: `v22+`
+- **pnpm**: `12.x` (`npm install -g pnpm`)
+- **PostgreSQL**: 16+ running locally or in Docker:
+  ```bash
+  docker run -d --name moaz-postgres -p 5432:5432 -e POSTGRES_PASSWORD=moaz_dev postgres:17-alpine
+  ```
+
+---
+
+## 2. Installation
+
+Clone and install workspace dependencies from the root directory:
 
 ```bash
 git clone https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM.git
 cd MOAZ-ALIAN-PLATFORM
-```
-
-### 2. Backend Setup (Express API)
-```bash
-cd apps/api
 pnpm install
-cp .env.example .env
-# edit .env — set DATABASE_URL, AUTH_JWT_SECRET
-pnpm dev
 ```
-API: http://localhost:5199
 
-### 3. Frontend Setup — Public site
+---
+
+## 3. Configure Backend Environment
+
+Copy the example environment file:
+
 ```bash
-cd apps/public
-pnpm install
-pnpm dev
-```
-Public site: http://localhost:5173
-
-### 4. Frontend Setup — Dashboard
-```bash
-cd apps/dashboard
-pnpm install
-pnpm dev
-```
-Dashboard: http://localhost:5174
-
-## Key Commands
-
-### Backend (apps/api/)
-```bash
-pnpm dev          # Start dev server (tsx watch)
-pnpm build        # tsc compile
-pnpm typecheck    # tsc --noEmit
-pnpm lint         # eslint
-pnpm test         # Vitest unit tests
-pnpm db:migrate   # prisma migrate deploy
+cp apps/api/.env.example apps/api/.env
 ```
 
-### Frontends (apps/public/, apps/dashboard/)
-```bash
-pnpm dev          # Start dev server
-pnpm build        # Production build
-pnpm lint         # Check code quality
-pnpm format       # Auto-format code
-pnpm test         # Run tests
-```
+Edit `apps/api/.env`:
 
-## Structure
-
-```
-MOAZ-ALIAN-PLATFORM/
-├── api/              Backend (Express 5 API)
-├── apps/
-│   ├── public/       Frontend — public site
-│   └── dashboard/    Frontend — admin dashboard
-├── packages/         Shared workspace packages
-├── docs/             Documentation
-├── .github/          GitHub workflows
-└── README.md         Overview
-```
-
-## Deployment
-
-The repository deploys to **Vercel** via `vercel.json` (multi-service: `api`, `public`, `dashboard`, `ui`).
-
-## Environment Variables
-
-### Frontends (apps/public/.env, apps/dashboard/.env)
 ```env
-VITE_API_URL=http://localhost:5199
-API_URL=http://localhost:5199
-AI_API_KEY=your_ai_api_key
+DATABASE_URL=postgresql://moaz:moaz_dev@localhost:5432/moaz_alian?schema=library
+AUTH_JWT_SECRET=super-secret-random-32-characters-minimum
+AUTH_ADMIN_EMAILS=["admin@moazalian.com"]
 ```
 
-### Backend (apps/api/.env)
-```env
-DATABASE_URL=postgresql://user:password@host:5432/moaz_alian?schema=library
-AUTH_JWT_SECRET=your_32_char_secret
-CORS_ALLOWED_ORIGINS=http://localhost:5173
-```
+Run Prisma schema generation and apply the database migrations:
 
-## Common Issues
-
-**Port in use?**
 ```bash
-# change PORT in apps/api/.env or pass PORT=5200 pnpm dev
+pnpm --filter @moaz/api prisma:generate
+pnpm --filter @moaz/api db:migrate
 ```
 
-## API Documentation
+---
 
-Browse [docs/API.md](./docs/API.md) for complete API reference.
+## 4. Run Locally
+
+From the root of the repository, run whichever service you need:
+
+### Start Backend API
+```bash
+pnpm dev:api
+# API runs at http://localhost:5199
+# Test health: curl http://localhost:5199/health
+```
+
+### Start Public Site
+```bash
+pnpm dev:public
+# Public site runs at http://localhost:5173
+```
+
+### Start Editorial Dashboard
+```bash
+pnpm dev:dashboard
+# Dashboard runs at http://localhost:5174
+```
+
+---
+
+## 5. Key Workspace Commands
+
+| Command | Action |
+|---|---|
+| `pnpm build` | Builds all applications and packages |
+| `pnpm typecheck` | Validates TypeScript types across the monorepo |
+| `pnpm lint` | Runs ESLint across all projects |
+| `pnpm test` | Executes unit tests |
+| `pnpm db:up` | Boots local PostgreSQL via Docker Compose |
+| `pnpm db:down` | Stops local PostgreSQL Docker container |
+
+---
+
+## Next Steps
+
+- Consult the [System Architecture](./docs/ARCHITECTURE.md) for data flow and services.
+- Read [Deployment Guide](./docs/DEPLOY.md) before pushing to production or staging.
+- Check the [API Documentation](./docs/API.md) for REST endpoint specifications.

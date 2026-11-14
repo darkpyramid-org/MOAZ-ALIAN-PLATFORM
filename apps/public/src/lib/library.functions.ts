@@ -15,33 +15,47 @@ const RAW_BASE =
 const BASE = RAW_BASE.replace(/\/+$/, "");
 
 /**
- * Public read of the whole library. Content and categories come from the ASP.NET API —
- * the single source of truth. Site settings are now also read from the API (the
- * `/api/settings/main` record) instead of always resolving to defaults, so the
- * public site reflects what the dashboard saves (fixes the settings-disconnect bug).
+ * Public read of the whole library. Content and categories come from the API.
+ * Resilient to backend cold starts / database errors so SSR and client hydration
+ * never throw an unhandled 500 into ErrorBoundary.
  */
 export const getLibrary = createServerFn({ method: "GET" }).handler(async () => {
-  const [items, cats, settingsRes] = await Promise.all([
-    fetchLibraryItems(),
-    fetchCategories(),
-    fetch(`${BASE}/api/settings/main`).catch(() => null),
-  ]);
+  try {
+    const [items, cats, settingsRes] = await Promise.all([
+      fetchLibraryItems().catch((err) => {
+        console.warn("[library] fetchLibraryItems failed:", err);
+        return [];
+      }),
+      fetchCategories().catch((err) => {
+        console.warn("[library] fetchCategories failed:", err);
+        return [];
+      }),
+      fetch(`${BASE}/api/settings/main`).catch(() => null),
+    ]);
 
-  let settings = resolveSiteSettings(undefined);
-  if (settingsRes && settingsRes.ok) {
-    try {
-      const json = (await settingsRes.json()) as { data?: unknown };
-      settings = resolveSiteSettings(json.data);
-    } catch {
-      // Fall back to defaults on a malformed body.
+    let settings = resolveSiteSettings(undefined);
+    if (settingsRes && settingsRes.ok) {
+      try {
+        const json = (await settingsRes.json()) as { data?: unknown };
+        settings = resolveSiteSettings(json.data);
+      } catch {
+        // Fall back to defaults on a malformed body.
+      }
     }
-  }
 
-  return {
-    items,
-    categories: cats.map(({ id, name, description }) => ({ id, name, description })),
-    settings,
-  };
+    return {
+      items: items ?? [],
+      categories: (cats ?? []).map(({ id, name, description }) => ({ id, name, description })),
+      settings,
+    };
+  } catch (error) {
+    console.error("[library] getLibrary server function failed:", error);
+    return {
+      items: [],
+      categories: [],
+      settings: resolveSiteSettings(undefined),
+    };
+  }
 });
 
 export const libraryQuery = queryOptions({

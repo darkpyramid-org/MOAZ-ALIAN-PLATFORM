@@ -1,0 +1,40 @@
+# Configuration for .github/workflows/labeler.yml (actions/labeler@v5)
+
+"area:api":
+  - changed-files:
+      - any-glob-to-any-file: "apps/api/**"
+
+"area:public":
+  - changed-files:
+      - any-glob-to-any-file: "apps/public/**"
+
+"area:dashboard":
+  - changed-files:
+      - any-glob-to-any-file: "apps/dashboard/**"
+
+"area:packages":
+  - changed-files:
+      - any-glob-to-any-file: "packages/**"
+
+"area:ui":
+  - changed-files:
+      - any-glob-to-any-file: "packages/ui/**"
+
+"area:docs":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "docs/**"
+          - "*.md"
+
+"area:ci":
+  - changed-files:
+      - any-glob-to-any-file: ".github/**"
+
+"area:config":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "package.json"
+          - "pnpm-workspace.yaml"
+          - "pnpm-lock.yaml"
+          - ".npmrc"
+          - "vercel.json"
