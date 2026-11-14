@@ -35,6 +35,8 @@ const schema = z.object({
   // deliberately unsupported — the .NET binder never accepted them either.
   AUTH_ADMIN_EMAILS: z.string().optional(),
   FRONTEND_URL: z.string().default('http://localhost:8080'),
+  RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().email().optional(),
 
   CORS_ALLOWED_ORIGINS: z.string().optional(),
   CORS_ALLOW_VERCEL_ORIGINS: z
