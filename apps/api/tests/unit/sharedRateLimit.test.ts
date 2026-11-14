@@ -53,7 +53,7 @@ describe('shared Upstash fixed-window counter', () => {
       ok: true,
       json: async () => ({ result: 'not-a-counter' }),
     });
-    const { incrementSharedRateLimit } = await import('../../src/middleware/rateLimit.js');
+    const { incrementSharedRateLimit } = await import('../../src/lib/rateLimitStore.js');
     await expect(incrementSharedRateLimit('global', 'user:123')).rejects.toThrow('invalid counter response');
   });
 });
