@@ -61,7 +61,7 @@ const RAW_BASE =
   (isServer
     ? import.meta.env.DEV
       ? "http://localhost:5199"
-      : process.env["API_URL"] ?? "http://localhost:5199"
+      : (process.env["API_URL"] ?? "http://localhost:5199")
     : (import.meta.env["VITE_API_URL"] ??
       (import.meta.env.DEV ? "http://localhost:5199" : "/proxy-api")));
 const BASE = RAW_BASE.replace(/\/+$/, "");

@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 // SSR/server function: runtime binding API_URL points to the bound api service internal URL.
-const BACKEND = (typeof process !== "undefined" && process.env["API_URL"]) || "http://localhost:5199";
+const BACKEND =
+  (typeof process !== "undefined" && process.env["API_URL"]) || "http://localhost:5199";
 
 async function proxy(request: Request): Promise<Response> {
   const url = new URL(request.url);

@@ -2,7 +2,9 @@ import type { UIMessage } from "ai";
 
 const RAW_BASE =
   (typeof process !== "undefined" ? process.env["API_URL"] : undefined) ??
-  (import.meta.env.DEV ? "http://localhost:5199" : process.env["API_URL"] ?? "http://localhost:5199");
+  (import.meta.env.DEV
+    ? "http://localhost:5199"
+    : (process.env["API_URL"] ?? "http://localhost:5199"));
 const BASE = RAW_BASE.replace(/\/+$/, "");
 
 export type RouteUser = { userId: string };
