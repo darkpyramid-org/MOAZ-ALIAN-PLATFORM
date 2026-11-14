@@ -139,7 +139,7 @@ router.put('/api/auth/me', requireAuth, (req, res, next) => {
   }
 });
 
-router.post('/api/auth/change-password', requireAuth, (req, res, next) => {
+router.post('/api/auth/change-password', requireAuth, authRateLimit, (req, res, next) => {
   try {
     const body = bindBody(req, [
       { key: 'currentPassword', kind: 'string' },
