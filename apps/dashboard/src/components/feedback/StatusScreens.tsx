@@ -18,9 +18,7 @@ import {
 } from "lucide-react";
 import { reportAppError } from "@/lib/error-reporting";
 
-const QUICK_LINKS = [
-  { to: "/dashboard", label: "لوحة التحكم" },
-] as const;
+const QUICK_LINKS = [{ to: "/dashboard", label: "لوحة التحكم" }] as const;
 
 function Stage({
   children,

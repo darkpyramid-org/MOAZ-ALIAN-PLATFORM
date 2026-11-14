@@ -89,9 +89,7 @@ function CategoriesPage() {
     // same thing here instead of offering a delete that can only fail.
     const used = countOf(id);
     if (used) {
-      toast.error(
-        `«${name}» مستخدم في ${used.toLocaleString("ar-EG")} مادة — أزل منه المواد أولًا`,
-      );
+      toast.error(`«${name}» مستخدم في ${used.toLocaleString("ar-EG")} مادة — أزل منه المواد أولًا`);
       return;
     }
     if (!confirm(`حذف التصنيف «${name}»؟`)) return;

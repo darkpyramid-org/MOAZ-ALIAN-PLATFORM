@@ -10,14 +10,12 @@ import { authClient } from "@/lib/auth";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { trapFocus, useDismiss, usePresence, useScrollLock } from "@/hooks/use-overlay";
 
-const NAV = [
-  { to: "/dashboard", label: "لوحة التحكم" },
-] as const;
+const NAV = [{ to: "/dashboard", label: "لوحة التحكم" }] as const;
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  
+
   const [accountOpen, setAccountOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const home = pathname === "/";
@@ -284,8 +282,6 @@ export function Header() {
           </div>,
           document.body,
         )}
-
-      
     </header>
   );
 }

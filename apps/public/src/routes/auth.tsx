@@ -16,7 +16,6 @@ function safePath(p?: string) {
   try {
     const u = new URL(p, "http://x");
     return u.pathname.startsWith("/") && !p.startsWith("//") ? u.pathname + u.search : "/";
-
   } catch {
     return "/dashboard";
   }

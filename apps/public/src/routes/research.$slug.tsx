@@ -70,9 +70,7 @@ function Page() {
             تحميل الوثيقة <Download className="size-4" aria-hidden />
           </a>
         ) : (
-          <p className="text-sm leading-7 text-muted-foreground">
-            لم يُضف ملف كامل لهذا البحث بعد.
-          </p>
+          <p className="text-sm leading-7 text-muted-foreground">لم يُضف ملف كامل لهذا البحث بعد.</p>
         )}
         <FactGrid
           facts={[
