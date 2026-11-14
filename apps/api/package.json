@@ -2,7 +2,7 @@
   "name": "@moaz/api",
   "version": "1.0.0",
   "private": true,
-  "description": "MOAZ ALIAN library API — Express 5 port of api-server (ASP.NET Core minimal APIs)",
+  "description": "MOAZ ALIAN library API — Express 5 + TypeScript + Prisma backend",
   "type": "module",
   "engines": {
     "node": ">=22"

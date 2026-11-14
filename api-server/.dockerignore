@@ -1,9 +1,0 @@
-**/bin/
-**/obj/
-**/.vs/
-**/*.user
-**/.editorconfig
-tests/
-docker-compose.yml
-*.md
-tools/

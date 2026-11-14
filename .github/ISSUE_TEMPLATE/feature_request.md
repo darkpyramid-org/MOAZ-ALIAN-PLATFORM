@@ -27,7 +27,7 @@ assignees: ''
 
 ## Affected Component
 - [ ] Frontend (moaz-alian)
-- [ ] Backend (api-server)
+- [ ] Backend (apps/api)
 - [ ] Database
 - [ ] Documentation
 - [ ] Other

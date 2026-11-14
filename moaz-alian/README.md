@@ -4,7 +4,7 @@ MOAZ ALIAN is a cultural library and research platform for publishing and explor
 
 ## Data
 
-Content and categories come from the ASP.NET library API in [`../api-server`](../api-server) —
+Content and categories come from the Express library API in [`../apps/api`](../apps/api) —
 one source, one writer. `src/lib/api.ts` is the only module that calls it, `src/lib/api-mapping.ts`
 is the only place the API's shapes become the UI's, and the root loader hydrates the in-memory
 store (`src/lib/content.ts`) from `/api/content/snapshot` before any page renders. Nothing reads
@@ -15,13 +15,11 @@ Auth (login/register/JWT), roles, site settings and debates are served by the sa
 there is no Supabase anywhere in the stack. Writes carry the API-issued JWT shown once by `src/lib/auth.ts`.
 
 `src/data/seed.ts` and `src/data/library/` are **not** bundled into the running app. They are the
-dataset's origin, used by `api-server/tools/generate-seed.mjs` to build SQL and by the test suite
-as a fixture. After changing them, regenerate and re-apply the seed, then restart the API (SQL
-writes do not bump its cache version).
+dataset's origin, used by the seed SQL and by the test suite as a fixture. After changing them,
+regenerate and re-apply the seed, then restart the API (SQL writes do not bump its cache version).
 
-The database's schema and seed travel as two generated bundles: `api-server/apply-supabase.sql`
-(schema + seed + verification, one paste into any SQL console) and `api-server/supabase-schema.sql`
-(the initial schema snapshot). Regenerate them from the seed data with `node tools/generate-seed.mjs`.
+The database's schema and seed travel as the Prisma baseline migration under
+`apps/api/prisma/migrations/20261114000000_baseline/`. Regenerate them from the seed data as needed.
 
 ## Development
 

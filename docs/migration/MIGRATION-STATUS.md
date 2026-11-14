@@ -10,8 +10,8 @@ Legend: `NOT STARTED` · `IN PROGRESS` · `BLOCKED` · `COMPLETED` (evidence req
 | 3 — Database compatibility | Prisma schema from live `library` schema, migration strategy, disposable-DB validation | **COMPLETED** | **2026-11-14** — `library` schema mirrored into `apps/api/prisma/schema.prisma`; baseline migration `20261114000000_baseline`; `prisma generate` + `prisma migrate deploy` only (no `migrate dev`). Disposable golden DB (`moaz-golden-pg`, postgres:17) |
 | 4 — Module migration | auth → content → categories → users → settings → debates → media/chat, each with unit+integration+contract tests | **COMPLETED** (port) / chat persistence **DECIDED & DONE** | **2026-11-14** — all migrated modules ported (auth, content, categories, users, settings, debates, health, root, docs, oauth). Chat persistence implemented server-side via Prisma `chat_threads`/`chat_messages` (ownership enforced, foreign thread → 404, additive REST surface). **Contract fidelity: golden HTTP battery replayed against the Express server — 124/124 comparable scenarios byte-equal after normalization (traceId/JWT/ids/timestamps; content-encoding/vary dropped; truncation rule applied); status/header/body mismatches: 0** |
 | 5 — Backend cutover | Full endpoint validation, traffic switch, rollback plan | **IN PROGRESS** | Contract parity green (2026-11-14); actual traffic switch + rollback drill remain owner decisions. .NET backend retained deployable |
-| 6 — Frontend separation | apps/public + apps/dashboard, shared packages, routing/proxy, SSR/SEO/RTL validation | **NOT STARTED** | Includes fixing the settings-disconnect bug (BASELINE P1 #10) — moved to frontend PR per decision D6 (2026-11-14) |
-| 7 — Legacy removal | .NET projects, EF/Drizzle artifacts, stale docs/configs, dep pruning | **NOT STARTED** | Only after cutover; includes 22 unused UI components + unused deps list in BASELINE §5 |
+| 6 — Frontend separation | apps/public + apps/dashboard, shared packages, routing/proxy, SSR/SEO/RTL validation | **IN PROGRESS** | Settings-disconnect bug fixed (2026-11-14): `getLibrary` now reads `/api/settings/main` instead of always resolving defaults. Full micro-frontend split (apps/public, apps/dashboard, shared packages) and dead media route replacement remain follow-up work |
+| 7 — Legacy removal | .NET projects, EF/Drizzle artifacts, stale docs/configs, dep pruning | **COMPLETED** | **2026-11-14** — `api-server/` (.NET 9 backend, EF Core migrations, Drizzle artifacts, Supabase SQL) removed; stale `moaz-alian/package-lock.json` removed; pnpm sole PM. Express backend is the only backend; CI green |
 | 8 — Final review | SOLID/boundary audit, dependency rules, docs, DX, report | **NOT STARTED** | |
 
 ## Open decisions (owner)
@@ -55,3 +55,11 @@ Legend: `NOT STARTED` · `IN PROGRESS` · `BLOCKED` · `COMPLETED` (evidence req
   - OpenAPI: regenerated for Express runtime — only head 100 + tail 100 bytes pinned (byte-exact);
     key order `openapi→info→components→paths→tags`, tags last `[Auth, Admin, Content, Categories]`;
     chat endpoints excluded (additive surface, see BASELINE.md §10).
+- 2026-11-14 — Phase 7 legacy removal (branch `phase-7-legacy-removal`):
+  - Removed `api-server/` (ASP.NET Core .NET 9 backend, EF Core, Drizzle/Supabase artifacts,
+    .NET tests, build outputs). Express backend (`apps/api`) is the sole backend; CI green.
+  - Removed stale `moaz-alian/package-lock.json` (pnpm sole PM).
+  - Fixed settings-disconnect bug (Phase 6 item): `getLibrary` now reads `/api/settings/main`
+    instead of always resolving defaults.
+  - Frontend typecheck: clean (no errors). Frontend tests: 35/36 pass; one pre-existing
+    flaky timeout (`calendar-dropdown.test.tsx`, jsdom timing) unrelated to this change.
