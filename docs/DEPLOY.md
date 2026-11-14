@@ -29,7 +29,7 @@ Set these in the Vercel dashboard → Project → Settings → Environment Varia
 | Variable | Notes |
 |----------|-------|
 | `DATABASE_URL` | **Must point at a publicly reachable Postgres** (Neon/Supabase/RDS), not localhost. Same schema convention: `?schema=library` |
-| `AUTH_JWT_SECRET` | 32+ random characters. Unique per environment |
+| `AUTH_JWT_SECRET` | 32+ random characters. Unique per environment; signs user access tokens |
 | `CORS_ALLOWED_ORIGINS` | e.g. `["https://your-vercel-app.vercel.app","https://your-domain.com"]` |
 | `CORS_ALLOW_VERCEL_ORIGINS` | set `true` temporarily to allow any `*.vercel.app` origin (e.g. for preview deployments) |
 | `FRONTEND_URL` | your public site origin (used by OAuth callback redirects) |
@@ -40,12 +40,22 @@ Optional:
 | Variable | Notes |
 |----------|-------|
 | `AUTH_ISSUER`, `AUTH_AUDIENCE` | JWT issuer/audience claims (defaults are fine) |
+| `AUTH_SERVICE_JWT_SECRET` | Optional, separate 32+ character key for explicit service tokens. Must differ from `AUTH_JWT_SECRET`; unset disables service tokens. |
 | `RATE_LIMIT_GLOBAL_PER_MINUTE`, `RATE_LIMIT_EDITORIAL_PER_MINUTE` | rate limits |
 | `SWAGGER_ENABLED` | set `true` to enable OpenAPI UI in production |
 | `AUTH_REGISTER_ROLES` | JSON array to restrict self-registration roles (defaults to editor) |
 | `CONTENT_CACHE_*`, `RATE_LIMIT_*` | cache and rate limit tuning |
 | `OAUTH_GOOGLE_*`, `OAUTH_FACEBOOK_*` | OAuth providers (all three per provider required) |
 | `AI_API_KEY`, `OPENAI_API_KEY` | if `/api/chat` is used |
+
+## User session revocation and service tokens
+
+- User access tokens carry a monotonically increasing `ver` claim. Existing tokens without `ver` are treated as version `0` during rollout.
+- The API re-reads the user row and current roles from PostgreSQL on every authenticated request. Deleted users are rejected; role claims embedded in JWTs are never the authorization source.
+- Role changes, password changes, and successful password resets increment `TokenVersion`, immediately invalidating all previously issued user tokens across every API instance. A role change also takes effect from the database role list on the next request.
+- This introduces one indexed user lookup per authenticated request. Keep the users table available and monitor database latency/connection pool utilization; do not replace this with per-instance memory caching if immediate cross-instance revocation is required.
+- Service tokens are a separate trust class: they require `AUTH_SERVICE_JWT_SECRET` (different from the user JWT secret), `token_use=service`, the configured `service_role`, and a maximum one-hour lifetime. They have no user ID and cannot access user-owned profile/chat resources. User records carrying `service_role` do not gain service privileges. If the secret is unset, service tokens are disabled.
+- There is currently no user-deletion endpoint in the Express API. Any future deletion path must delete the user row; the middleware will then reject that user's token immediately. Do not add a token-only fallback for unknown subjects.
 
 ## Frontend environment variables
 
