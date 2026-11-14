@@ -7,10 +7,6 @@ import { incrementSharedRateLimit } from '../lib/rateLimitStore.js';
 
 const WINDOW_MS = 60_000;
 const MAX_PARTITIONS = 50_000;
-const REDIS_SCRIPT =
-  "local count = redis.call('INCR', KEYS[1]); " +
-  "if count == 1 then redis.call('PEXPIRE', KEYS[1], ARGV[1]); end; " +
-  "return { count, redis.call('PTTL', KEYS[1]) }";
 
 interface Bucket {
   windowStart: number;
