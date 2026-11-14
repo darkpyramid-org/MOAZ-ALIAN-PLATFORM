@@ -34,7 +34,7 @@ Set these in the Vercel dashboard → Project → Settings → Environment Varia
 | `CORS_ALLOW_VERCEL_ORIGINS` | set `true` temporarily to allow any `*.vercel.app` origin (e.g. for preview deployments) |
 | `FRONTEND_URL` | your public site origin (used by OAuth callbacks and password reset links) |
 | `RESEND_API_KEY` | Resend API key used by the password reset mail adapter |
-| `EMAIL_FROM` | Verified sender address configured in Resend, e.g. `MOAZ ALIAN <no-reply@example.com>` |
+| `EMAIL_FROM` | Verified sender address configured in Resend, e.g. `no-reply@example.com` |
 | `AUTH_ADMIN_EMAILS` | JSON array, e.g. `["admin@example.com"]` |
 
 Optional:
