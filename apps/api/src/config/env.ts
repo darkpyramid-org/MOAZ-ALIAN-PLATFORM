@@ -24,6 +24,8 @@ const schema = z.object({
       process.env.AUTH_JWT_SECRET ||
         'fallback-secret-minimum-32-characters-for-preview-development',
     ),
+  // Optional, distinct signing key for explicitly typed short-lived service tokens.
+  AUTH_SERVICE_JWT_SECRET: z.string().min(32).optional(),
   AUTH_ISSUER: z.string().optional(),
   AUTH_AUDIENCE: z.string().default('authenticated'),
   AUTH_ADMIN_ROLE: z.string().default('admin'),
@@ -126,6 +128,9 @@ function parseStringArray(raw: string | undefined, name: string): string[] {
 export function loadEnv(): Env {
   const raw = { ...process.env } as Record<string, string | undefined>;
   const parsed = schema.parse(raw);
+  if (parsed.AUTH_SERVICE_JWT_SECRET !== undefined && parsed.AUTH_SERVICE_JWT_SECRET === parsed.AUTH_JWT_SECRET) {
+    throw new Error('AUTH_SERVICE_JWT_SECRET must be different from AUTH_JWT_SECRET.');
+  }
 
   const adminEmails = [
     ...parseStringArray(parsed.AUTH_ADMIN_EMAILS, 'AUTH_ADMIN_EMAILS'),
