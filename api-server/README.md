@@ -52,9 +52,12 @@ Writes use `EnableRetryOnFailure(3, 5s)` for transient pooler blips.
 
 The API is its own identity provider: `POST /api/auth/register` and `POST /api/auth/login` issue
 HMAC-SHA256 JWTs signed with `Auth:JwtSecret` (7-day expiry), and every write validates that token
-locally — no external identity service, no sessions. The first registered account is seeded with
-the `admin` + `editor` roles; later registrations get `editor` and stay board-invisible until an
-admin promotes or demotes them with `POST /api/users/{id}/roles`.
+locally — no external identity service, no sessions. Administrative roles are granted only to
+emails listed in `Auth:AdminEmails` (allowlist bootstrap); everyone else registers as `editor`
+and stays board-invisible until an admin promotes or demotes them with
+`POST /api/users/{id}/roles`. Password-reset tokens are stored server-side only — they are never
+returned in responses or logs and must be delivered by email (the "forgot password" flow stays
+inert until a mailer exists).
 
 Authorization: `ContentEditor` requires a `roles` claim containing `admin` or `editor`;
 `SiteAdmin` requires `admin`. Roles live in the `library.users` table and are stamped into the
@@ -77,8 +80,10 @@ header is CSRF-inert).
 | `DELETE /api/content/{id}` | editor/admin |
 | `GET /api/categories` | includes `contentCount` |
 | `POST/PUT/DELETE /api/categories/{id}` | admin only for delete-with-content → 409 |
-| `POST /api/auth/register`, `POST /api/auth/login` | issue the API's own JWT; first account ever registered is admin+editor |
+| `POST /api/auth/register`, `POST /api/auth/login` | issue the API's own JWT; admin roles come only from the `Auth:AdminEmails` allowlist |
 | `GET /api/auth/me` | profile + roles of the token's user, re-read from the database |
+| `PUT /api/auth/me`, `POST /api/auth/change-password` | profile and password self-service (Bearer) |
+| `POST /api/auth/forgot-password`, `POST /api/auth/reset-password` | single-use reset token stored server-side, delivered out-of-band (inert until a mailer exists) |
 | `GET /api/users`, `POST /api/users/{id}/roles` | admin only; dashboard user management |
 | `GET/PUT /api/settings/{id}` | site settings blob (PUT editor/admin) |
 | `GET/POST/PUT/DELETE /api/debates` | debates archive (writes editor/admin) |
@@ -98,16 +103,19 @@ cd api-server
 dotnet run --project src/ApiServer.WebApi    # Swagger UI at /swagger, OpenAPI at /openapi/v1.json
 ```
 
-The connection string already points at the hosted PostgreSQL database
-(`db77224.public.databaseasp.net`) via `appsettings*.json`; override it anywhere in the chain
-(user-secrets, environment variables) without code changes:
+The connection string is **not committed** any more (see
+[`docs/migration/P0-REMEDIATION.md`](../docs/migration/P0-REMEDIATION.md)); supply it through
+user-secrets or environment variables:
 
 ```bash
 cd src/ApiServer.WebApi
 dotnet user-secrets set "ConnectionStrings:Postgres" "<Server=...;Database=...;User Id=...;Password=...;SSL Mode=...;Trust Server Certificate=true>"
+dotnet user-secrets set "Auth:JwtSecret" "<openssl rand -hex 32>"
 ```
 
-Npgsql accepts either the key-value form or a `postgres://` URI; the key-value form is preferred
+`docker compose up -d` (in `api-server/`) starts a local PostgreSQL that matches the
+`library` schema; its compose password is a localhost-only placeholder. Npgsql accepts either the
+key-value form or a `postgres://` URI; the key-value form is preferred
 because hosted poolers often need `Trust Server Certificate=true`, which is what makes
 `SSL Mode=Require` work when the certificate is not issued for the proxy hostname.
 `EnableRetryOnFailure(3, 5s)` absorbs transient pooler resets.
@@ -146,10 +154,12 @@ Environment variables only — the same keys as user-secrets with `__`:
 start with a missing/short JWT secret, and refuses cross-origin writes when no origins are
 configured (`Cors__AllowedOrigins__n` enumerates them).
 
-Never commit database passwords or JWT secrets. `appsettings.json` carries placeholders; the
-development credentials currently live in `appsettings.Development.json` — move them into
-user-secrets before sharing the repo. If credentials were ever pasted into a chat, issue, or
-ticket: rotate the database password and the JWT secret first, then update user-secrets/env.
+Never commit database passwords or JWT secrets. `appsettings.json` carries an empty connection
+string; the API refuses to start until credentials arrive through user-secrets or environment
+variables. Committed credentials were found here once — see
+[`docs/migration/P0-REMEDIATION.md`](../docs/migration/P0-REMEDIATION.md) for the rotation steps.
+If credentials are ever pasted into a chat, issue, or ticket: rotate the database password and the
+JWT secret first, then update user-secrets/env.
 
 ### What production mode changes
 
@@ -255,6 +265,6 @@ Startup failures (HTTP 500.30) mean configuration, not code, 99% of the time. Or
 
 ## Tests
 
-`dotnet test` — 45 unit tests over the real Application + Domain layers with hand-written fakes.
+`dotnet test` — 47 unit tests over the real Application + Domain layers with hand-written fakes.
 The database itself is exercised by the migration and the smoke files above; an integration suite
 would need its own Postgres fixture and is the natural next addition.

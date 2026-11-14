@@ -76,9 +76,12 @@ public sealed class AuthService(
             throw new InvalidOperationException("هذا البريد الإلكتروني مسجل بالفعل.");
         }
 
-        var count = await dbContext.Users.CountAsync(cancellationToken);
+        // Administrative access is granted only through the configured allowlist. The old
+        // "first account becomes admin" rule was a takeover vector on any fresh database
+        // (open registration + empty table = instant admin) and is intentionally gone;
+        // bootstrap administrators by seeding Auth:AdminEmails (or a controlled CLI seed).
         var isAdminEmail = _options.AdminEmails.Contains(normalizedEmail, StringComparer.OrdinalIgnoreCase);
-        var roles = (count == 0 || isAdminEmail)
+        var roles = isAdminEmail
             ? new List<string> { _options.AdminRole, _options.EditorRole }
             : new List<string> { _options.EditorRole };
 
@@ -242,19 +245,25 @@ public sealed class AuthService(
         var token = GenerateJwtToken(user);
         return new AuthResponse(token, MapToDto(user));
     }
-    public async Task<string?> ForgotPasswordAsync(string email, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Stores a single-use reset token on the account. The token is never returned to the
+    /// caller and never logged: it must reach the user out-of-band (email). Until a mailer
+    /// exists the "forgot password" flow stays intentionally inert — operators can still
+    /// reset an account through controlled database access.
+    /// </summary>
+    public async Task ForgotPasswordAsync(string email, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(email)) return null;
+        if (string.IsNullOrWhiteSpace(email)) return;
         var normalizedEmail = email.Trim().ToLowerInvariant();
         var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
-        if (user is null) return null;
+        if (user is null) return;
 
         var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
             .Replace("+", "-").Replace("/", "_").TrimEnd('=');
         user.SetPasswordResetToken(token, clock.UtcNow.AddHours(1));
         await dbContext.SaveChangesAsync(cancellationToken);
-        logger.LogInformation("Password reset token issued for {Email}: {Token}", normalizedEmail, token);
-        return token;
+        // Deliberately no token in the log line — a leaked reset token is an account takeover.
+        logger.LogInformation("Password reset requested for {Email}; a single-use token was stored.", normalizedEmail);
     }
 
     public async Task ResetPasswordAsync(string token, string newPassword, CancellationToken cancellationToken = default)
