@@ -7,6 +7,7 @@ import { guardOptional } from '../lib/guard.js';
 import { utcNow } from '../lib/clock.js';
 import { createHash, randomBytes } from 'node:crypto';
 import { sendPasswordResetEmail } from '../lib/passwordResetMailer.js';
+import { logger } from '../lib/logger.js';
 
 /**
  * The auth use cases — a port of Infrastructure.Auth.AuthService. Exception
@@ -258,7 +259,7 @@ export async function forgotPassword(emailRaw: string | null): Promise<void> {
       where: { id: user.id, passwordResetToken: digest },
       data: { passwordResetToken: null, passwordResetExpiresAt: null, updatedAt: utcNow() },
     });
-    console.error('Password reset email delivery failed', error instanceof Error ? error.message : 'unknown error');
+    logger.error({ error: error instanceof Error ? error.message : 'unknown error' }, 'Password reset email delivery failed');
   }
 }
 
