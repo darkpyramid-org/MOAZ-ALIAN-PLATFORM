@@ -82,16 +82,15 @@ export async function login(emailRaw: string | null, passwordRaw: string | null)
 }
 
 /** Admin allowlist, case-insensitive — the only path to the admin role. */
-function isAdminEmail(email: string): boolean {
-  return env.adminEmails.some((candidate) => candidate.toLowerCase() === email.toLowerCase());
+/**
+ * Public registration and OAuth account creation are untrusted entry points.
+ * They must never assign privileged roles based on an email address or an
+ * allowlist: neither proves mailbox ownership. Privileged roles are provisioned
+ * only through a trusted operator-controlled process after identity verification.
+ */
+function rolesForPublicAccount(): string[] {
+  return [];
 }
-
-function rolesForEmail(email: string): string[] {
-  return isAdminEmail(email)
-    ? [env.AUTH_ADMIN_ROLE, env.AUTH_EDITOR_ROLE]
-    : [env.AUTH_EDITOR_ROLE];
-}
-
 export async function register(emailRaw: string | null, passwordRaw: string | null): Promise<{ token: string; user: AuthUserJson }> {
   if (emailRaw === null || emailRaw === undefined || emailRaw.trim() === '' || !emailRaw.includes('@')) {
     // Deliberately mirrors the original's ArgumentException: the register
@@ -115,7 +114,7 @@ export async function register(emailRaw: string | null, passwordRaw: string | nu
       id: cryptoRandomUuid(),
       email,
       passwordHash: hashPassword(passwordRaw),
-      roles: rolesForEmail(email),
+      roles: rolesForPublicAccount(),
       createdAt: now,
       updatedAt: null,
     },
@@ -279,7 +278,7 @@ export async function externalLogin(
         id: cryptoRandomUuid(),
         email,
         passwordHash: hashPassword(cryptoRandomUuid().replace(/-/g, '')), // opaque secret the owner never uses
-        roles: rolesForEmail(email),
+        roles: rolesForPublicAccount(),
         createdAt: now,
         updatedAt: null,
       },
