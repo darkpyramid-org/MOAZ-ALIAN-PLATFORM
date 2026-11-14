@@ -117,7 +117,7 @@ model ContentItemCategory {
 /// quoted PascalCase exactly as that DDL wrote them.
 model User {
   id                    String    @id @map("Id") @db.Uuid
-  email                 String    @unique(map: "IX_users_Email") @db.VarChar(255)
+  email                 String    @unique(map: "IX_users_Email") @map("Email") @db.VarChar(255)
   passwordHash          String    @map("PasswordHash") @db.VarChar(1000)
   /// Real text[] column — native Postgres array, unlike content tags.
   roles                 String[]  @map("Roles") @default([])
