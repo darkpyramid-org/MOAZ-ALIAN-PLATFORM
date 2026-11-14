@@ -32,12 +32,14 @@ This plan converts the source-level review into independently actionable issues.
 
 ## Execution sequence
 
-1. Fix the production JWT secret and release-workflow input handling before production release activity.
-2. Close OAuth identity validation and state correlation gaps before enabling OAuth in production.
-3. Harden rate-limit identity derivation, then move counters to shared storage for multi-instance deployments.
-4. Make the security scanner a real merge gate and repair issue automation.
-5. Add database-backed API integration tests so future auth, authorization, and ownership changes have regression protection.
-6. Complete the password recovery delivery path and token lifecycle.
+1. Remove editor/admin privileges from public self-registration and fail closed on a missing/default production JWT secret.
+2. Eliminate shell injection in release dispatch before running privileged release workflows.
+3. Close OAuth provider-identity verification and state correlation/replay gaps before enabling OAuth in production.
+4. Enforce session revocation after role changes/account deletion, and harden trusted client-IP resolution.
+5. Move password derivation off the event loop and establish shared rate-limit storage for multi-instance deployments.
+6. Make CRITICAL/HIGH security findings fail the required CI gate and repair issue-triage automation.
+7. Add PostgreSQL-backed API integration tests for auth, authorization, content, and chat ownership.
+8. Complete password recovery delivery and its one-time token lifecycle.
 
 ## Definition of done
 
