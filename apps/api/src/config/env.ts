@@ -57,6 +57,8 @@ const schema = z.object({
   RATE_LIMIT_STORE: z.enum(['memory', 'upstash']).default('memory'),
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
+  RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().email().optional(),
 
   SWAGGER_ENABLED: z
     .string()
