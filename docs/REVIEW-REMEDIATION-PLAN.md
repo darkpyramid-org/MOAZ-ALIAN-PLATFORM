@@ -15,7 +15,7 @@ This plan converts the source-level review into independently actionable issues.
 
 ### P1 — Security and delivery integrity
 
-- [ ] [#45 — Prevent shell injection through release workflow_dispatch input](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/45).
+- [ ] [#45 — Prevent shell injection through release workflow_dispatch input](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/45). Implementation is in draft [PR #57](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/pull/57); keep open until checks pass and it is merged.
 - [ ] [#43 — Bind OAuth state to the initiating browser session and consume it once](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/43).
 - [ ] [#44 — Verify provider identity before OAuth email account linking](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/44).
 - [ ] [#41 — Trust forwarded client IP metadata only from configured proxies](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/41).
