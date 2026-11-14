@@ -157,4 +157,58 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('PostgreSQL integration: content
       .set('Authorization', 'Bearer ' + editorToken)
       .expect(204);
   });
+  it('enforces SiteAdmin, editor settings, and debate route policies', async () => {
+    await request(app).get('/api/users').expect(401);
+    await request(app).get('/api/users').set('Authorization', 'Bearer ' + editorToken).expect(403);
+    await request(app).get('/api/users').set('Authorization', 'Bearer ' + adminToken).expect(200);
+
+    await request(app)
+      .post('/api/users/' + readerId + '/roles')
+      .set('Authorization', 'Bearer ' + editorToken)
+      .send({ role: 'editor', has: false })
+      .expect(403);
+
+    const roleUpdate = await request(app)
+      .post('/api/users/' + readerId + '/roles')
+      .set('Authorization', 'Bearer ' + adminToken)
+      .send({ role: 'editor', has: false })
+      .expect(200);
+    expect(roleUpdate.body.roles).toContain('editor');
+
+    await request(app).get('/api/settings/' + settingsId).expect(200);
+    await request(app)
+      .put('/api/settings/' + settingsId)
+      .set('Authorization', 'Bearer ' + readerToken)
+      .send({ title: 'forbidden' })
+      .expect(403);
+    await request(app)
+      .put('/api/settings/' + settingsId)
+      .set('Authorization', 'Bearer ' + editorToken)
+      .send({ title: 'integration settings' })
+      .expect(200);
+    const settings = await request(app).get('/api/settings/' + settingsId).expect(200);
+    expect(settings.body.data.title).toBe('integration settings');
+
+    await request(app).get('/api/debates').expect(401);
+    await request(app).get('/api/debates').set('Authorization', 'Bearer ' + readerToken).expect(403);
+    await request(app).get('/api/debates').set('Authorization', 'Bearer ' + editorToken).expect(200);
+
+    const debate = await request(app)
+      .post('/api/debates')
+      .set('Authorization', 'Bearer ' + editorToken)
+      .send({ guestName: 'Integration Guest', topic: 'Authorization boundary' })
+      .expect(200);
+    const debateId = debate.body.id as string;
+
+    await request(app)
+      .put('/api/debates/' + debateId)
+      .set('Authorization', 'Bearer ' + editorToken)
+      .send({ guestName: 'Updated Guest', topic: 'Updated authorization boundary' })
+      .expect(200);
+    await request(app)
+      .delete('/api/debates/' + debateId)
+      .set('Authorization', 'Bearer ' + editorToken)
+      .expect(204);
+  });
+
 });
