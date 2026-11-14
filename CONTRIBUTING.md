@@ -6,11 +6,10 @@ Thank you for contributing.
 
 ```sh
 git clone https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM.git
-cd MOAZ-ALIAN-PLATFORM/moaz-alian
-bun install
-cp .env.example .env.local
-# edit .env.local with real values (never commit secrets)
-bun run dev
+cd MOAZ-ALIAN-PLATFORM
+cd apps/api && pnpm install   # backend
+cd ../public && pnpm install  # public site
+cd ../dashboard && pnpm install  # dashboard
 ```
 
 Full environment notes: [docs/SETUP.md](./docs/SETUP.md).
@@ -18,30 +17,31 @@ Full environment notes: [docs/SETUP.md](./docs/SETUP.md).
 ## Workflow
 
 1. Branch from `main`: `git checkout -b fix/your-change`
-2. Make changes under `moaz-alian/`
+2. Make changes under the relevant app (`apps/public`, `apps/dashboard`, `apps/api`, or `packages/*`)
 3. Before opening a PR:
 
 ```sh
-cd moaz-alian
-bun run format
-bun run lint
-bun run test
-bun run build
+pnpm -r --if-present test
+pnpm -r --if-present typecheck
+pnpm -r --if-present lint
+pnpm -r --if-present format:check
 ```
 
-## Project layout (app)
+## Project layout
 
 ```
-moaz-alian/src/
-├── components/       # UI and domain components
-├── routes/           # TanStack file routes (pages + api/)
-│   └── api/          # Server routes: chat, media, …
-├── lib/              # Shared helpers and server logic (api.ts is the only API client)
-└── test/             # Vitest suites
+apps/
+├── api/              Express 5 backend (TypeScript + Prisma + PostgreSQL)
+├── public/           TanStack Start public site
+└── dashboard/        TanStack Start admin dashboard
+packages/
+├── api-client/       Typed API client
+├── shared-types/     Shared content types
+└── ui/               Shared component library
 ```
 
-The backend lives in `api-server/` (ASP.NET Core + EF Core + PostgreSQL) — see its README for
-layering, auth and endpoints.
+The API client is the only module that talks to the backend (`apps/*/src/lib/api.ts`);
+shape translation lives in `apps/*/src/lib/api-mapping.ts`.
 
 ## Commit style
 

@@ -28,11 +28,11 @@ it("opens only one calendar dropdown at a time", () => {
   const month = screen.getByRole("button", { name: "Month" });
   const year = screen.getByRole("button", { name: "Year" });
   fireEvent.click(year);
-  expect(year).toHaveAttribute("aria-expanded", "true");
+  expect(year.getAttribute("aria-expanded")).toBe("true");
   fireEvent.click(month);
-  expect(month).toHaveAttribute("aria-expanded", "true");
-  expect(year).toHaveAttribute("aria-expanded", "false");
+  expect(month.getAttribute("aria-expanded")).toBe("true");
+  expect(year.getAttribute("aria-expanded")).toBe("false");
   fireEvent.click(year);
-  expect(year).toHaveAttribute("aria-expanded", "true");
-  expect(month).toHaveAttribute("aria-expanded", "false");
+  expect(year.getAttribute("aria-expanded")).toBe("true");
+  expect(month.getAttribute("aria-expanded")).toBe("false");
 });

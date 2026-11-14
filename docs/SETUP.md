@@ -1,81 +1,74 @@
-# Setup Guide
+# Local Development Setup
 
 ## Prerequisites
 
-- [Bun](https://bun.sh) (frontend package manager; CI uses it)
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) (backend)
-- Git
-- A PostgreSQL database — none is committed; use `docker compose up -d` (api-server) or your own instance
-- Optional: AI gateway key for `/api/chat`
+- Node.js ≥ 22
+- pnpm ≥ 9 (`npm install -g pnpm`)
+- PostgreSQL 17 (or Docker: `docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=moaz_dev postgres:17-alpine`)
 
-## Install
+## 1. Clone
 
 ```sh
 git clone https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM.git
 cd MOAZ-ALIAN-PLATFORM
-
-# backend — serves PostgreSQL data on http://localhost:5199
-cd api-server
-dotnet run --project src/ApiServer.WebApi
-
-# frontend
-cd ../moaz-alian
-bun install
 ```
 
-## Develop
+## 2. Backend (apps/api/)
 
 ```sh
-bun run dev        # frontend
-# api-server: dotnet run --project src/ApiServer.WebApi  (Swagger at /swagger)
+cd apps/api
+pnpm install
+cp .env.example .env
 ```
 
-## Quality checks
+Edit `.env` and set at least:
+
+```env
+DATABASE_URL=postgresql://moaz:moaz_dev@localhost:5432/moaz_alian?schema=library
+AUTH_JWT_SECRET=<at least 32 random characters>
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:5174
+```
+
+Run Prisma generate and migrate, then start the dev server:
 
 ```sh
-bun run lint
-bun run format:check
-bun run test
-bun run build
+pnpm prisma generate
+pnpm db:migrate
+pnpm dev      # http://localhost:5199
 ```
 
-Backend: `dotnet build` and `dotnet test` inside `api-server/` (47 unit tests).
+Health check: `curl http://localhost:5199/health` should return `Healthy`.
 
-## Environment variables
-
-### Frontend (`moaz-alian/.env`)
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `VITE_API_URL` | Yes (browser) | API base, e.g. `http://localhost:5199` |
-| `API_URL` | Yes (SSR) | Same for server-side calls |
-| `AI_API_KEY` | For chat | AI gateway key |
-
-### Backend (`api-server/src/ApiServer.WebApi`)
-
-No credentials are committed. Configure through user-secrets (dev) or environment variables:
+## 3. Public frontend (apps/public/)
 
 ```sh
-cd api-server/src/ApiServer.WebApi
-dotnet user-secrets set "ConnectionStrings:Postgres" "Server=localhost;Port=5433;Database=moaz_alian_library;Username=postgres;Password=Local.Postgres.Password_1"
-dotnet user-secrets set "Auth:JwtSecret" "<openssl rand -hex 32>"
+cd apps/public
+pnpm install
+pnpm dev      # http://localhost:5173
 ```
 
-| Key | Description |
-|-----|-------------|
-| `ConnectionStrings:Postgres` | PostgreSQL connection string (or `ConnectionStrings__Postgres` in prod) |
-| `Auth:JwtSecret` | HMAC secret the API signs its JWTs with (≥ 32 chars) |
-| `Auth:Issuer` | Expected `iss` (default `http://localhost:5199`) |
-| `Auth:AdminEmails` | Admin allowlist — the only way an account becomes admin. JSON array (`"AdminEmails": ["a@x.com"]`) or indexed env keys `Auth__AdminEmails__0`, `Auth__AdminEmails__1`, … |
-| `Cors:AllowedOrigins` | Explicit frontend origins in production |
+The public site fetches from the API at `http://localhost:5199` by default.
+Override with `API_URL` (SSR) / `VITE_API_URL` (browser) if needed.
 
-**Never** commit real database passwords or JWT secrets — see
-[`migration/P0-REMEDIATION.md`](./migration/P0-REMEDIATION.md) for why and how to rotate.
+## 4. Dashboard frontend (apps/dashboard/)
 
-## Admin bootstrap
+```sh
+cd apps/dashboard
+pnpm install
+pnpm dev      # http://localhost:5174
+```
 
-Accounts receive the `admin` role **only** when their email is in `Auth:AdminEmails`
-(comma-separated, case-insensitive). Everyone else registers as `editor` and stays invisible to
-the dashboard until an admin toggles their roles in `المستخدمون والصلاحيات` (dashboard users
-page). The previous "first registered account becomes admin" rule was removed as a takeover
-vector.
+Login with an account whose email is in `AUTH_ADMIN_EMAILS` (set in `apps/api/.env`).
+Example: `AUTH_ADMIN_EMAILS=admin@example.com`
+
+## 5. Seeding
+
+A seed script is not committed. Creating content via the dashboard or via
+`POST /api/content` is the recommended path.
+
+## Troubleshooting
+
+- **Port in use**: change `PORT` in `apps/api/.env` (default 5199).
+- **DB connection refused**: verify `DATABASE_URL` and that PostgreSQL is running.
+- **401/403 after login**: confirm your admin email is in `AUTH_ADMIN_EMAILS`.
+- **CORS errors**: confirm `CORS_ALLOWED_ORIGINS` includes the frontend origin.
