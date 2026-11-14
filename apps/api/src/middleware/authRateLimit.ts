@@ -42,7 +42,8 @@ function identifierOf(req: RawBodyRequest): string | null {
   } catch {
     // The JSON binder owns malformed-body responses; the IP budget still applies.
   }
-  return null;
+  const authenticatedUserId = (req as Request & { auth?: { userId?: string | null } }).auth?.userId;
+  return authenticatedUserId ? 'user:' + authenticatedUserId : null;
 }
 
 /**
