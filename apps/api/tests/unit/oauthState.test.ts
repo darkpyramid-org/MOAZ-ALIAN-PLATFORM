@@ -10,7 +10,7 @@ vi.mock('../../src/lib/db.js', () => ({
   db: { oAuthState: stateStore },
 }));
 
-import { consumeOAuthState, createOAuthState } from '../../src/lib/oauthState.js';
+import { consumeOAuthState, createOAuthState, getOAuthStateNonce } from '../../src/lib/oauthState.js';
 
 function responseRecorder() {
   const headers: string[] = [];
@@ -54,6 +54,7 @@ describe('browser-bound OAuth state', () => {
     expect(headers[0]).toContain('SameSite=Lax');
     expect(headers[0]).toContain(`Path=/api/auth/oauth/${provider}/callback`);
     expect(state).toMatch(/^[A-Za-z0-9_-]+$/);
+    expect(getOAuthStateNonce(state)).toMatch(/^[A-Za-z0-9_-]{22}$/);
     expect(stateStore.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         nonceHash: expect.any(String),
@@ -83,6 +84,7 @@ describe('browser-bound OAuth state', () => {
     // Only the creation-time expired-row cleanup may run.
     expect(stateStore.deleteMany).toHaveBeenCalledTimes(1);
     expect(nonceFrom(state)).toMatch(/^[A-Za-z0-9_-]{22}$/);
+    expect(getOAuthStateNonce(state)).toBe(nonceFrom(state));
   });
 
   it('rejects a modified signature without touching the state store', async () => {
