@@ -177,6 +177,18 @@ model ChatThread {
   @@map("chat_threads")
 }
 
+/// Short-lived, one-time OAuth authorization attempts. Only hashes of the
+/// nonce and browser binding are persisted; raw correlation secrets stay in
+/// the initiating browser cookie and signed state value.
+model OAuthState {
+  nonceHash          String   @id @map("NonceHash") @db.VarChar(64)
+  browserBindingHash String   @map("BrowserBindingHash") @db.VarChar(64)
+  expiresAt          DateTime @map("ExpiresAt") @db.Timestamptz(3)
+
+  @@index([expiresAt], map: "IX_oauth_states_ExpiresAt")
+  @@map("oauth_states")
+}
+
 model ChatMessage {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   threadId  String   @map("ThreadId") @db.Uuid
