@@ -197,7 +197,7 @@ export async function verifyFacebookIdentity(
     if (data?.is_valid !== true || data.app_id !== cfg.clientId ||
         typeof data.user_id !== 'string' || data.user_id.trim() === '' ||
         typeof data.expires_at !== 'number' || data.expires_at <= now ||
-        !Array.isArray(data.scopes) || !data.scopes.includes('email')) {
+        !Array.isArray(data.scopes)) {
       return null;
     }
   
@@ -211,8 +211,8 @@ export async function verifyFacebookIdentity(
     const picture = profile.picture?.data?.url;
     return {
       subject: data.user_id,
-      email: validEmail(profile.email) ? profile.email : null,
-      emailVerified: profile.email_verified === true,
+      email: data.scopes.includes('email') && validEmail(profile.email) ? profile.email : null,
+      emailVerified: data.scopes.includes('email') && profile.email_verified === true,
       displayName: typeof profile.name === 'string' ? profile.name : null,
       avatarUrl: typeof picture === 'string' ? picture : null,
     };
