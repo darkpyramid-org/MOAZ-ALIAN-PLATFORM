@@ -1,21 +1,18 @@
 import type { NextFunction, Request, Response } from 'express';
 import { env } from '../config/env.js';
-import { resolvePermissions, readRoles, type TokenPayload } from '../lib/roles.js';
-import { verifyToken } from '../lib/jwt.js';
+import { db } from '../lib/db.js';
+import { resolvePermissions, readRoles } from '../lib/roles.js';
+import { verifyServiceToken, verifyToken } from '../lib/jwt.js';
 import { sendStatusPage, sendUnauthorizedChallenge } from '../lib/http.js';
 
 /**
- * Token parsing + authorization gates.
+ * Authentication is backed by the current user row on every request. This
+ * makes account deletion and token-version increments effective across every
+ * API instance without an in-memory revocation cache.
  *
- * Parsing never short-circuits by itself: the ASP.NET pipeline runs
- * UseAuthentication for every request and only endpoints with
- * RequireAuthorization consult the result. Keeping parse separate from gate
- * means anonymous endpoints stay anonymous even when a caller sends a stale
- * token (the token is parsed; a failure is simply ignored there).
- *
- * The challenge bytes match the original's authentication middleware +
- * StatusCodePages pairing: "Bearer" (or "Bearer error=\"invalid_token\"")
- * plus the JSON status page.
+ * Legacy user JWTs without a version are interpreted as version 0; persisted
+ * roles always win over token role claims. Service tokens use a separate
+ * signing key and explicit token_use=service contract.
  */
 
 export interface AuthContext {
@@ -32,6 +29,12 @@ declare module 'express-serve-static-core' {
   }
 }
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isUuid(value: string): boolean {
+  return UUID_PATTERN.test(value);
+}
+
 function parseBearer(header: string | undefined): string | null {
   if (header === undefined) return null;
   const parts = header.split(' ');
@@ -41,39 +44,73 @@ function parseBearer(header: string | undefined): string | null {
   return token === '' ? null : token;
 }
 
-export function authenticate(req: Request, _res: Response, next: NextFunction): void {
-  const token = parseBearer(req.headers.authorization);
+function rejectInvalidToken(req: Request, next: NextFunction): void {
+  req.auth = undefined;
+  (req as Request & { authError?: 'invalid_token' }).authError = 'invalid_token';
+  next();
+}
 
+export async function authenticate(req: Request, _res: Response, next: NextFunction): Promise<void> {
+  const token = parseBearer(req.headers.authorization);
   if (token === null) {
     next();
     return;
   }
 
-  const payload = verifyToken(token) as TokenPayload | null;
-  if (payload === null || typeof payload.sub !== 'string' || payload.sub === '') {
-    // Signature/issuer/audience/lifetime failure: the challenge carries the
-    // error detail a browser console can read.
-    req.auth = undefined;
-    (req as Request & { authError?: 'invalid_token' }).authError = 'invalid_token';
+  try {
+    // Service identities are deliberately separate from user accounts. They
+    // are short-lived, signed with AUTH_SERVICE_JWT_SECRET and never receive a
+    // userId that could be used for user-owned resources.
+    const service = verifyServiceToken(token);
+    if (service !== null) {
+      req.auth = {
+        userId: null,
+        email: null,
+        roles: [env.AUTH_SERVICE_ROLE],
+        isAdmin: true,
+        canEditContent: true,
+      };
+      next();
+      return;
+    }
+
+    const payload = verifyToken(token);
+    if (payload === null || typeof payload.sub !== 'string' || !isUuid(payload.sub)) {
+      rejectInvalidToken(req, next);
+      return;
+    }
+
+    const user = await db.user.findUnique({
+      where: { id: payload.sub },
+      select: { id: true, email: true, roles: true, tokenVersion: true },
+    });
+
+    const tokenVersion = payload.ver ?? 0;
+    if (user === null || !Number.isSafeInteger(tokenVersion) || tokenVersion !== user.tokenVersion) {
+      rejectInvalidToken(req, next);
+      return;
+    }
+
+    // Service role is not a user privilege. Only the separate service-token
+    // contract above can receive that permission.
+    const roles = user.roles.filter((role) => role.toLowerCase() !== env.AUTH_SERVICE_ROLE.toLowerCase());
+    const permissions = resolvePermissions(roles, true, {
+      adminRole: env.AUTH_ADMIN_ROLE,
+      editorRole: env.AUTH_EDITOR_ROLE,
+      serviceRole: '__service_token_only__',
+    });
+
+    req.auth = {
+      userId: user.id,
+      email: user.email,
+      roles,
+      isAdmin: permissions.isAdmin,
+      canEditContent: permissions.canEditContent,
+    };
     next();
-    return;
+  } catch (error) {
+    next(error);
   }
-
-  const roles = readRoles(payload);
-  const permissions = resolvePermissions(roles, true, {
-    adminRole: env.AUTH_ADMIN_ROLE,
-    editorRole: env.AUTH_EDITOR_ROLE,
-    serviceRole: env.AUTH_SERVICE_ROLE,
-  });
-
-  req.auth = {
-    userId: payload.sub,
-    email: typeof payload.email === 'string' ? payload.email : null,
-    roles,
-    isAdmin: permissions.isAdmin,
-    canEditContent: permissions.canEditContent,
-  };
-  next();
 }
 
 function challenge(req: Request, res: Response, invalid: boolean): void {
@@ -102,15 +139,13 @@ export function requireEditor(req: Request, res: Response, next: NextFunction): 
     return;
   }
   if (!req.auth.canEditContent) {
-    // Bare 403 → the status-page body, exactly like the authorization
-    // middleware's rejection (no problem-details envelope here).
     sendUnauthorizedStatus(res, req, 403);
     return;
   }
   next();
 }
 
-/** AuthorizationPolicies.SiteAdmin — admins (and service tokens). */
+/** AuthorizationPolicies.SiteAdmin — admins and explicit service tokens. */
 export function requireAdmin(req: Request, res: Response, next: NextFunction): void {
   const error = (req as Request & { authError?: 'invalid_token' }).authError;
   if (req.auth === undefined) {
@@ -124,7 +159,6 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction): v
   next();
 }
 
-/** The bare-status shapes rendered by UseStatusCodePages for 401/403. */
 function sendUnauthorizedStatus(res: Response, req: Request, status: 401 | 403): void {
   sendStatusPage(res, status, req.traceId ?? '0000000000000:00000000');
 }
