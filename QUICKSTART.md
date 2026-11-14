@@ -3,113 +3,100 @@
 ## 5-Minute Setup
 
 ### 1. Clone & Navigate
+
 ```bash
 git clone https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM.git
 cd MOAZ-ALIAN-PLATFORM
 ```
 
-### 2. Frontend Setup
+### 2. Backend Setup (Express API)
 ```bash
-cd moaz-alian
-npm install
-cp .env.example .env.local  # Add your credentials
-npm run dev
+cd apps/api
+pnpm install
+cp .env.example .env
+# edit .env — set DATABASE_URL, AUTH_JWT_SECRET
+pnpm dev
 ```
-👉 Frontend: http://localhost:5173
+API: http://localhost:5199
 
-### 3. Backend Setup (New Terminal)
+### 3. Frontend Setup — Public site
 ```bash
-cd api-server
-npm install
-cp .env.example .env.local  # Add your credentials
-npm run dev
+cd apps/public
+pnpm install
+pnpm dev
 ```
-👉 Backend: http://localhost:3000
+Public site: http://localhost:5173
+
+### 4. Frontend Setup — Dashboard
+```bash
+cd apps/dashboard
+pnpm install
+pnpm dev
+```
+Dashboard: http://localhost:5174
 
 ## Key Commands
 
-### Frontend (moaz-alian/)
+### Backend (apps/api/)
 ```bash
-npm run dev          # Start dev server
-npm run build        # Production build
-npm run lint         # Check code quality
-npm run format       # Auto-format code
-npm run test         # Run tests
+pnpm dev          # Start dev server (tsx watch)
+pnpm build        # tsc compile
+pnpm typecheck    # tsc --noEmit
+pnpm lint         # eslint
+pnpm test         # Vitest unit tests
+pnpm db:migrate   # prisma migrate deploy
 ```
 
-### Backend (api-server/)
+### Frontends (apps/public/, apps/dashboard/)
 ```bash
-npm run dev          # Start dev server
-npm run build        # Production build
-npm run lint         # Check code quality
-npm run test         # Run tests
+pnpm dev          # Start dev server
+pnpm build        # Production build
+pnpm lint         # Check code quality
+pnpm format       # Auto-format code
+pnpm test         # Run tests
 ```
 
 ## Structure
 
 ```
 MOAZ-ALIAN-PLATFORM/
-├── moaz-alian/       👈 Frontend (React + TanStack)
-├── api-server/       👈 Backend (Node.js API)
-├── docs/             👈 Documentation
-├── .github/          👈 GitHub workflows
-├── README.md         👈 Overview
-└── CHANGELOG.md      👈 Version history
+├── api/              Backend (Express 5 API)
+├── apps/
+│   ├── public/       Frontend — public site
+│   └── dashboard/    Frontend — admin dashboard
+├── packages/         Shared workspace packages
+├── docs/             Documentation
+├── .github/          GitHub workflows
+└── README.md         Overview
 ```
 
-## Next Steps
+## Deployment
 
-1. **Read** [README.md](./README.md) for full overview
-2. **Setup** [docs/SETUP.md](./docs/SETUP.md) for detailed configuration
-3. **Understand** [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) for system design
-4. **Contribute** [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines
+The repository deploys to **Vercel** via `vercel.json` (multi-service: `api`, `public`, `dashboard`, `ui`).
 
 ## Environment Variables
 
-### Frontend (moaz-alian/.env)
+### Frontends (apps/public/.env, apps/dashboard/.env)
 ```env
 VITE_API_URL=http://localhost:5199
 API_URL=http://localhost:5199
-# AI_API_KEY=your_ai_api_key
+AI_API_KEY=your_ai_api_key
 ```
 
-### Backend (api-server/src/ApiServer.WebApi/appsettings.Development.json or user-secrets)
-```json
-{
-  "ConnectionStrings": {
-    "Postgres": "Server=...;Database=...;User Id=...;Password=...;SSL Mode=Require;Trust Server Certificate=true"
-  },
-  "Auth": { "Issuer": "http://localhost:5199", "JwtSecret": "your_secret_key" }
-}
+### Backend (apps/api/.env)
+```env
+DATABASE_URL=postgresql://user:password@host:5432/moaz_alian?schema=library
+AUTH_JWT_SECRET=your_32_char_secret
+CORS_ALLOWED_ORIGINS=http://localhost:5173
 ```
 
 ## Common Issues
 
-**Port 5173/3000 in use?**
+**Port in use?**
 ```bash
-npm run dev -- --port 3001
+# change PORT in apps/api/.env or pass PORT=5200 pnpm dev
 ```
-
-**Missing dependencies?**
-```bash
-rm -rf node_modules package-lock.json
-npm install
-```
-
-**Database connection error?**
-- Verify DATABASE_URL is correct
-- Ensure PostgreSQL is running
 
 ## API Documentation
 
 Browse [docs/API.md](./docs/API.md) for complete API reference.
-
-## Need Help?
-
-- 📖 [Documentation](./docs/)
-- 🐛 [Report Issues](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues)
-- 💬 [Discussions](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/discussions)
-
----
-
-Ready to develop? Start with [docs/SETUP.md](./docs/SETUP.md) 🚀

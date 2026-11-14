@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — 2026-11-14
+
+### Added
+- Vercel multi-service deployment via `vercel.json` (`api`, `public`, `dashboard`, `ui`)
+
+### Changed
+- Backend migrated from ASP.NET Core .NET 9 to Node.js + Express 5 + TypeScript + Prisma
+- Frontend split into `apps/public` (public site) and `apps/dashboard` (admin dashboard)
+- Package manager migrated to pnpm across all workspaces
+- Legacy .NET backend (`api-server/`) removed; stale `moaz-alian/` removed
+
 ## [1.0.0] - 2024-10-31
 
 ### Added

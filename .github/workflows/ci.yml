@@ -136,7 +136,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
-          path: moaz-alian/dist
+          path: apps/dashboard/.output/public
           retention-days: 7
 
   test-backend:
@@ -217,3 +217,4 @@ jobs:
         if: always() && hashFiles('trivy-results.sarif') != ''
         with:
           sarif_file: trivy-results.sarif
+

@@ -1,5 +1,41 @@
 {
-  "buildCommand": "bun install --frozen-lockfile && bun run build",
-  "outputDirectory": ".vercel/output",
-  "framework": null
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "api": {
+      "root": "apps/api",
+      "framework": "express"
+    },
+    "dashboard": {
+      "root": "apps/dashboard",
+      "framework": "tanstack-start-lovable",
+      "bindings": [
+        { "type": "service", "service": "api", "format": "url", "env": "API_URL" }
+      ]
+    },
+    "public": {
+      "root": "apps/public",
+      "framework": "tanstack-start-lovable",
+      "bindings": [
+        { "type": "service", "service": "api", "format": "url", "env": "API_URL" }
+      ]
+    },
+    "ui": {
+      "root": "packages/ui",
+      "framework": "tanstack-start-lovable"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "api"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "dashboard"
+      }
+    }
+  ]
 }

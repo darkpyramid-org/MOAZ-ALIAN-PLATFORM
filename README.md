@@ -1,37 +1,36 @@
 # MOAZ ALIAN Platform
 
-مساحة معرفية عربية للبحث والقراءة: فيديوهات، كتب، مقالات وأبحاث، مع لوحة تحكم للفريق ومساعد ذكي.
-
 An Arabic knowledge platform for videos, books, articles, and research, with a team dashboard and AI assistant.
 
 ## Repository structure
 
 ```
 .
-├── api/                  # Backend: Express 5 + TypeScript + Prisma + PostgreSQL
 ├── apps/
-│   ├── public/           # Frontend: TanStack Start public site (SSR/SEO)
-│   └── dashboard/        # Frontend: TanStack Start admin dashboard
+│   ├── api/               # Backend: Express 5 + TypeScript + Prisma + PostgreSQL
+│   ├── public/            # Frontend: TanStack Start public site (SSR/SEO)
+│   └── dashboard/         # Frontend: TanStack Start admin dashboard
 ├── packages/
-│   ├── api-client/       # Shared: typed API client
-│   └── shared-types/     # Shared: content types
-├── docs/                 # Documentation
-├── .github/              # GitHub Actions and templates
+│   ├── api-client/        # Shared: typed API client
+│   ├── shared-types/      # Shared: content types
+│   └── ui/                # Shared: component library
+├── docs/                  # Documentation
+├── .github/               # GitHub Actions and templates
+├── vercel.json            # Vercel multi-service deployment config
 ├── pnpm-workspace.yaml
-├── package.json
 └── README.md
 ```
 
-Everything passes through the API in `api/` — content, categories, auth (its own JWTs),
-users/roles, site settings and debates — backed by a PostgreSQL `library` schema. The frontend
-talks to it over HTTP via `apps/*/src/lib/api.ts`; server routes include the AI chat proxy
-(`/api/chat`) and media serving.
+All data flows through the Express API in `apps/api/` — content, categories, auth, users/roles,
+site settings and debates — backed by a PostgreSQL `library` schema. The frontends talk to it
+over HTTP via `apps/*/src/lib/api.ts`; server routes include the AI chat proxy (`/api/chat`)
+and media serving.
 
 ## Quick start
 
 ```sh
 # 1 — backend (http://localhost:5199)
-cd api
+cd apps/api
 pnpm install
 pnpm dev
 
@@ -46,10 +45,18 @@ pnpm install
 pnpm dev
 ```
 
-App runs at the port Vite prints; set `API_URL` (SSR) if the API is not on
-`http://localhost:5199`. Browser calls don't need a variable in production:
-they stay same-origin under `/proxy-api`, which rewrites to the backend — an HTTPS
-page must never fetch an HTTP API directly (mixed content).
+Set `API_URL` (SSR) in the frontends if the API is not on `http://localhost:5199`.
+
+## Deployment
+
+Production deployment uses **Vercel** with multi-service support. See `vercel.json`:
+
+- `api` — Express backend (internal service)
+- `public` — public site
+- `dashboard` — admin dashboard
+- `ui` — component library (not deployed standalone)
+
+Environment variables are set per-service in the Vercel dashboard.
 
 ## Tech stack
 
@@ -60,7 +67,7 @@ page must never fetch an HTTP API directly (mixed content).
 
 ## Scripts
 
-Backend (in `api/`):
+Backend (in `apps/api/`):
 
 | Command | Purpose |
 |---------|---------|
@@ -83,23 +90,17 @@ Frontend (in `apps/public/` or `apps/dashboard/`):
 
 ## Documentation
 
-- [Backend](./api-server/README.md) — architecture, auth, database, endpoints
+- [Backend](./apps/api/README.md)
 - [Setup](./docs/SETUP.md)
 - [Architecture](./docs/ARCHITECTURE.md)
-- [API](./docs/API.md) — real routes only
+- [API](./docs/API.md)
 - [Contributing](./CONTRIBUTING.md)
-
-## Environment
-
-See `moaz-alian/.env.example` for the frontend variables (`VITE_API_URL`, `API_URL`, optional AI
-keys) and `api-server/src/ApiServer.WebApi/appsettings.json` for the database and JWT secret.
-**Never** commit real passwords or secrets — use user-secrets / environment variables in production.
 
 ## CI
 
-GitHub Actions (`.github/workflows/ci.yml`) uses **Bun** only: install, lint, format check, test,
-and build for the frontend. The backend builds and tests with `dotnet build` / `dotnet test`
-inside `api-server/`.
+GitHub Actions (`.github/workflows/ci.yml`) installs with pnpm, lints, typechecks, tests,
+builds and runs backend unit tests against an ephemeral PostgreSQL service. Frontend apps
+are built as separate workspace packages.
 
 ## License
 
