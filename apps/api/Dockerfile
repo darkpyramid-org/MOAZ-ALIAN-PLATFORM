@@ -1,9 +1,9 @@
 # Production image for the MOAZ ALIAN library API (Express 5 port).
-# Build (from apps/api/): docker build -t moaz-alian-api-node .
-# Run:                     docker run -p 5199:5199 \
-#                            -e DATABASE_URL="postgresql://…?schema=library" \
-#                            -e AUTH_JWT_SECRET="<32+ chars>" \
-#                            moaz-alian-api-node
+# Build (from root): docker build -f apps/api/Dockerfile -t moaz-alian-api-node .
+# Run:                docker run -p 5199:5199 \
+#                       -e DATABASE_URL="postgresql://…?schema=library" \
+#                       -e AUTH_JWT_SECRET="<32+ chars>" \
+#                       moaz-alian-api-node
 FROM node:24-alpine AS build
 WORKDIR /app
 
@@ -11,12 +11,12 @@ WORKDIR /app
 RUN corepack enable
 
 # Copy workspace manifests first so dependency layers cache independently of source.
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* .npmrc* .pnpmfile* ./
 COPY apps/api/package.json apps/api/
 RUN pnpm --filter @moaz/api install --no-frozen-lockfile
 
 COPY apps/api apps/api
-RUN cd apps/api && pnpm prisma generate && pnpm build
+RUN cd apps/api && pnpm build
 
 # ---- runtime ----
 FROM node:24-alpine
