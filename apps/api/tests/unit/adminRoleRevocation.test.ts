@@ -1,4 +1,3 @@
-import express from 'express';
 import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -11,6 +10,7 @@ vi.mock('../../src/lib/db.js', () => ({
   db: { user: { findUnique: mocks.findUnique, update: mocks.update } },
 }));
 
+import { collectRawBody } from '../../src/middleware/body.js';
 import { adminRoutes } from '../../src/modules/admin.js';
 
 const userId = '11111111-1111-4111-8111-111111111111';
@@ -23,7 +23,7 @@ const existingUser = {
 
 function app() {
   const instance = express();
-  instance.use(express.json());
+  instance.use(collectRawBody);
   instance.use((req, _res, next) => {
     req.auth = {
       userId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
