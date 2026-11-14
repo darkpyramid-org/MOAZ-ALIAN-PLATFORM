@@ -45,7 +45,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('PostgreSQL integration: content
 
   afterAll(async () => {
     await db.contentItem.deleteMany({ where: { slug } });
-    await db.category.deleteMany({ where: { id: categoryId } });
+    await db.category.deleteMany({ where: { id: { in: [categoryId, categoryId + '-crud'] } } });
     await db.user.deleteMany({ where: { id: { in: [editorId, readerId] } } });
   });
 
