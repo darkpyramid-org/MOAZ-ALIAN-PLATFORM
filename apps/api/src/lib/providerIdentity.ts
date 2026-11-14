@@ -73,9 +73,7 @@ async function getGoogleSigningKeys(forceRefresh = false): Promise<GoogleJwk[]> 
     return googleJwksCache.keys;
   }
 
-  const response = await fetch('https://www.googleapis.com/oauth2/v3/certs', {
-    headers: googleJwksCache === null ? {} : { 'if-none-match': '' },
-  });
+  const response = await fetch('https://www.googleapis.com/oauth2/v3/certs');
   if (!response.ok) throw new Error('Google signing keys could not be retrieved.');
 
   const body = (await response.json()) as GoogleJwksResponse;
@@ -152,7 +150,9 @@ export async function verifyGoogleIdentity(
   const now = Math.floor(Date.now() / 1000);
   const audienceMatches = claims.aud === clientId ||
     (Array.isArray(claims.aud) && claims.aud.includes(clientId));
-  const authorizedPartyMatches = claims.azp === undefined || claims.azp === clientId;
+  const authorizedPartyMatches = Array.isArray(claims.aud) && claims.aud.length > 1
+    ? claims.azp === clientId
+    : claims.azp === undefined || claims.azp === clientId;
   const issuerMatches = claims.iss === 'https://accounts.google.com' || claims.iss === 'accounts.google.com';
 
   if (!issuerMatches || !audienceMatches || !authorizedPartyMatches ||
@@ -183,36 +183,40 @@ export async function verifyFacebookIdentity(
   accessToken: string,
   cfg: OAuthProvider,
 ): Promise<VerifiedProviderIdentity | null> {
-  const appAccessToken = `${cfg.clientId}|${cfg.clientSecret}`;
-  const debugUrl = new URL('https://graph.facebook.com/debug_token');
-  debugUrl.searchParams.set('input_token', accessToken);
-  debugUrl.searchParams.set('access_token', appAccessToken);
-
-  const debugResponse = await fetch(debugUrl);
-  if (!debugResponse.ok) return null;
-  const debug = (await debugResponse.json()) as FacebookDebugResponse;
-  const data = debug.data;
-  const now = Math.floor(Date.now() / 1000);
-  if (data?.is_valid !== true || data.app_id !== cfg.clientId ||
-      typeof data.user_id !== 'string' || data.user_id.trim() === '' ||
-      typeof data.expires_at !== 'number' || data.expires_at <= now ||
-      !Array.isArray(data.scopes) || !data.scopes.includes('email')) {
+  try {  
+    const appAccessToken = `${cfg.clientId}|${cfg.clientSecret}`;
+    const debugUrl = new URL('https://graph.facebook.com/debug_token');
+    debugUrl.searchParams.set('input_token', accessToken);
+    debugUrl.searchParams.set('access_token', appAccessToken);
+  
+    const debugResponse = await fetch(debugUrl);
+    if (!debugResponse.ok) return null;
+    const debug = (await debugResponse.json()) as FacebookDebugResponse;
+    const data = debug.data;
+    const now = Math.floor(Date.now() / 1000);
+    if (data?.is_valid !== true || data.app_id !== cfg.clientId ||
+        typeof data.user_id !== 'string' || data.user_id.trim() === '' ||
+        typeof data.expires_at !== 'number' || data.expires_at <= now ||
+        !Array.isArray(data.scopes) || !data.scopes.includes('email')) {
+      return null;
+    }
+  
+    const profileResponse = await fetch(cfg.userInfoEndpoint, {
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    if (!profileResponse.ok) return null;
+    const profile = (await profileResponse.json()) as FacebookProfile;
+    if (profile.id !== data.user_id) return null;
+  
+    const picture = profile.picture?.data?.url;
+    return {
+      subject: data.user_id,
+      email: validEmail(profile.email) ? profile.email : null,
+      emailVerified: profile.email_verified === true,
+      displayName: typeof profile.name === 'string' ? profile.name : null,
+      avatarUrl: typeof picture === 'string' ? picture : null,
+    };
+  } catch {
     return null;
   }
-
-  const profileResponse = await fetch(cfg.userInfoEndpoint, {
-    headers: { authorization: `Bearer ${accessToken}` },
-  });
-  if (!profileResponse.ok) return null;
-  const profile = (await profileResponse.json()) as FacebookProfile;
-  if (profile.id !== data.user_id) return null;
-
-  const picture = profile.picture?.data?.url;
-  return {
-    subject: data.user_id,
-    email: validEmail(profile.email) ? profile.email : null,
-    emailVerified: profile.email_verified === true,
-    displayName: typeof profile.name === 'string' ? profile.name : null,
-    avatarUrl: typeof picture === 'string' ? picture : null,
-  };
 }
