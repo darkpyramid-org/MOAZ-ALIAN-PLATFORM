@@ -1,58 +1,61 @@
 # Contributing to MOAZ ALIAN Platform
 
-Thank you for contributing.
+Thank you for contributing to the MOAZ ALIAN knowledge platform.
 
-## Setup
+---
 
-```sh
+## Workspace Setup
+
+Clone the repository and install dependencies at the monorepo root:
+
+```bash
 git clone https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM.git
 cd MOAZ-ALIAN-PLATFORM
-cd apps/api && pnpm install   # backend
-cd ../public && pnpm install  # public site
-cd ../dashboard && pnpm install  # dashboard
+pnpm install
 ```
 
-Full environment notes: [docs/SETUP.md](./docs/SETUP.md).
+Detailed setup instructions are available in [docs/SETUP.md](./docs/SETUP.md).
 
-## Workflow
+---
 
-1. Branch from `main`: `git checkout -b fix/your-change`
-2. Make changes under the relevant app (`apps/public`, `apps/dashboard`, `apps/api`, or `packages/*`)
-3. Before opening a PR:
+## Development Workflow
 
-```sh
-pnpm -r --if-present test
-pnpm -r --if-present typecheck
-pnpm -r --if-present lint
-pnpm -r --if-present format:check
-```
+1. **Create a topic branch:**
+   ```bash
+   git checkout -b feat/your-feature-name
+   ```
+2. **Make your changes:**
+   Work in the relevant workspace under `apps/` (`api`, `public`, `dashboard`) or `packages/` (`ui`, `api-client`, `shared-types`).
+3. **Verify checks locally before pushing:**
+   ```bash
+   pnpm -r build
+   pnpm -r test
+   pnpm -r typecheck
+   pnpm -r lint
+   ```
 
-## Project layout
+---
 
-```
-apps/
-├── api/              Express 5 backend (TypeScript + Prisma + PostgreSQL)
-├── public/           TanStack Start public site
-└── dashboard/        TanStack Start admin dashboard
-packages/
-├── api-client/       Typed API client
-├── shared-types/     Shared content types
-└── ui/               Shared component library
-```
+## Commit Guidelines
 
-The API client is the only module that talks to the backend (`apps/*/src/lib/api.ts`);
-shape translation lives in `apps/*/src/lib/api-mapping.ts`.
+Follow conventional commit formats:
+- `feat:` for new capabilities and endpoints
+- `fix:` for bug fixes and patches
+- `docs:` for documentation updates
+- `refactor:` for internal restructuring without behavior changes
+- `test:` for test additions or updates
+- `chore:` for tooling and dependency maintenance
 
-## Commit style
+---
 
-- `feat:`, `fix:`, `docs:`, `style:`, `refactor:`, `test:`, `chore:`
+## Pull Requests
 
-## Pull requests
+- Keep PRs focused and single-purpose.
+- Ensure all CI workflows and Vercel preview builds pass.
+- Reference related issues where applicable.
 
-- Link issues (`Closes #n`)
-- Keep CI green (lint, format, test, build)
-- Prefer small, focused PRs
+---
 
-## Code of conduct
+## Code of Conduct
 
-Be respectful and constructive in reviews and discussions.
+Maintain a constructive, respectful, and professional environment in all interactions and reviews.
