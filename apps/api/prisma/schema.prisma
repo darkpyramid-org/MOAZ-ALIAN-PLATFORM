@@ -129,6 +129,7 @@ model User {
   updatedAt             DateTime? @map("UpdatedAt") @db.Timestamptz(3)
 
   chatThreads ChatThread[]
+  oauthIdentities OAuthIdentity[]
 
   @@map("users")
 }
@@ -175,6 +176,23 @@ model ChatThread {
 
   @@index([userId], map: "IX_chat_threads_UserId")
   @@map("chat_threads")
+}
+
+/// Stable provider subject bindings. Email is metadata, never the identity key.
+model OAuthIdentity {
+  id             String   @id @db.Uuid
+  provider       String   @db.VarChar(32)
+  providerSubject String  @map("ProviderSubject") @db.VarChar(255)
+  userId         String   @map("UserId") @db.Uuid
+  emailAtLink    String?  @map("EmailAtLink") @db.VarChar(255)
+  emailVerified  Boolean  @map("EmailVerified")
+  createdAt      DateTime @map("CreatedAt") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([provider, providerSubject], map: "UX_oauth_identities_Provider_Subject")
+  @@index([userId], map: "IX_oauth_identities_UserId")
+  @@map("oauth_identities")
 }
 
 /// Short-lived, one-time OAuth authorization attempts. Only hashes of the
