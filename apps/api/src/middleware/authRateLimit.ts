@@ -33,9 +33,11 @@ function identifierOf(req: RawBodyRequest): string | null {
   if (!req.rawBody || req.rawBody.length === 0) return null;
   try {
     const body = JSON.parse(req.rawBody.toString('utf8')) as Record<string, unknown>;
-    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+    const emailEntry = Object.entries(body).find(([key]) => key.toLowerCase() === 'email')?.[1];
+    const email = typeof emailEntry === 'string' ? emailEntry.trim().toLowerCase() : '';
     if (email !== '') return 'email:' + email;
-    const token = typeof body.token === 'string' ? body.token : '';
+    const tokenEntry = Object.entries(body).find(([key]) => key.toLowerCase() === 'token')?.[1];
+    const token = typeof tokenEntry === 'string' ? tokenEntry : '';
     if (token !== '') return 'reset:' + token;
   } catch {
     // The JSON binder owns malformed-body responses; the IP budget still applies.
