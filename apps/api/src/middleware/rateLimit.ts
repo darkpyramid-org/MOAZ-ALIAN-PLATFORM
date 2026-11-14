@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+import { isIP } from 'node:net';
 import { env } from '../config/env.js';
 import { sendStatusPage } from '../lib/http.js';
 
@@ -57,17 +58,29 @@ function bucketFor(map: Map<string, Bucket>, key: string): Bucket {
 }
 
 /**
- * Client IP for anonymous partitioning. The original trusted X-Forwarded-For
- * only from loopback proxies; per deployment the reverse proxy is expected to
- * set (or strip) the header — documented in the migration notes.
+ * Client IP for anonymous partitioning. Express resolves req.ip using the
+ * explicit trust-proxy allowlist configured by createApp(). Never read the raw
+ * X-Forwarded-For header here: direct clients can supply it themselves.
  */
 export function clientIp(req: Request): string {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string' && forwarded.trim() !== '') {
-    const first = (forwarded.split(',')[0] ?? '').trim();
-    if (first !== '') return first;
+  const normalize = (value: string | undefined): string | null => {
+    if (!value) return null;
+    const candidate = value.toLowerCase().startsWith('::ffff:')
+      ? value.slice('::ffff:'.length)
+      : value;
+    return isIP(candidate) !== 0 ? candidate.toLowerCase() : null;
+  };
+
+  // req.ip may throw when a trusted proxy supplies a malformed address chain.
+  // Fall back to the transport peer, which is never derived from client input.
+  try {
+    const resolved = normalize(req.ip);
+    if (resolved !== null) return resolved;
+  } catch {
+    // Ignore malformed forwarded metadata and use the socket peer below.
   }
-  return req.socket.remoteAddress ?? 'unknown';
+
+  return normalize(req.socket.remoteAddress) ?? 'unknown';
 }
 
 function partitionKey(req: Request & { auth?: AuthLike }): string {
