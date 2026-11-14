@@ -44,8 +44,15 @@ Optional:
 | `SWAGGER_ENABLED` | set `true` to enable OpenAPI UI in production |
 | `AUTH_REGISTER_ROLES` | JSON array to restrict self-registration roles (defaults to editor) |
 | `CONTENT_CACHE_*`, `RATE_LIMIT_*` | cache and rate limit tuning |
-| `OAUTH_GOOGLE_*`, `OAUTH_FACEBOOK_*` | OAuth providers (all three per provider required) |
+| `OAUTH_GOOGLE_*`, `OAUTH_FACEBOOK_*` | OAuth providers (client ID, secret and redirect URI required) |
 | `AI_API_KEY`, `OPENAI_API_KEY` | if `/api/chat` is used |
+
+## OAuth identity and account-linking policy
+
+- **Google:** request the `openid email profile` scopes. The API validates the ID-token RS256 signature against Google's JWKS and checks issuer, audience/authorized party, expiry, issue time, OIDC nonce, and `email_verified=true`. The ID-token `sub` is the stable provider identity; user-info email is not trusted for account linking.
+- **Facebook:** the API validates the access token through Graph `debug_token`, checks the configured app ID, validity, expiry, email permission when used, and requires the `/me` subject to match the token's `user_id`. Meta's Graph API does not generally provide a dependable `email_verified` claim. Therefore an unverified Facebook email is never used to link or create an account. A previously linked Facebook subject can still sign in without an email claim; first-time Facebook linking requires an explicit `email_verified=true` provider claim. Do not weaken this rule by treating the Graph `email` field or `verified` profile flag as proof of email ownership.
+- Provider identities are stored by the unique `(provider, providerSubject)` pair. Email is linking metadata only and is accepted for first-time linking only after explicit provider verification.
+- Apply Prisma migrations before deploying the API: the OAuth identity table is additive and does not alter existing user rows.
 
 ## Frontend environment variables
 
