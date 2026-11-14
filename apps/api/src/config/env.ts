@@ -153,8 +153,7 @@ export function loadEnv(): Env {
     if (
       configuredSecret === DEVELOPMENT_JWT_SECRET ||
       configuredSecret.length < 32 ||
-      new Set(configuredSecret).size < 8 ||
-      /^(.)\\1+$/.test(configuredSecret)
+      new Set(configuredSecret).size < 8
     ) {
       throw new Error(
         'AUTH_JWT_SECRET is weak or uses a development placeholder. Configure a unique random secret of at least 32 characters before starting the API in production.',
