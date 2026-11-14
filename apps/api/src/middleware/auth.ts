@@ -1,7 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import { env } from '../config/env.js';
 import { db } from '../lib/db.js';
-import { readRoles } from '../lib/roles.js';
 import { verifyServiceToken, verifyToken } from '../lib/jwt.js';
 import { sendStatusPage, sendUnauthorizedChallenge } from '../lib/http.js';
 
