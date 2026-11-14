@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "pnpm --filter @moaz/api dev",
     "dev:api": "pnpm --filter @moaz/api dev",
-    "dev:web": "bun --cwd moaz-alian run dev",
+    "dev:dashboard": "pnpm --filter @moaz/dashboard dev",
+    "dev:public": "pnpm --filter @moaz/public dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",

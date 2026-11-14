@@ -1,23 +1,20 @@
 # Deployment — Vercel (multi-service)
 
-The repo deploys as one Vercel project with four services defined in `vercel.json`:
+The repo deploys as one Vercel project with three services defined in `vercel.json`:
 
 | Service | Root | Public URL | Framework |
 |---------|------|-----------|-----------|
 | `public` | `apps/public` | `/` | TanStack Start (Lovable) |
 | `dashboard` | `apps/dashboard` | `/dashboard/*` | TanStack Start (Lovable) |
 | `api` | `apps/api` | `/api/*` (internal service; no direct public route to API-only hostnames needed) | Express |
-| `ui` | `packages/ui` | none (library, not publicly routed) | TanStack Start (Lovable) |
+
+Shared libraries (`packages/ui`, `packages/api-client`, `packages/shared-types`) are consumed directly by the frontends and API workspaces during their builds.
 
 ## Routing
 
 - `/api/(.*)` → `api` service
 - `/dashboard`, `/dashboard/(.*)` → `dashboard` service
 - `/(.*)` → `public` service
-
-`ui` is declared but intentionally has **no** rewrite to it — it's a shared component
-library consumed by both frontends. It must remain a service so Vercel can resolve
-workspace dependencies when building the frontends.
 
 ## Service bindings
 
@@ -37,7 +34,6 @@ Set these in the Vercel dashboard → Project → Settings → Environment Varia
 | `CORS_ALLOW_VERCEL_ORIGINS` | set `true` temporarily to allow any `*.vercel.app` origin (e.g. for preview deployments) |
 | `FRONTEND_URL` | your public site origin (used by OAuth callback redirects) |
 | `AUTH_ADMIN_EMAILS` | JSON array, e.g. `["admin@example.com"]` |
-| `FRONTEND_URL` | your public site origin |
 
 Optional:
 
@@ -66,12 +62,12 @@ Set in the Vercel dashboard for the frontend services:
 
 ## Prisma
 
-- `prisma generate` runs automatically via `onlyBuiltDependencies` (configured in `pnpm-workspace.yaml`) so the client matches the engines downloaded on install.
+- `prisma generate` runs automatically on install via `allowBuilds` (and `onlyBuiltDependencies` in `pnpm-workspace.yaml`), and is also wired into the `build` script of `@moaz/api`.
 - Database **migrations must be applied manually**: `pnpm --filter @moaz/api db:migrate` (i.e. `prisma migrate deploy`). This is not run automatically by Vercel builds.
 - The `library` schema is owned by the EF migration history; do not use `prisma migrate dev` against it.
 
 ## Troubleshooting Vercel builds
 
-- **`ERR_PNPM_IGNORED_BUILDS`** — `onlyBuiltDependencies` in `pnpm-workspace.yaml` controls which postinstall scripts are allowed (Prisma engines, esbuild). If you add a new dependency with a build script you must allow it there.
+- **`ERR_PNPM_IGNORED_BUILDS`** — `allowBuilds` in `pnpm-workspace.yaml` (and `strictDepBuilds: false`) controls which postinstall scripts are allowed (Prisma engines, esbuild).
 - **`EXIT_CODE: 1` in install** — check that `pnpm-lock.yaml` is committed and consistent with `package.json` (`pnpm install --frozen-lockfile` must pass).
 - **API responds 404 on `/api/auth/*` or `/api/content/*`** — the `/api/(.*)` rewrite hits the internal `api` service; ensure `DATABASE_URL` is reachable from Vercel.
