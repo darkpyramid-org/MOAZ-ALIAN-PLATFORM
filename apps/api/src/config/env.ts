@@ -37,6 +37,8 @@ const schema = z.object({
   FRONTEND_URL: z.string().default('http://localhost:8080'),
 
   CORS_ALLOWED_ORIGINS: z.string().optional(),
+  // Explicit proxy IPs/CIDRs allowed to supply X-Forwarded-For. Empty means no proxy is trusted.
+  TRUSTED_PROXY_CIDRS: z.string().optional(),
   CORS_ALLOW_VERCEL_ORIGINS: z
     .string()
     .default('false')
@@ -77,6 +79,7 @@ const schema = z.object({
 export type Env = z.infer<typeof schema> & {
   adminEmails: string[];
   allowedOrigins: string[];
+  trustedProxyCidrs: string[];
   docsEnabled: boolean;
   isProduction: boolean;
   oauth: Record<'google' | 'facebook', OAuthProvider | undefined>;
@@ -137,6 +140,11 @@ export function loadEnv(): Env {
     ...collectIndexed('CORS_ALLOWED_ORIGINS_', raw),
   ];
 
+  const trustedProxyCidrs = [
+    ...parseStringArray(parsed.TRUSTED_PROXY_CIDRS, 'TRUSTED_PROXY_CIDRS'),
+    ...collectIndexed('TRUSTED_PROXY_CIDRS_', raw),
+  ];
+
   const isProduction = parsed.NODE_ENV === 'production';
   // Mirror of Program.cs: docs on in Development, off in Production unless
   // Swagger:Enabled is explicitly set.
@@ -174,6 +182,7 @@ export function loadEnv(): Env {
     ...parsed,
     adminEmails,
     allowedOrigins,
+    trustedProxyCidrs,
     docsEnabled,
     isProduction,
     oauth,
