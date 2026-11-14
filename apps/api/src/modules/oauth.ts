@@ -166,7 +166,7 @@ async function runExchange(
   const accessToken = typeof tokenJson['access_token'] === 'string' ? tokenJson['access_token'] : null;
   if (accessToken === null) return 'no_access_token';
 
-  let identity;
+  let identity: Awaited<ReturnType<typeof verifyGoogleIdentity>>;
   if (provider === 'google') {
     const idToken = typeof tokenJson['id_token'] === 'string' ? tokenJson['id_token'] : null;
     if (idToken === null) return 'provider_identity_invalid';
