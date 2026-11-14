@@ -28,6 +28,7 @@ interface GoogleIdTokenClaims {
   azp?: unknown;
   exp?: unknown;
   iat?: unknown;
+  nbf?: unknown;
   sub?: unknown;
   nonce?: unknown;
   email?: unknown;
@@ -158,6 +159,8 @@ export async function verifyGoogleIdentity(
   if (!issuerMatches || !audienceMatches || !authorizedPartyMatches ||
       typeof claims.exp !== 'number' || !Number.isSafeInteger(claims.exp) || claims.exp <= now ||
       typeof claims.iat !== 'number' || !Number.isSafeInteger(claims.iat) || claims.iat > now + 60 ||
+      claims.exp <= claims.iat ||
+      (claims.nbf !== undefined && (typeof claims.nbf !== 'number' || !Number.isSafeInteger(claims.nbf) || claims.nbf > now + 60)) ||
       typeof claims.sub !== 'string' || claims.sub.trim() === '' ||
       typeof claims.nonce !== 'string' || claims.nonce !== expectedNonce ||
       claims.email_verified !== true || !validEmail(claims.email)) {
