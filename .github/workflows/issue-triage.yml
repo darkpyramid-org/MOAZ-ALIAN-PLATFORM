@@ -1,0 +1,89 @@
+name: Issue Triage
+
+on:
+  issues:
+    types: [opened, edited, reopened]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  triage:
+    name: Auto-label & triage new issues
+    runs-on: ubuntu-latest
+    if: github.event.issue.state == 'open'
+
+    steps:
+      - name: Apply triage labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const title = (issue.title || '').toLowerCase();
+            const body = (issue.body || '').toLowerCase();
+            const text = `${title}\n${body}`;
+
+            const labelsToAdd = new Set();
+
+            // Always mark brand-new issues for human triage
+            if (context.payload.action === 'opened') {
+              labelsToAdd.add('needs-triage');
+            }
+
+            // Type labels
+            if (/\b(bug|broken|crash|error|fail|regression|fix)\b/.test(text)) {
+              labelsToAdd.add('bug');
+            }
+            if (/\b(feature|enhancement|request|improve|add support)\b/.test(text)) {
+              labelsToAdd.add('enhancement');
+            }
+            if (/\b(doc|documentation|readme|guide)\b/.test(text)) {
+              labelsToAdd.add('documentation');
+            }
+            if (/\b(security|vulnerab|cve|auth|jwt|xss|csrf|injection|secret|password)\b/.test(text)) {
+              labelsToAdd.add('security');
+            }
+
+            // Priority hints
+            if (/\b(critical|urgent|blocker|p0|sev0)\b/.test(text)) {
+              labelsToAdd.add('priority: critical');
+            } else if (/\b(high priority|p1|sev1|important)\b/.test(text)) {
+              labelsToAdd.add('priority: high');
+            } else if (/\b(medium priority|p2)\b/.test(text)) {
+              labelsToAdd.add('priority: medium');
+            }
+
+            // Area labels (based on keywords or paths mentioned)
+            if (/\b(api|backend|express|prisma|endpoint|/api/)\b/.test(text)) {
+              labelsToAdd.add('area:api');
+            }
+            if (/\b(public|frontend|ssr|tanstack start|apps\/public)\b/.test(text)) {
+              labelsToAdd.add('area:public');
+            }
+            if (/\b(dashboard|editorial|admin panel|apps\/dashboard)\b/.test(text)) {
+              labelsToAdd.add('area:dashboard');
+            }
+            if (/\b(package|shared|ui package|api-client|shared-types)\b/.test(text)) {
+              labelsToAdd.add('area:packages');
+            }
+            if (/\b(ci|github actions|workflow|pipeline|trivy)\b/.test(text)) {
+              labelsToAdd.add('area:ci');
+            }
+
+            const existing = new Set((issue.labels || []).map(l => l.name));
+            const toAdd = [...labelsToAdd].filter(l => !existing.has(l));
+
+            if (toAdd.length === 0) {
+              console.log('No new labels to apply');
+              return;
+            }
+
+            console.log('Adding labels:', toAdd.join(', '));
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              labels: toAdd,
+            });
