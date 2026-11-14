@@ -8,8 +8,9 @@ This plan converts the source-level review into independently actionable issues.
 
 ## Priority order
 
-### P0 — Release blocker
+### P0 — Release blockers
 
+- [ ] [#51 — Prevent public self-registration from granting editor/admin roles](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/51). Public signup must not grant editorial write access or unverified admin access.
 - [ ] [#39 — Require a production-safe JWT signing secret](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/39). Production must fail startup if the secret is absent or equals the repository-known fallback.
 
 ### P1 — Security and delivery integrity
@@ -21,6 +22,7 @@ This plan converts the source-level review into independently actionable issues.
 - [ ] [#46 — Make CRITICAL/HIGH Trivy findings fail the required CI gate](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/46).
 - [ ] [#40 — Repair issue-triage workflow and provision labels safely](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/40).
 - [ ] [#47 — Add PostgreSQL-backed API integration coverage](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/47).
+- [ ] [#50 — Revoke existing JWT sessions after role changes or account deletion](https://github.com/darkpyramid-org/MOAZ-ALIAN-PLATFORM/issues/50).
 
 ### P2 — Operational resilience and functional completeness
 
