@@ -31,12 +31,11 @@ jobs:
             );
             const labelsToAdd = new Set(classifyIssue(issue, context.payload.action));
 
-            // Create custom labels on demand so a missing label cannot break triage.
+            // Fail closed if the classifier ever emits an unregistered label.
             for (const name of labelsToAdd) {
               const definition = LABEL_DEFINITIONS[name];
               if (!definition) {
-                core.warning(`No label definition registered for "${name}"`);
-                continue;
+                throw new Error(`Missing label definition for "${name}"; refusing to silently skip it.`);
               }
 
               try {
