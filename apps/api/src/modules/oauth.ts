@@ -37,12 +37,6 @@ function defaultTokenEndpoint(provider: ProviderName): string {
     : 'https://graph.facebook.com/v18.0/oauth/access_token';
 }
 
-function defaultUserInfoEndpoint(provider: ProviderName): string {
-  return provider === 'google'
-    ? 'https://openidconnect.googleapis.com/v1/userinfo'
-    : 'https://graph.facebook.com/me?fields=id,name,email,picture.type(large)';
-}
-
 
 for (const provider of PROVIDERS) {
   router.get(`/api/auth/oauth/${provider}`, async (req, res) => {
