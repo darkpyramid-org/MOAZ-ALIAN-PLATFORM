@@ -74,7 +74,9 @@ async function getGoogleSigningKeys(forceRefresh = false): Promise<GoogleJwk[]> 
     return googleJwksCache.keys;
   }
 
-  const response = await fetch('https://www.googleapis.com/oauth2/v3/certs');
+  const response = await fetch('https://www.googleapis.com/oauth2/v3/certs', {
+    signal: AbortSignal.timeout(5_000),
+  });
   if (!response.ok) throw new Error('Google signing keys could not be retrieved.');
 
   const body = (await response.json()) as GoogleJwksResponse;
