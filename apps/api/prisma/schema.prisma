@@ -144,7 +144,7 @@ model SiteSetting {
 
 /// library.debates — legacy table created by Program.cs startup DDL.
 model Debate {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @map("Id") @db.Uuid
   guestName       String   @map("GuestName") @db.Text
   guestBackground String?  @map("GuestBackground") @db.Text
   topic           String   @map("Topic") @db.Text
