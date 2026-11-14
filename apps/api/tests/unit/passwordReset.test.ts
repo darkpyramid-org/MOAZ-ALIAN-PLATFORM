@@ -50,13 +50,13 @@ describe('password recovery', () => {
 
   it('does not send email or write a token for an unknown account', async () => {
     mocks.findUnique.mockResolvedValue(null);
-    await expect(forgotPassword('missing@example.test')).resolves.toBeUndefined();
+    await expect(forgotPassword('missing@example.test', '198.51.100.10')).resolves.toBeUndefined();
     expect(mocks.update).not.toHaveBeenCalled();
     expect(mocks.sendPasswordResetEmail).not.toHaveBeenCalled();
   });
 
   it('stores only a SHA-256 digest and sends the raw token out of band', async () => {
-    await forgotPassword(' PERSON@example.test ');
+    await forgotPassword(' PERSON@example.test ', '198.51.100.10');
     const stored = mocks.update.mock.calls[0]?.[0]?.data?.passwordResetToken as string;
     const [email, rawToken] = mocks.sendPasswordResetEmail.mock.calls[0] as [string, string];
     expect(email).toBe('person@example.test');
@@ -68,7 +68,7 @@ describe('password recovery', () => {
 
   it('clears the pending token when the mail provider fails without exposing delivery state', async () => {
     mocks.sendPasswordResetEmail.mockRejectedValue(new Error('provider unavailable'));
-    await expect(forgotPassword('person@example.test')).resolves.toBeUndefined();
+    await expect(forgotPassword('person@example.test', '198.51.100.10')).resolves.toBeUndefined();
     expect(mocks.updateMany).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({ id: user.id, passwordResetToken: expect.any(String) }),
       data: expect.objectContaining({ passwordResetToken: null, passwordResetExpiresAt: null }),
