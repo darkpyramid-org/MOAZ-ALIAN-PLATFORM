@@ -40,7 +40,13 @@ describe('JWT authentication contract', () => {
       audience,
       expiresIn: '5m',
     });
-    const tampered = wrongSecret.slice(0, -1) + (wrongSecret.endsWith('a') ? 'b' : 'a');
+    const validSignature = jwt.sign(validShape, secret, {
+      algorithm: 'HS256',
+      issuer,
+      audience,
+      expiresIn: '5m',
+    });
+    const tampered = validSignature.slice(0, -1) + (validSignature.endsWith('a') ? 'b' : 'a');
 
     expect(verifyToken(wrongSecret)).toBeNull();
     expect(verifyToken(tampered)).toBeNull();
