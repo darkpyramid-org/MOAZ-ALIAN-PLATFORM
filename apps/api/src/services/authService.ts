@@ -2,7 +2,6 @@ import { db } from '../lib/db.js';
 import { env } from '../config/env.js';
 import { hashPassword, verifyPassword, VerificationResult } from '../lib/password.js';
 import { issueToken } from '../lib/jwt.js';
-import { DomainError } from '../lib/errors.js';
 import { guardOptional } from '../lib/guard.js';
 import { utcNow } from '../lib/clock.js';
 import { randomBytes } from 'node:crypto';
