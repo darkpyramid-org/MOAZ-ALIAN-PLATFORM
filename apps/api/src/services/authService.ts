@@ -5,7 +5,8 @@ import { issueToken } from '../lib/jwt.js';
 import { DomainError } from '../lib/errors.js';
 import { guardOptional } from '../lib/guard.js';
 import { utcNow } from '../lib/clock.js';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
+import { sendPasswordResetEmail } from '../lib/passwordResetMailer.js';
 
 /**
  * The auth use cases — a port of Infrastructure.Auth.AuthService. Exception
@@ -220,20 +221,45 @@ export async function changePassword(identity: CurrentIdentity, currentPassword:
   await db.user.update({ where: { id: user.id }, data: { passwordHash: hashPassword(newPassword), updatedAt: utcNow() } });
 }
 
+const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
+
+function passwordResetDigest(token: string): string {
+  return createHash('sha256').update(token, 'utf8').digest('hex');
+}
+
 export async function forgotPassword(emailRaw: string | null): Promise<void> {
   if (emailRaw === null || emailRaw === undefined || emailRaw.trim() === '') return;
+
   const email = emailRaw.trim().toLowerCase();
   const user = await db.user.findUnique({ where: { email } });
   if (user === null) return;
 
-  // The token is stored server-side only and is never returned or logged: it
-  // must reach the user out-of-band. Until a mailer exists the flow stays
-  // intentionally inert (operators reset through controlled database access).
-  const token = randomBytes(32).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  // The raw bearer token exists only in this request and the outbound email.
+  // PostgreSQL stores a SHA-256 digest, so a database read cannot be replayed.
+  const token = randomBytes(32).toString('base64url');
+  const digest = passwordResetDigest(token);
+  const now = utcNow();
   await db.user.update({
     where: { id: user.id },
-    data: { passwordResetToken: token, passwordResetExpiresAt: new Date(utcNow().getTime() + 60 * 60 * 1000), updatedAt: utcNow() },
+    data: {
+      passwordResetToken: digest,
+      passwordResetExpiresAt: new Date(now.getTime() + PASSWORD_RESET_TTL_MS),
+      updatedAt: now,
+    },
   });
+
+  try {
+    await sendPasswordResetEmail(email, token);
+  } catch (error) {
+    // Do not expose delivery outcomes to the caller: that would turn this
+    // endpoint into an account-enumeration oracle. Remove the unusable token
+    // and emit only a token/PII-free operational error.
+    await db.user.updateMany({
+      where: { id: user.id, passwordResetToken: digest },
+      data: { passwordResetToken: null, passwordResetExpiresAt: null, updatedAt: utcNow() },
+    });
+    console.error('Password reset email delivery failed', error instanceof Error ? error.message : 'unknown error');
+  }
 }
 
 export async function resetPassword(token: string | null, newPassword: string | null): Promise<void> {
@@ -244,19 +270,29 @@ export async function resetPassword(token: string | null, newPassword: string | 
     throw new AuthSignal('argument', 'البيانات غير صالحة.');
   }
 
-  const user = await db.user.findFirst({ where: { passwordResetToken: token } });
-  if (user === null) {
-    throw new AuthSignal('reset', 'رمز إعادة التعيين غير صالح.');
-  }
-
-  if (user.passwordResetExpiresAt === null || user.passwordResetExpiresAt.getTime() < utcNow().getTime()) {
-    throw new AuthSignal('reset', 'رمز إعادة التعيين منتهي الصلاحية.');
-  }
-
-  await db.user.update({
-    where: { id: user.id },
-    data: { passwordHash: hashPassword(newPassword), passwordResetToken: null, passwordResetExpiresAt: null, updatedAt: utcNow() },
+  const now = utcNow();
+  const digest = passwordResetDigest(token);
+  const user = await db.user.findFirst({
+    where: { passwordResetToken: digest, passwordResetExpiresAt: { gt: now } },
   });
+  if (user === null) {
+    throw new AuthSignal('reset', 'رمز إعادة التعيين غير صالح أو منتهي الصلاحية.');
+  }
+
+  // Conditional UPDATE is the single-use boundary. Concurrent requests may
+  // both read the row, but only one can consume the matching live digest.
+  const consumed = await db.user.updateMany({
+    where: { id: user.id, passwordResetToken: digest, passwordResetExpiresAt: { gt: now } },
+    data: {
+      passwordHash: hashPassword(newPassword),
+      passwordResetToken: null,
+      passwordResetExpiresAt: null,
+      updatedAt: now,
+    },
+  });
+  if (consumed.count !== 1) {
+    throw new AuthSignal('reset', 'رمز إعادة التعيين غير صالح أو منتهي الصلاحية.');
+  }
 }
 
 export async function externalLogin(
