@@ -11,26 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as SearchRouteImport } from './routes/search'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
-import { Route as ArticlesIndexRouteImport } from './routes/articles.index'
-import { Route as ArticlesSlugRouteImport } from './routes/articles.$slug'
-import { Route as BooksIndexRouteImport } from './routes/books.index'
-import { Route as BooksSlugRouteImport } from './routes/books.$slug'
-import { Route as CategoriesIndexRouteImport } from './routes/categories.index'
-import { Route as CategoriesIdRouteImport } from './routes/categories.$id'
-import { Route as ChatIndexRouteImport } from './routes/chat.index'
-import { Route as ChatThreadIdRouteImport } from './routes/chat.$threadId'
 import { Route as ProxyApiSplatRouteImport } from './routes/proxy-api.$'
-import { Route as ResearchIndexRouteImport } from './routes/research.index'
-import { Route as ResearchSlugRouteImport } from './routes/research.$slug'
-import { Route as VideosIndexRouteImport } from './routes/videos.index'
-import { Route as VideosSlugRouteImport } from './routes/videos.$slug'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
 import { Route as AuthenticatedDashboardCategoriesRouteImport } from './routes/_authenticated/dashboard.categories'
 import { Route as AuthenticatedDashboardContentRouteImport } from './routes/_authenticated/dashboard.content'
@@ -49,29 +33,9 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AboutRoute = AboutRouteImport.update({
-  id: '/about',
-  path: '/about',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SearchRoute = SearchRouteImport.update({
-  id: '/search',
-  path: '/search',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -84,69 +48,9 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ArticlesIndexRoute = ArticlesIndexRouteImport.update({
-  id: '/articles/',
-  path: '/articles/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ArticlesSlugRoute = ArticlesSlugRouteImport.update({
-  id: '/articles/$slug',
-  path: '/articles/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BooksIndexRoute = BooksIndexRouteImport.update({
-  id: '/books/',
-  path: '/books/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BooksSlugRoute = BooksSlugRouteImport.update({
-  id: '/books/$slug',
-  path: '/books/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CategoriesIndexRoute = CategoriesIndexRouteImport.update({
-  id: '/categories/',
-  path: '/categories/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CategoriesIdRoute = CategoriesIdRouteImport.update({
-  id: '/categories/$id',
-  path: '/categories/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChatIndexRoute = ChatIndexRouteImport.update({
-  id: '/chat/',
-  path: '/chat/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChatThreadIdRoute = ChatThreadIdRouteImport.update({
-  id: '/chat/$threadId',
-  path: '/chat/$threadId',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ProxyApiSplatRoute = ProxyApiSplatRouteImport.update({
   id: '/proxy-api/$',
   path: '/proxy-api/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResearchIndexRoute = ResearchIndexRouteImport.update({
-  id: '/research/',
-  path: '/research/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResearchSlugRoute = ResearchSlugRouteImport.update({
-  id: '/research/$slug',
-  path: '/research/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const VideosIndexRoute = VideosIndexRouteImport.update({
-  id: '/videos/',
-  path: '/videos/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const VideosSlugRoute = VideosSlugRouteImport.update({
-  id: '/videos/$slug',
-  path: '/videos/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedDashboardIndexRoute =
@@ -199,26 +103,10 @@ const ApiMediaSplatRoute = ApiMediaSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/search': typeof SearchRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/api/chat': typeof ApiChatRoute
-  '/articles/$slug': typeof ArticlesSlugRoute
-  '/books/$slug': typeof BooksSlugRoute
-  '/categories/$id': typeof CategoriesIdRoute
-  '/chat/$threadId': typeof ChatThreadIdRoute
   '/proxy-api/$': typeof ProxyApiSplatRoute
-  '/research/$slug': typeof ResearchSlugRoute
-  '/videos/$slug': typeof VideosSlugRoute
-  '/articles/': typeof ArticlesIndexRoute
-  '/books/': typeof BooksIndexRoute
-  '/categories/': typeof CategoriesIndexRoute
-  '/chat/': typeof ChatIndexRoute
-  '/research/': typeof ResearchIndexRoute
-  '/videos/': typeof VideosIndexRoute
   '/dashboard/categories': typeof AuthenticatedDashboardCategoriesRoute
   '/dashboard/content': typeof AuthenticatedDashboardContentRoute
   '/dashboard/debates': typeof AuthenticatedDashboardDebatesRoute
@@ -230,25 +118,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/search': typeof SearchRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/chat': typeof ApiChatRoute
-  '/articles/$slug': typeof ArticlesSlugRoute
-  '/books/$slug': typeof BooksSlugRoute
-  '/categories/$id': typeof CategoriesIdRoute
-  '/chat/$threadId': typeof ChatThreadIdRoute
   '/proxy-api/$': typeof ProxyApiSplatRoute
-  '/research/$slug': typeof ResearchSlugRoute
-  '/videos/$slug': typeof VideosSlugRoute
-  '/articles': typeof ArticlesIndexRoute
-  '/books': typeof BooksIndexRoute
-  '/categories': typeof CategoriesIndexRoute
-  '/chat': typeof ChatIndexRoute
-  '/research': typeof ResearchIndexRoute
-  '/videos': typeof VideosIndexRoute
   '/dashboard/categories': typeof AuthenticatedDashboardCategoriesRoute
   '/dashboard/content': typeof AuthenticatedDashboardContentRoute
   '/dashboard/debates': typeof AuthenticatedDashboardDebatesRoute
@@ -262,26 +134,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/search': typeof SearchRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/api/chat': typeof ApiChatRoute
-  '/articles/$slug': typeof ArticlesSlugRoute
-  '/books/$slug': typeof BooksSlugRoute
-  '/categories/$id': typeof CategoriesIdRoute
-  '/chat/$threadId': typeof ChatThreadIdRoute
   '/proxy-api/$': typeof ProxyApiSplatRoute
-  '/research/$slug': typeof ResearchSlugRoute
-  '/videos/$slug': typeof VideosSlugRoute
-  '/articles/': typeof ArticlesIndexRoute
-  '/books/': typeof BooksIndexRoute
-  '/categories/': typeof CategoriesIndexRoute
-  '/chat/': typeof ChatIndexRoute
-  '/research/': typeof ResearchIndexRoute
-  '/videos/': typeof VideosIndexRoute
   '/_authenticated/dashboard/categories': typeof AuthenticatedDashboardCategoriesRoute
   '/_authenticated/dashboard/content': typeof AuthenticatedDashboardContentRoute
   '/_authenticated/dashboard/debates': typeof AuthenticatedDashboardDebatesRoute
@@ -295,26 +151,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/about'
     | '/auth'
-    | '/reset-password'
-    | '/search'
-    | '/sitemap.xml'
     | '/dashboard'
     | '/api/chat'
-    | '/articles/$slug'
-    | '/books/$slug'
-    | '/categories/$id'
-    | '/chat/$threadId'
     | '/proxy-api/$'
-    | '/research/$slug'
-    | '/videos/$slug'
-    | '/articles/'
-    | '/books/'
-    | '/categories/'
-    | '/chat/'
-    | '/research/'
-    | '/videos/'
     | '/dashboard/categories'
     | '/dashboard/content'
     | '/dashboard/debates'
@@ -326,25 +166,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/about'
     | '/auth'
-    | '/reset-password'
-    | '/search'
-    | '/sitemap.xml'
     | '/api/chat'
-    | '/articles/$slug'
-    | '/books/$slug'
-    | '/categories/$id'
-    | '/chat/$threadId'
     | '/proxy-api/$'
-    | '/research/$slug'
-    | '/videos/$slug'
-    | '/articles'
-    | '/books'
-    | '/categories'
-    | '/chat'
-    | '/research'
-    | '/videos'
     | '/dashboard/categories'
     | '/dashboard/content'
     | '/dashboard/debates'
@@ -357,26 +181,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
-    | '/about'
     | '/auth'
-    | '/reset-password'
-    | '/search'
-    | '/sitemap.xml'
     | '/_authenticated/dashboard'
     | '/api/chat'
-    | '/articles/$slug'
-    | '/books/$slug'
-    | '/categories/$id'
-    | '/chat/$threadId'
     | '/proxy-api/$'
-    | '/research/$slug'
-    | '/videos/$slug'
-    | '/articles/'
-    | '/books/'
-    | '/categories/'
-    | '/chat/'
-    | '/research/'
-    | '/videos/'
     | '/_authenticated/dashboard/categories'
     | '/_authenticated/dashboard/content'
     | '/_authenticated/dashboard/debates'
@@ -390,25 +198,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
-  ResetPasswordRoute: typeof ResetPasswordRoute
-  SearchRoute: typeof SearchRoute
-  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiChatRoute: typeof ApiChatRoute
-  ArticlesSlugRoute: typeof ArticlesSlugRoute
-  BooksSlugRoute: typeof BooksSlugRoute
-  CategoriesIdRoute: typeof CategoriesIdRoute
-  ChatThreadIdRoute: typeof ChatThreadIdRoute
   ProxyApiSplatRoute: typeof ProxyApiSplatRoute
-  ResearchSlugRoute: typeof ResearchSlugRoute
-  VideosSlugRoute: typeof VideosSlugRoute
-  ArticlesIndexRoute: typeof ArticlesIndexRoute
-  BooksIndexRoute: typeof BooksIndexRoute
-  CategoriesIndexRoute: typeof CategoriesIndexRoute
-  ChatIndexRoute: typeof ChatIndexRoute
-  ResearchIndexRoute: typeof ResearchIndexRoute
-  VideosIndexRoute: typeof VideosIndexRoute
   ApiMediaSplatRoute: typeof ApiMediaSplatRoute
 }
 
@@ -428,39 +220,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/auth': {
       id: '/auth'
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/search': {
-      id: '/search'
-      path: '/search'
-      fullPath: '/search'
-      preLoaderRoute: typeof SearchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/dashboard': {
@@ -477,95 +241,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/articles/': {
-      id: '/articles/'
-      path: '/articles'
-      fullPath: '/articles/'
-      preLoaderRoute: typeof ArticlesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/articles/$slug': {
-      id: '/articles/$slug'
-      path: '/articles/$slug'
-      fullPath: '/articles/$slug'
-      preLoaderRoute: typeof ArticlesSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/books/': {
-      id: '/books/'
-      path: '/books'
-      fullPath: '/books/'
-      preLoaderRoute: typeof BooksIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/books/$slug': {
-      id: '/books/$slug'
-      path: '/books/$slug'
-      fullPath: '/books/$slug'
-      preLoaderRoute: typeof BooksSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/categories/': {
-      id: '/categories/'
-      path: '/categories'
-      fullPath: '/categories/'
-      preLoaderRoute: typeof CategoriesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/categories/$id': {
-      id: '/categories/$id'
-      path: '/categories/$id'
-      fullPath: '/categories/$id'
-      preLoaderRoute: typeof CategoriesIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/chat/': {
-      id: '/chat/'
-      path: '/chat'
-      fullPath: '/chat/'
-      preLoaderRoute: typeof ChatIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/chat/$threadId': {
-      id: '/chat/$threadId'
-      path: '/chat/$threadId'
-      fullPath: '/chat/$threadId'
-      preLoaderRoute: typeof ChatThreadIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/proxy-api/$': {
       id: '/proxy-api/$'
       path: '/proxy-api/$'
       fullPath: '/proxy-api/$'
       preLoaderRoute: typeof ProxyApiSplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/research/': {
-      id: '/research/'
-      path: '/research'
-      fullPath: '/research/'
-      preLoaderRoute: typeof ResearchIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/research/$slug': {
-      id: '/research/$slug'
-      path: '/research/$slug'
-      fullPath: '/research/$slug'
-      preLoaderRoute: typeof ResearchSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/videos/': {
-      id: '/videos/'
-      path: '/videos'
-      fullPath: '/videos/'
-      preLoaderRoute: typeof VideosIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/videos/$slug': {
-      id: '/videos/$slug'
-      path: '/videos/$slug'
-      fullPath: '/videos/$slug'
-      preLoaderRoute: typeof VideosSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/dashboard/': {
@@ -668,25 +348,9 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
-  ResetPasswordRoute: ResetPasswordRoute,
-  SearchRoute: SearchRoute,
-  SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiChatRoute: ApiChatRoute,
-  ArticlesSlugRoute: ArticlesSlugRoute,
-  BooksSlugRoute: BooksSlugRoute,
-  CategoriesIdRoute: CategoriesIdRoute,
-  ChatThreadIdRoute: ChatThreadIdRoute,
   ProxyApiSplatRoute: ProxyApiSplatRoute,
-  ResearchSlugRoute: ResearchSlugRoute,
-  VideosSlugRoute: VideosSlugRoute,
-  ArticlesIndexRoute: ArticlesIndexRoute,
-  BooksIndexRoute: BooksIndexRoute,
-  CategoriesIndexRoute: CategoriesIndexRoute,
-  ChatIndexRoute: ChatIndexRoute,
-  ResearchIndexRoute: ResearchIndexRoute,
-  VideosIndexRoute: VideosIndexRoute,
   ApiMediaSplatRoute: ApiMediaSplatRoute,
 }
 export const routeTree = rootRouteImport

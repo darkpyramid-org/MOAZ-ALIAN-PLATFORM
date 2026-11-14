@@ -10,13 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ArticlesIndexRouteImport } from './routes/articles.index'
 import { Route as ArticlesSlugRouteImport } from './routes/articles.$slug'
@@ -31,22 +29,11 @@ import { Route as ResearchIndexRouteImport } from './routes/research.index'
 import { Route as ResearchSlugRouteImport } from './routes/research.$slug'
 import { Route as VideosIndexRouteImport } from './routes/videos.index'
 import { Route as VideosSlugRouteImport } from './routes/videos.$slug'
-import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
-import { Route as AuthenticatedDashboardCategoriesRouteImport } from './routes/_authenticated/dashboard.categories'
-import { Route as AuthenticatedDashboardContentRouteImport } from './routes/_authenticated/dashboard.content'
-import { Route as AuthenticatedDashboardDebatesRouteImport } from './routes/_authenticated/dashboard.debates'
-import { Route as AuthenticatedDashboardPagesRouteImport } from './routes/_authenticated/dashboard.pages'
-import { Route as AuthenticatedDashboardProfileRouteImport } from './routes/_authenticated/dashboard.profile'
-import { Route as AuthenticatedDashboardUsersRouteImport } from './routes/_authenticated/dashboard.users'
 import { Route as ApiMediaSplatRouteImport } from './routes/api/media.$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -73,11 +60,6 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
@@ -149,48 +131,6 @@ const VideosSlugRoute = VideosSlugRouteImport.update({
   path: '/videos/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedDashboardIndexRoute =
-  AuthenticatedDashboardIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedDashboardRoute,
-  } as any)
-const AuthenticatedDashboardCategoriesRoute =
-  AuthenticatedDashboardCategoriesRouteImport.update({
-    id: '/categories',
-    path: '/categories',
-    getParentRoute: () => AuthenticatedDashboardRoute,
-  } as any)
-const AuthenticatedDashboardContentRoute =
-  AuthenticatedDashboardContentRouteImport.update({
-    id: '/content',
-    path: '/content',
-    getParentRoute: () => AuthenticatedDashboardRoute,
-  } as any)
-const AuthenticatedDashboardDebatesRoute =
-  AuthenticatedDashboardDebatesRouteImport.update({
-    id: '/debates',
-    path: '/debates',
-    getParentRoute: () => AuthenticatedDashboardRoute,
-  } as any)
-const AuthenticatedDashboardPagesRoute =
-  AuthenticatedDashboardPagesRouteImport.update({
-    id: '/pages',
-    path: '/pages',
-    getParentRoute: () => AuthenticatedDashboardRoute,
-  } as any)
-const AuthenticatedDashboardProfileRoute =
-  AuthenticatedDashboardProfileRouteImport.update({
-    id: '/profile',
-    path: '/profile',
-    getParentRoute: () => AuthenticatedDashboardRoute,
-  } as any)
-const AuthenticatedDashboardUsersRoute =
-  AuthenticatedDashboardUsersRouteImport.update({
-    id: '/users',
-    path: '/users',
-    getParentRoute: () => AuthenticatedDashboardRoute,
-  } as any)
 const ApiMediaSplatRoute = ApiMediaSplatRouteImport.update({
   id: '/api/media/$',
   path: '/api/media/$',
@@ -204,7 +144,6 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/api/chat': typeof ApiChatRoute
   '/articles/$slug': typeof ArticlesSlugRoute
   '/books/$slug': typeof BooksSlugRoute
@@ -219,14 +158,7 @@ export interface FileRoutesByFullPath {
   '/chat/': typeof ChatIndexRoute
   '/research/': typeof ResearchIndexRoute
   '/videos/': typeof VideosIndexRoute
-  '/dashboard/categories': typeof AuthenticatedDashboardCategoriesRoute
-  '/dashboard/content': typeof AuthenticatedDashboardContentRoute
-  '/dashboard/debates': typeof AuthenticatedDashboardDebatesRoute
-  '/dashboard/pages': typeof AuthenticatedDashboardPagesRoute
-  '/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
-  '/dashboard/users': typeof AuthenticatedDashboardUsersRoute
   '/api/media/$': typeof ApiMediaSplatRoute
-  '/dashboard/': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -249,25 +181,16 @@ export interface FileRoutesByTo {
   '/chat': typeof ChatIndexRoute
   '/research': typeof ResearchIndexRoute
   '/videos': typeof VideosIndexRoute
-  '/dashboard/categories': typeof AuthenticatedDashboardCategoriesRoute
-  '/dashboard/content': typeof AuthenticatedDashboardContentRoute
-  '/dashboard/debates': typeof AuthenticatedDashboardDebatesRoute
-  '/dashboard/pages': typeof AuthenticatedDashboardPagesRoute
-  '/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
-  '/dashboard/users': typeof AuthenticatedDashboardUsersRoute
   '/api/media/$': typeof ApiMediaSplatRoute
-  '/dashboard': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/api/chat': typeof ApiChatRoute
   '/articles/$slug': typeof ArticlesSlugRoute
   '/books/$slug': typeof BooksSlugRoute
@@ -282,14 +205,7 @@ export interface FileRoutesById {
   '/chat/': typeof ChatIndexRoute
   '/research/': typeof ResearchIndexRoute
   '/videos/': typeof VideosIndexRoute
-  '/_authenticated/dashboard/categories': typeof AuthenticatedDashboardCategoriesRoute
-  '/_authenticated/dashboard/content': typeof AuthenticatedDashboardContentRoute
-  '/_authenticated/dashboard/debates': typeof AuthenticatedDashboardDebatesRoute
-  '/_authenticated/dashboard/pages': typeof AuthenticatedDashboardPagesRoute
-  '/_authenticated/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
-  '/_authenticated/dashboard/users': typeof AuthenticatedDashboardUsersRoute
   '/api/media/$': typeof ApiMediaSplatRoute
-  '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -300,7 +216,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/search'
     | '/sitemap.xml'
-    | '/dashboard'
     | '/api/chat'
     | '/articles/$slug'
     | '/books/$slug'
@@ -315,14 +230,7 @@ export interface FileRouteTypes {
     | '/chat/'
     | '/research/'
     | '/videos/'
-    | '/dashboard/categories'
-    | '/dashboard/content'
-    | '/dashboard/debates'
-    | '/dashboard/pages'
-    | '/dashboard/profile'
-    | '/dashboard/users'
     | '/api/media/$'
-    | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -345,24 +253,15 @@ export interface FileRouteTypes {
     | '/chat'
     | '/research'
     | '/videos'
-    | '/dashboard/categories'
-    | '/dashboard/content'
-    | '/dashboard/debates'
-    | '/dashboard/pages'
-    | '/dashboard/profile'
-    | '/dashboard/users'
     | '/api/media/$'
-    | '/dashboard'
   id:
     | '__root__'
     | '/'
-    | '/_authenticated'
     | '/about'
     | '/auth'
     | '/reset-password'
     | '/search'
     | '/sitemap.xml'
-    | '/_authenticated/dashboard'
     | '/api/chat'
     | '/articles/$slug'
     | '/books/$slug'
@@ -377,19 +276,11 @@ export interface FileRouteTypes {
     | '/chat/'
     | '/research/'
     | '/videos/'
-    | '/_authenticated/dashboard/categories'
-    | '/_authenticated/dashboard/content'
-    | '/_authenticated/dashboard/debates'
-    | '/_authenticated/dashboard/pages'
-    | '/_authenticated/dashboard/profile'
-    | '/_authenticated/dashboard/users'
     | '/api/media/$'
-    | '/_authenticated/dashboard/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -419,13 +310,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -462,13 +346,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/chat': {
       id: '/api/chat'
@@ -568,55 +445,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VideosSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/dashboard/': {
-      id: '/_authenticated/dashboard/'
-      path: '/'
-      fullPath: '/dashboard/'
-      preLoaderRoute: typeof AuthenticatedDashboardIndexRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
-    }
-    '/_authenticated/dashboard/categories': {
-      id: '/_authenticated/dashboard/categories'
-      path: '/categories'
-      fullPath: '/dashboard/categories'
-      preLoaderRoute: typeof AuthenticatedDashboardCategoriesRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
-    }
-    '/_authenticated/dashboard/content': {
-      id: '/_authenticated/dashboard/content'
-      path: '/content'
-      fullPath: '/dashboard/content'
-      preLoaderRoute: typeof AuthenticatedDashboardContentRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
-    }
-    '/_authenticated/dashboard/debates': {
-      id: '/_authenticated/dashboard/debates'
-      path: '/debates'
-      fullPath: '/dashboard/debates'
-      preLoaderRoute: typeof AuthenticatedDashboardDebatesRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
-    }
-    '/_authenticated/dashboard/pages': {
-      id: '/_authenticated/dashboard/pages'
-      path: '/pages'
-      fullPath: '/dashboard/pages'
-      preLoaderRoute: typeof AuthenticatedDashboardPagesRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
-    }
-    '/_authenticated/dashboard/profile': {
-      id: '/_authenticated/dashboard/profile'
-      path: '/profile'
-      fullPath: '/dashboard/profile'
-      preLoaderRoute: typeof AuthenticatedDashboardProfileRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
-    }
-    '/_authenticated/dashboard/users': {
-      id: '/_authenticated/dashboard/users'
-      path: '/users'
-      fullPath: '/dashboard/users'
-      preLoaderRoute: typeof AuthenticatedDashboardUsersRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
-    }
     '/api/media/$': {
       id: '/api/media/$'
       path: '/api/media/$'
@@ -627,47 +455,8 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthenticatedDashboardRouteChildren {
-  AuthenticatedDashboardCategoriesRoute: typeof AuthenticatedDashboardCategoriesRoute
-  AuthenticatedDashboardContentRoute: typeof AuthenticatedDashboardContentRoute
-  AuthenticatedDashboardDebatesRoute: typeof AuthenticatedDashboardDebatesRoute
-  AuthenticatedDashboardPagesRoute: typeof AuthenticatedDashboardPagesRoute
-  AuthenticatedDashboardProfileRoute: typeof AuthenticatedDashboardProfileRoute
-  AuthenticatedDashboardUsersRoute: typeof AuthenticatedDashboardUsersRoute
-  AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
-}
-
-const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
-  {
-    AuthenticatedDashboardCategoriesRoute:
-      AuthenticatedDashboardCategoriesRoute,
-    AuthenticatedDashboardContentRoute: AuthenticatedDashboardContentRoute,
-    AuthenticatedDashboardDebatesRoute: AuthenticatedDashboardDebatesRoute,
-    AuthenticatedDashboardPagesRoute: AuthenticatedDashboardPagesRoute,
-    AuthenticatedDashboardProfileRoute: AuthenticatedDashboardProfileRoute,
-    AuthenticatedDashboardUsersRoute: AuthenticatedDashboardUsersRoute,
-    AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
-  }
-
-const AuthenticatedDashboardRouteWithChildren =
-  AuthenticatedDashboardRoute._addFileChildren(
-    AuthenticatedDashboardRouteChildren,
-  )
-
-interface AuthenticatedRouteRouteChildren {
-  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRouteWithChildren
-}
-
-const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedDashboardRoute: AuthenticatedDashboardRouteWithChildren,
-}
-
-const AuthenticatedRouteRouteWithChildren =
-  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
