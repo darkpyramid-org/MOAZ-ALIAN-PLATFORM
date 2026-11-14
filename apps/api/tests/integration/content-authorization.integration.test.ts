@@ -8,6 +8,8 @@ import { issueToken } from '../../src/lib/jwt.js';
 const app = createApp();
 const editorId = randomUUID();
 const readerId = randomUUID();
+const adminId = randomUUID();
+const settingsId = 'integration-settings-' + randomUUID();
 const categoryId = 'integration-' + randomUUID();
 const slug = 'integration-article-' + randomUUID();
 const now = new Date();
@@ -15,9 +17,10 @@ const now = new Date();
 describe.skipIf(!process.env.TEST_DATABASE_URL)('PostgreSQL integration: content and category authorization', () => {
   let editorToken: string;
   let readerToken: string;
+  let adminToken: string;
 
   beforeAll(async () => {
-    const [editor, reader] = await Promise.all([
+    const [editor, reader, admin] = await Promise.all([
       db.user.create({
         data: {
           id: editorId,
@@ -38,15 +41,27 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('PostgreSQL integration: content
           updatedAt: null,
         },
       }),
+      db.user.create({
+        data: {
+          id: adminId,
+          email: adminId + '@example.test',
+          passwordHash: 'integration-only-not-used',
+          roles: ['admin', 'editor'],
+          createdAt: now,
+          updatedAt: null,
+        },
+      }),
     ]);
     editorToken = issueToken(editor);
     readerToken = issueToken(reader);
+    adminToken = issueToken(admin);
   });
 
   afterAll(async () => {
     await db.contentItem.deleteMany({ where: { slug } });
     await db.category.deleteMany({ where: { id: { in: [categoryId, categoryId + '-crud'] } } });
-    await db.user.deleteMany({ where: { id: { in: [editorId, readerId] } } });
+    await db.siteSetting.deleteMany({ where: { id: settingsId } });
+    await db.user.deleteMany({ where: { id: { in: [editorId, readerId, adminId] } } });
   });
 
   it('enforces anonymous, reader, and editor boundaries for content writes', async () => {
