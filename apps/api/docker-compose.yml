@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: moaz-api-postgres
+    environment:
+      POSTGRES_USER: moaz
+      POSTGRES_PASSWORD: moaz_dev
+      POSTGRES_DB: moaz_alian
+    ports:
+      # Host port 5434 keeps this isolated from any locally installed Postgres
+      # (5432) and from the legacy hosted instance this API will eventually
+      # replace. Nothing outside this compose file should rely on 5434.
+      - "5434:5432"
+    volumes:
+      - moaz-api-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U moaz -d moaz_alian"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  moaz-api-pgdata:

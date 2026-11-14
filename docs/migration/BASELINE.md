@@ -363,3 +363,64 @@ the updated `@moaz/api-client`.
 Migration strategy: contract tests first (recorded against the .NET API), then module-by-module
 Express port (auth → content → categories → users → settings → debates → media/chat), Prisma
 schema introspected from the live DB, destructive operations gated behind explicit approval.
+
+---
+
+## 10. Express migration contract-fidelity addendum (2026-11-14, branch `darkpyramid-solutions`)
+
+> Recorded as the port of `api-server/` landed in this branch; supersedes nothing above, it
+> *constrains* the Express implementation to the wire truths locked here.
+
+### 10.1 Regenerated OpenAPI (decision: regenerate, do not hand-rewrite)
+
+No full request/response capture of the .NET API existed, so the OpenAPI document was
+**regenerated from the Express implementation** under `apps/api/src/modules/docs.ts` and pinned
+only where byte-parity is knowable:
+
+- Only the **head 100** and **tail 100** bytes of `/openapi/v1.json` were captured from the .NET
+  runtime and matched byte-exactly against the regenerated serialization
+  (`JSON.stringify(doc, null, 2)`): head pin `{\n  "openapi": "3.0.1",\n  "info": {\n    "title":
+  "ApiServer.WebApi | v1",\n    "version": "1.0.0"\n  }`; tail pin ends with the `Content`/`Categories`
+  tag blocks.
+- Key order is pinned: `openapi → info → components → paths → tags`; tags last, in order
+  `[Auth, Admin, Content, Categories]`.
+- Chat endpoints are **excluded** from the generated document (additive surface; see 10.2) and are
+  recorded here instead.
+
+### 10.2 Chat persistence (decision: implement server-side, additive)
+
+Chat threads/messages now persist via Prisma (`chat_threads`, `chat_messages`) with ownership
+enforced; a foreign thread id yields **404** (not 403/400). The REST surface is **additive** — it is
+not part of the recorded baseline contract and the frontend keeps its localStorage threading
+until a follow-up PR consumes the new endpoints.
+
+### 10.3 Locked wire truths preserved by the Express port
+
+- Status pages: `content-type: application/json; charset=utf-8`, body `{title, status, traceId}`.
+- 401: `Authentication required.` + `www-authenticate: Bearer`; bad token →
+  `Bearer error="invalid_token"`.
+- 403: `Not allowed.` · 404: `Not found.` · 429: `Too many requests.` · 415:
+  `Request failed with status 415.`
+- `Results.Problem` (RFC 9110 `type` links for 400/401/403/404/405/406/409/410/411/412/413/415/422/500
+  only; 501/502 intentionally bare) with `traceId` extension LAST; handler problems use
+  `https://httpstatuses.com/{status}` type, `instance` = decoded request path, ASCII-safe serializer.
+- Default 500: `An unexpected error occurred.` / `The error has been logged. Please try again later.`
+- `/health` → `Healthy` (text/plain, no charset); dev root → 302 to `/swagger`; prod root →
+  `{status:"online", service:"MOAZ ALIAN API", health:"/health"}`.
+- CORS: allowed origin ⇒ `Vary: Accept-Encoding, Origin`; preflight bare/no-ACAO; unallowed method ⇒
+  ACAO+ACAM+Vary Origin (no ACAH); disallowed origin ⇒ vary `Accept-Encoding` only.
+- Rate limits: global 300/min per user-or-IP, editorial 30/min per user else IP; 429 bodies identical.
+
+### 10.4 Contract-fidelity evidence
+
+The shared golden battery (`goldens/run-battery.mjs`) was replayed against the running Express
+server (`http://localhost:5199`) with the golden DB env and the .NET golden captures
+(`goldens/dotnet/*.json`). Normalized diff (`goldens/diff-battery.mjs`) — traceId/JWT/ids/timestamps
+normalized, counts arrays sorted, `content-encoding` + `Vary: Accept-Encoding` dropped,
+truncation rule applied, UUID + 8-hex ids normalized — **124/124 comparable scenarios matched**
+(status, captured headers, body). Zero contract drift.
+
+### 10.5 Known non-goals (carried into follow-ups)
+
+- Full integration/E2E suite for every module (current backend suite is unit-only).
+- Frontend consumption changes (chat surface, settings disconnect) → follow-up PRs.

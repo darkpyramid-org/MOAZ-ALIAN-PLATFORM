@@ -1,0 +1,12 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Postinstall scripts pnpm 10+ refuses to run by default. These four are the
+# only ones the workspace needs: Prisma generates its client + downloads query
+# engines, esbuild compiles its platform binary — all load-bearing for the API.
+onlyBuiltDependencies:
+  - "@prisma/client"
+  - "@prisma/engines"
+  - "prisma"
+  - "esbuild"
