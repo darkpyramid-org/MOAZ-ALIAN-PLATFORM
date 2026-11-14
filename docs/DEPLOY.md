@@ -33,6 +33,7 @@ Set these in the Vercel dashboard → Project → Settings → Environment Varia
 | `CORS_ALLOWED_ORIGINS` | e.g. `["https://your-vercel-app.vercel.app","https://your-domain.com"]` |
 | `CORS_ALLOW_VERCEL_ORIGINS` | set `true` temporarily to allow any `*.vercel.app` origin (e.g. for preview deployments) |
 | `FRONTEND_URL` | your public site origin (used by OAuth callback redirects) |
+| `TRUSTED_PROXY_CIDRS` | optional JSON array of exact reverse-proxy IPs/CIDRs. Only these peers may supply trusted `X-Forwarded-For` hops. Leave unset if the hosting ingress cannot be identified precisely. |
 | `AUTH_ADMIN_EMAILS` | JSON array, e.g. `["admin@example.com"]` |
 
 Optional:
@@ -46,6 +47,10 @@ Optional:
 | `CONTENT_CACHE_*`, `RATE_LIMIT_*` | cache and rate limit tuning |
 | `OAUTH_GOOGLE_*`, `OAUTH_FACEBOOK_*` | OAuth providers (all three per provider required) |
 | `AI_API_KEY`, `OPENAI_API_KEY` | if `/api/chat` is used |
+
+## Reverse-proxy and rate-limit trust boundary
+
+The API ignores raw `X-Forwarded-For` values unless the immediate TCP peer matches an entry in `TRUSTED_PROXY_CIDRS`. Express then walks the forwarded chain from the nearest proxy outward and stops at the first untrusted address. Configure exact ingress proxy addresses/CIDRs (JSON array or indexed `TRUSTED_PROXY_CIDRS_0`, `TRUSTED_PROXY_CIDRS_1`, …); do not use `*`, `0.0.0.0/0`, or a numeric hop count. When unset, no proxy is trusted and rate limiting uses the socket peer address. If the hosting provider does not publish a stable, verifiable ingress range for the API, keep this setting empty and enforce client-facing rate limits at the provider edge/WAF rather than trusting a spoofable forwarding header.
 
 ## Frontend environment variables
 
