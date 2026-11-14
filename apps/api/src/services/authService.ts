@@ -261,7 +261,7 @@ export async function resetPassword(token: string | null, newPassword: string | 
 
   await db.user.update({
     where: { id: user.id },
-    data: { passwordHash: hashPassword(newPassword), passwordResetToken: null, passwordResetExpiresAt: null, updatedAt: utcNow() },
+    data: { passwordHash: await hashPassword(newPassword), passwordResetToken: null, passwordResetExpiresAt: null, updatedAt: utcNow() },
   });
 }
 
