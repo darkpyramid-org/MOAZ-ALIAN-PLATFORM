@@ -19,11 +19,7 @@ import {
 import { reportAppError } from "@/lib/error-reporting";
 
 const QUICK_LINKS = [
-  { to: "/videos", label: "الفيديوهات" },
-  { to: "/books", label: "الكتب" },
-  { to: "/articles", label: "المقالات" },
-  { to: "/research", label: "الأبحاث" },
-  { to: "/categories", label: "التصنيفات" },
+  { to: "/dashboard", label: "لوحة التحكم" },
 ] as const;
 
 function Stage({
@@ -47,7 +43,7 @@ function SearchBox() {
   const [q, setQ] = useState("");
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (q.trim()) void navigate({ to: "/search", search: { q: q.trim() } });
+    if (q.trim()) void navigate({ to: "/", search: { q: q.trim() } });
   };
   return (
     <form
@@ -93,7 +89,6 @@ export function NotFoundScreen({ full }: { full?: boolean }) {
         </span>{" "}
         غير موجود، ربما نُقل أو حُذف أو كُتب بشكل خاطئ.
       </p>
-      <SearchBox />
       <div className="animate-rise-3 mt-8 flex flex-wrap justify-center gap-3">
         <Link to="/" className="btn-gold">
           <Home className="size-4" aria-hidden />
@@ -137,7 +132,6 @@ export function MissingItemScreen({
       <p className="animate-rise-2 mx-auto mt-3 max-w-md leading-8 text-muted-foreground">
         ربما تغيّر الرابط أو أُزيلت هذه المادة من المكتبة. جرّب البحث أو تصفّح {listLabel}.
       </p>
-      <SearchBox />
       <div className="animate-rise-3 mt-8 flex flex-wrap justify-center gap-3">
         <a href={listTo} className="btn-gold">
           <Compass className="size-4" aria-hidden />

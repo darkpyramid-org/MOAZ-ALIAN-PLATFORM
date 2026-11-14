@@ -12,10 +12,11 @@ type Search = {
 };
 
 function safePath(p?: string) {
-  if (!p) return "/dashboard";
+  if (!p) return "/";
   try {
     const u = new URL(p, "http://x");
-    return u.pathname.startsWith("/") && !p.startsWith("//") ? u.pathname + u.search : "/dashboard";
+    return u.pathname.startsWith("/") && !p.startsWith("//") ? u.pathname + u.search : "/";
+
   } catch {
     return "/dashboard";
   }
@@ -60,11 +61,11 @@ function AuthPage() {
       if (mode === "in") {
         await authClient.login(normalizedEmail, password);
         toast.success("تم تسجيل الدخول بنجاح");
-        navigate({ to: target as "/dashboard", replace: true });
+        navigate({ to: target as "/", replace: true });
       } else if (mode === "up") {
         await authClient.register(normalizedEmail, password);
         toast.success("تم إنشاء الحساب وتسجيل الدخول بنجاح");
-        navigate({ to: "/dashboard", replace: true });
+        navigate({ to: "/", replace: true });
       } else {
         // The API never discloses the reset token; delivery is out-of-band (email).
         await authClient.forgotPassword(normalizedEmail);
@@ -81,7 +82,7 @@ function AuthPage() {
     async function checkExistingAuth() {
       const user = await authClient.getMe();
       if (user) {
-        navigate({ to: target as "/dashboard", replace: true });
+        navigate({ to: target as "/", replace: true });
       }
     }
     void checkExistingAuth();
@@ -98,7 +99,7 @@ function AuthPage() {
       const user = await authClient.getMe();
       if (user) {
         toast.success("تم تسجيل الدخول بنجاح");
-        navigate({ to: target as "/dashboard", replace: true });
+        navigate({ to: target as "/", replace: true });
       }
     })();
   }, [token, navigate, target]);

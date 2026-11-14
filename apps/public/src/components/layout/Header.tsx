@@ -167,22 +167,6 @@ export function Header() {
                       <p className="truncate text-xs text-muted-foreground">{user.email}</p>
                     </div>
                     <div className="my-1 h-px bg-border" />
-                    <Link
-                      to="/dashboard/profile"
-                      onClick={() => setAccountOpen(false)}
-                      className="block rounded-xl px-3 py-2 text-sm hover:bg-accent"
-                    >
-                      الملف الشخصي
-                    </Link>
-                    {user.canEditContent && (
-                      <Link
-                        to="/dashboard"
-                        onClick={() => setAccountOpen(false)}
-                        className="block rounded-xl px-3 py-2 text-sm hover:bg-accent"
-                      >
-                        لوحة التحكم
-                      </Link>
-                    )}
                     <button
                       type="button"
                       onClick={() => {

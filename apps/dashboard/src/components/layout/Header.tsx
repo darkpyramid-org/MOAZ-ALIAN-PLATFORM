@@ -1,28 +1,23 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ArrowUpLeft, BookOpen, ChevronLeft, Menu, Search, User, X } from "lucide-react";
+import { ArrowUpLeft, BookOpen, ChevronLeft, Menu, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useStaff } from "@/hooks/use-staff";
 import { authClient } from "@/lib/auth";
 
-import { SearchOverlay } from "@/components/search/SearchOverlay";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { trapFocus, useDismiss, usePresence, useScrollLock } from "@/hooks/use-overlay";
 
 const NAV = [
-  { to: "/", label: "الرئيسية" },
-  { to: "/videos", label: "الفيديوهات" },
-  { to: "/books", label: "الكتب" },
-  { to: "/articles", label: "المقالات" },
-  { to: "/research", label: "الأبحاث" },
+  { to: "/dashboard", label: "لوحة التحكم" },
 ] as const;
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
+  
   const [accountOpen, setAccountOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const home = pathname === "/";
@@ -116,19 +111,8 @@ export function Header() {
           <div className="hidden xl:block">
             <ThemeToggle />
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            type="button"
-            onClick={() => setSearchOpen(true)}
-            aria-label="فتح البحث"
-            title="فتح البحث"
-            className="site-header-tool hidden rounded-full border border-border xl:inline-flex"
-          >
-            <Search className="size-5" aria-hidden />
-          </Button>
           <Button asChild className="hidden px-4 xl:inline-flex">
-            <Link to="/categories">
+            <Link to="/dashboard">
               استكشف{" "}
               <span className="grid size-5 place-items-center rounded-full bg-primary-foreground/15">
                 <ArrowUpLeft className="size-3" aria-hidden />
@@ -295,26 +279,13 @@ export function Header() {
               </nav>
               <div className="flex items-center gap-3 border-t border-border p-3">
                 <ThemeToggle />
-                <Button
-                  variant="ghost"
-                  type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setSearchOpen(true);
-                  }}
-                  className="flex h-11 flex-1 items-center gap-3 rounded-full border border-border px-4 py-3 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary"
-                  style={{ "--i": NAV.length } as CSSProperties}
-                >
-                  <Search className="size-4" aria-hidden />
-                  ابحث في المكتبة…
-                </Button>
               </div>
             </div>
           </div>,
           document.body,
         )}
 
-      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+      
     </header>
   );
 }

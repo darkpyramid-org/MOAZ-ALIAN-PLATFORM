@@ -37,13 +37,13 @@ pnpm dev
 
 # 2 — frontend (public site)
 cd apps/public
-bun install
-bun run dev
+pnpm install
+pnpm dev
 
 # 3 — frontend (dashboard)
 cd apps/dashboard
-bun install
-bun run dev
+pnpm install
+pnpm dev
 ```
 
 App runs at the port Vite prints; set `API_URL` (SSR) if the API is not on
@@ -53,7 +53,7 @@ page must never fetch an HTTP API directly (mixed content).
 
 ## Tech stack
 
-- **Frontend:** Bun, React 19, TanStack Start & Router, Tailwind CSS, Radix UI
+- **Frontend:** pnpm, React 19, TanStack Start & Router, Tailwind CSS, Radix UI
 - **Backend:** Node.js + Express 5 + TypeScript, Prisma ORM, PostgreSQL (`library` schema)
 - **Database:** PostgreSQL (schema `library`; connection string via `DATABASE_URL`)
 - **AI:** Lovable AI gateway (`AI_API_KEY`) via `/api/chat`
@@ -75,11 +75,11 @@ Frontend (in `apps/public/` or `apps/dashboard/`):
 
 | Command | Purpose |
 |---------|---------|
-| `bun run dev` | Development server |
-| `bun run build` | Production build |
-| `bun run lint` | ESLint |
-| `bun run format:check` | Prettier check |
-| `bun run test` | Vitest (once) |
+| `pnpm dev` | Development server |
+| `pnpm build` | Production build |
+| `pnpm lint` | ESLint |
+| `pnpm format:check` | Prettier check |
+| `pnpm test` | Vitest (once) |
 
 ## Documentation
 

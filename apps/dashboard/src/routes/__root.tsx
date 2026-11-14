@@ -13,9 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { ErrorScreen, NotFoundScreen, OfflineBanner } from "@/components/feedback/StatusScreens";
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { BackToTop } from "@/components/layout/BackToTop";
-import { ChatWidget } from "@/components/chat/ChatWidget";
 import { Toaster } from "@/components/ui/sonner";
 import { THEME_BOOT_SCRIPT } from "@/components/layout/ThemeToggle";
 import { libraryQuery } from "@/lib/library.functions";
@@ -131,9 +129,7 @@ function RootComponent() {
       <main id="main" className="min-h-[70vh]">
         <Outlet />
       </main>
-      <Footer />
       <BackToTop />
-      <ChatWidget />
       <OfflineBanner />
       <Toaster position="bottom-center" />
     </QueryClientProvider>

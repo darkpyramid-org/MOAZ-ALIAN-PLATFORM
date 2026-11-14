@@ -77,3 +77,6 @@ TestResults/
 *.swo
 *~
 .env.test.local
+
+# pnpm agent skills cache (pnpm approve)
+.agents/
