@@ -40,11 +40,13 @@ Optional:
 | Variable | Notes |
 |----------|-------|
 | `AUTH_ISSUER`, `AUTH_AUDIENCE` | JWT issuer/audience claims (defaults are fine) |
-| `RATE_LIMIT_GLOBAL_PER_MINUTE`, `RATE_LIMIT_EDITORIAL_PER_MINUTE` | rate limits |
+| `RATE_LIMIT_GLOBAL_PER_MINUTE`, `RATE_LIMIT_EDITORIAL_PER_MINUTE` | general API rate limits |
+| `AUTH_RATE_LIMIT_IP_PER_MINUTE` | public credential endpoint budget per direct client IP (default 30/min) |
+| `AUTH_RATE_LIMIT_ACCOUNT_PER_MINUTE` | public credential endpoint budget per IP + normalized account identifier (default 5/min) |
 | `SWAGGER_ENABLED` | set `true` to enable OpenAPI UI in production |
 | `AUTH_REGISTER_ROLES` | JSON array to restrict self-registration roles (defaults to editor) |
 | `CONTENT_CACHE_*`, `RATE_LIMIT_*` | cache and rate limit tuning |
-| `OAUTH_GOOGLE_*`, `OAUTH_FACEBOOK_*` | OAuth providers (client ID, secret and redirect URI required) |
+| `OAUTH_GOOGLE_*`, `OAUTH_FACEBOOK_*` | OAuth providers (all three per provider required) |
 | `AI_API_KEY`, `OPENAI_API_KEY` | if `/api/chat` is used |
 
 ## OAuth identity and account-linking policy
@@ -78,3 +80,13 @@ Set in the Vercel dashboard for the frontend services:
 - **`ERR_PNPM_IGNORED_BUILDS`** — `allowBuilds` in `pnpm-workspace.yaml` (and `strictDepBuilds: false`) controls which postinstall scripts are allowed (Prisma engines, esbuild).
 - **`EXIT_CODE: 1` in install** — check that `pnpm-lock.yaml` is committed and consistent with `package.json` (`pnpm install --frozen-lockfile` must pass).
 - **API responds 404 on `/api/auth/*` or `/api/content/*`** — the `/api/(.*)` rewrite hits the internal `api` service; ensure `DATABASE_URL` is reachable from Vercel.
+
+
+## Authentication resource controls
+
+- Password hashing and verification use Node's asynchronous `crypto.pbkdf2` API. Derivation runs in libuv's worker pool instead of synchronously blocking the API event loop.
+- Password inputs are limited to 1,024 UTF-8 bytes before derivation. The existing ASP.NET Identity V2/V3 Base64 format, PRF, iteration count, salt and subkey encoding are preserved for .NET interoperability.
+- Login for an unknown email performs a verification against a fixed, non-secret dummy V3 hash before returning the same generic authentication failure as a wrong password. This reduces account-enumeration timing differences; it does not make network timing perfectly identical.
+- Login, registration, forgot-password, reset-password and change-password routes have additional fixed-window limits. Limits are keyed by the direct socket peer and a SHA-256 digest of the normalized account identifier (or reset token); raw email addresses and reset tokens are not retained in rate-limit keys.
+- Express proxy trust is intentionally not enabled by this middleware. If deployed behind a reverse proxy, configure a trusted proxy topology before changing the IP source; do not trust arbitrary `X-Forwarded-For` input.
+- Rate-limit buckets are process-local. Multi-instance deployments should additionally enforce equivalent limits at the edge/API gateway for a fleet-wide budget.
