@@ -145,7 +145,7 @@ model SiteSetting {
 
 /// library.debates — legacy table created by Program.cs startup DDL.
 model Debate {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id              String   @id @map("Id") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   guestName       String   @map("GuestName") @db.Text
   guestBackground String?  @map("GuestBackground") @db.Text
   topic           String   @map("Topic") @db.Text
@@ -165,7 +165,7 @@ model Debate {
 /// One owner per thread; every read/write is filtered by the owner id, so a
 /// foreign thread is indistinguishable from a missing one (404 either way).
 model ChatThread {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id        String   @id @map("Id") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId    String   @map("UserId") @db.Uuid
   title     String?  @map("Title") @db.Text
   createdAt DateTime @map("CreatedAt") @default(now()) @db.Timestamptz(3)
@@ -208,7 +208,7 @@ model OAuthState {
 }
 
 model ChatMessage {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id        String   @id @map("Id") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   threadId  String   @map("ThreadId") @db.Uuid
   role      String   @map("Role") @db.Text
   content   String   @map("Content") @db.Text
