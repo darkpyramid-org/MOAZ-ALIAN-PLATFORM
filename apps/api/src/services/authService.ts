@@ -315,7 +315,7 @@ export async function externalLogin(
         data: {
           id: cryptoRandomUuid(),
           email,
-          passwordHash: hashPassword(cryptoRandomUuid().replace(/-/g, '')),
+          passwordHash: await hashPassword(cryptoRandomUuid().replace(/-/g, '')),
           // External identities never receive editor/admin roles at creation.
           roles: [],
           createdAt: now,
