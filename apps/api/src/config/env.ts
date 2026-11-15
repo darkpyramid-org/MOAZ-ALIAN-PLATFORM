@@ -6,6 +6,9 @@ import { z } from 'zod';
  * same reason: a misconfigured identity layer must not surface as a 500 on the
  * first login attempt.
  */
+const DEVELOPMENT_JWT_SECRET =
+  'fallback-secret-minimum-32-characters-for-preview-development';
+
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().int().positive().default(5199),
@@ -20,10 +23,7 @@ const schema = z.object({
   AUTH_JWT_SECRET: z
     .string()
     .min(32, 'Auth:JwtSecret must be at least 32 characters (256 bits of HMAC-SHA256 key material).')
-    .default(
-      process.env.AUTH_JWT_SECRET ||
-        'fallback-secret-minimum-32-characters-for-preview-development',
-    ),
+    .default(process.env.AUTH_JWT_SECRET || DEVELOPMENT_JWT_SECRET),
   AUTH_ISSUER: z.string().optional(),
   AUTH_AUDIENCE: z.string().default('authenticated'),
   AUTH_ADMIN_ROLE: z.string().default('admin'),
@@ -37,7 +37,7 @@ const schema = z.object({
   FRONTEND_URL: z.string().default('http://localhost:8080'),
 
   CORS_ALLOWED_ORIGINS: z.string().optional(),
-  // Explicit proxy IPs/CIDRs allowed to supply X-Forwarded-For. Empty means no proxy is trusted.
+  // Explicit proxy IPs/CIDRs allowed to supply X-Forwarded-For. Empty trusts none.
   TRUSTED_PROXY_CIDRS: z.string().optional(),
   CORS_ALLOW_VERCEL_ORIGINS: z
     .string()
@@ -57,6 +57,8 @@ const schema = z.object({
   RATE_LIMIT_STORE: z.enum(['memory', 'upstash']).default('memory'),
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
+  AUTH_RATE_LIMIT_IP_PER_MINUTE: z.coerce.number().int().positive().default(30),
+  AUTH_RATE_LIMIT_ACCOUNT_PER_MINUTE: z.coerce.number().int().positive().default(5),
 
   SWAGGER_ENABLED: z
     .string()
@@ -154,6 +156,28 @@ export function loadEnv(): Env {
   }
   if (parsed.RATE_LIMIT_STORE === 'upstash' && (!parsed.UPSTASH_REDIS_REST_URL || !parsed.UPSTASH_REDIS_REST_TOKEN)) {
     throw new Error('RATE_LIMIT_STORE=upstash requires UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.');
+  }
+
+  // A development fallback must never become the production signing key.
+  // Require an explicitly supplied, non-placeholder secret with sufficient
+  // length and character diversity before the API can start in production.
+  if (isProduction) {
+    const configuredSecret = raw.AUTH_JWT_SECRET;
+    if (!configuredSecret || configuredSecret.trim() === '') {
+      throw new Error(
+        'AUTH_JWT_SECRET must be explicitly configured in production. Generate a unique secret (for example: openssl rand -base64 48).',
+      );
+    }
+
+    if (
+      configuredSecret === DEVELOPMENT_JWT_SECRET ||
+      configuredSecret.length < 32 ||
+      new Set(configuredSecret).size < 8
+    ) {
+      throw new Error(
+        'AUTH_JWT_SECRET is weak or uses a development placeholder. Configure a unique random secret of at least 32 characters before starting the API in production.',
+      );
+    }
   }
   // Mirror of Program.cs: docs on in Development, off in Production unless
   // Swagger:Enabled is explicitly set.
