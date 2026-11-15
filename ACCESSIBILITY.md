@@ -1,95 +1,70 @@
 # Accessibility
 
-<!--
-Include a brief statement describing why accessibility matters to your
-project, who should be able to use and contribute to it, and what this
-document covers, such as your accessibility commitments, contributor
-expectations, and issue-reporting process.
-
-Write for people who may read this after encountering a barrier. Use plain
-language and describe user experiences rather than relying on legal
-language, technical jargon, or standards codes.
--->
+MOAZ ALIAN is an Arabic knowledge platform. People who use it — readers, researchers, editors, and administrators — should be able to access content and contribute regardless of disability, assistive technology, or input method. This document describes our accessibility commitments, what we expect from contributors, and how to report barriers.
 
 ## Priorities
 
-<!--
-Describe the outcomes the project prioritizes and how it works toward them.
-If you name a WCAG level as an accessibility target, make clear that it is
-an aspirational goal rather than a verified conformance claim. Only claim
-conformance after an evaluation, and identify the evaluated scope, date,
-method, and evaluator. Also describe the areas you prioritize, such as
-keyboard, screen reader, content, or language support.
--->
+We aim for experiences that work with:
+
+- Keyboard-only navigation
+- Screen readers and other assistive technologies
+- Adequate color contrast and resizable text
+- Clear focus indicators and meaningful structure (headings, landmarks, labels)
+- Right-to-left (RTL) layout for Arabic content, without breaking assistive technology support
+
+We treat **WCAG 2.2 Level AA** as an aspirational target for user-facing surfaces (`apps/public` and `apps/dashboard`). That is a goal, not a verified conformance claim. Formal evaluation scope, date, method, and results will be published when available.
 
 ## Contributor expectations
 
-<!--
-Describe the accessibility guardrails that apply to contributions,
-including relevant testing, documentation, and continuous integration
-checks. Name specific tools only when the project uses them, and explain
-what evidence contributors should include with user-facing changes.
--->
+When you change user-facing UI:
+
+- Prefer semantic HTML and accessible component patterns from the shared UI package when available.
+- Ensure interactive controls are reachable and operable by keyboard.
+- Provide accessible names (visible labels or appropriate `aria-*` / accessible name APIs).
+- Do not rely on color alone to convey meaning.
+- Preserve or improve RTL behavior for Arabic strings and layout.
+- Include brief notes in the PR when a change affects keyboard flow, focus management, or screen-reader announcements.
+
+Automated checks (lint, unit tests, CI) do not fully replace manual accessibility testing. For substantial UI work, test with keyboard and at least one screen reader or accessibility inspector where practical.
 
 ## Reporting accessibility issues
 
-<!--
-Provide a direct, accessible way to report a barrier or request help.
-Invite useful context such as the affected task, URL, observed behavior,
-browser, operating system, and assistive technology. Make screenshots or
-recordings optional and do not require disability disclosure.
--->
+Please open a GitHub issue with the label related to accessibility (or `area:public` / `area:dashboard` as appropriate).
 
-### Severity
+Useful context (optional but helpful):
 
-<!--
-If your project uses severity levels, define them and give practical
-examples based on how strongly a barrier affects a user's ability to
-complete a task. Keep labels consistent with your issue template and
-resolution targets if those processes exist. Maintainers can assign or
-confirm severity during triage; reporters do not need to.
--->
+- What you were trying to do (task / URL)
+- What happened instead
+- Browser, OS, and assistive technology if relevant
+- Screenshots or short recordings if they help (not required)
+
+You do **not** need to disclose a disability. Severity will be assessed by maintainers during triage.
+
+### Severity (guidance for maintainers)
+
+| Level | Example impact |
+| ----- | -------------- |
+| Critical | Cannot complete a core task (e.g. log in, read an article, publish content) with a primary assistive technology |
+| High | Major barrier with a reasonable workaround |
+| Medium | Partial impairment or inconsistent experience |
+| Low | Minor polish or edge-case improvement |
 
 ### How we respond
 
-<!--
-Explain what reporters can expect after submitting an accessibility issue,
-including acknowledgement, status updates, workarounds, expected timelines,
-and opportunities to verify a fix. Use commitments your project can
-consistently uphold.
--->
+We aim to acknowledge accessibility reports and triage them into the backlog. Critical barriers affecting core flows are prioritized alongside other high-severity work. When a fix ships, we welcome verification from the reporter if they choose to help.
 
 ## Ownership and maintenance
 
-<!--
-Identify the team, role, or maintainer responsible for accessibility and
-describe their responsibilities to the project. Include the review cadence
-and how ownership transfers when responsibilities change.
--->
+Maintainers of the public site and dashboard workspaces are responsible for accessibility of those surfaces. This document is reviewed when major UI systems change or when community feedback indicates gaps.
 
 ## Supported environments
 
-<!--
-List the platforms, devices, browsers, input methods, and assistive
-technologies the project supports or has tested. Include versions where
-useful, note partial support, and avoid implying support for combinations
-that have not been evaluated.
--->
+We primarily target modern evergreen browsers (latest Chrome, Firefox, Safari, Edge) on desktop and common mobile browsers. Assistive technology combinations are tested opportunistically; reported issues on widely used combinations are treated as first-class bugs.
 
 ## Known limitations
 
-<!--
-Describe known barriers in terms of the affected user experience, such as
-"videos do not have captions," rather than standards codes. Include
-available workarounds or equivalent access and link to tracked issues. If
-no limitations are currently documented, describe what has been tested
-instead of claiming that no barriers exist.
--->
+Document known barriers here as they are identified, with links to tracking issues and any available workarounds. If none are listed, that means none are currently documented — not that none exist.
 
 ## Feedback and improvements
 
-<!--
-Explain how users and contributors can suggest improvements to this
-statement or the project's accessibility practices. Direct active
-accessibility barriers to the reporting process above.
--->
+Suggestions to improve this statement or our practices are welcome via issue or PR. Active barriers should use the reporting process above.
