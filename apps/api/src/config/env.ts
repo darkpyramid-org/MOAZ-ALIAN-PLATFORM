@@ -52,6 +52,8 @@ const schema = z.object({
 
   RATE_LIMIT_GLOBAL_PER_MINUTE: z.coerce.number().int().positive().default(300),
   RATE_LIMIT_EDITORIAL_PER_MINUTE: z.coerce.number().int().positive().default(30),
+  AUTH_RATE_LIMIT_IP_PER_MINUTE: z.coerce.number().int().positive().default(30),
+  AUTH_RATE_LIMIT_ACCOUNT_PER_MINUTE: z.coerce.number().int().positive().default(5),
 
   SWAGGER_ENABLED: z
     .string()

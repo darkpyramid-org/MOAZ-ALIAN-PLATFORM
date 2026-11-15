@@ -1,5 +1,6 @@
 import { Router, type Request } from 'express';
 import { bindBody } from '../middleware/body.js';
+import { authRateLimit } from '../middleware/authRateLimit.js';
 import { requireAuth } from '../middleware/auth.js';
 import { sendJson, sendNoContent, sendProblemFramework, sendStatusPage, traceOf } from '../lib/http.js';
 import { AuthSignal, getCurrentUser, changePassword, forgotPassword, login, register, resetPassword, updateProfile } from '../services/authService.js';
@@ -31,7 +32,7 @@ function identityOf(req: Request): CurrentIdentity {
   };
 }
 
-router.post('/api/auth/login', (req, res, next) => {
+router.post('/api/auth/login', authRateLimit, (req, res, next) => {
   try {
     const body = bindBody(req, [
       { key: 'email', kind: 'string' },
@@ -64,7 +65,7 @@ router.post('/api/auth/login', (req, res, next) => {
   }
 });
 
-router.post('/api/auth/register', (req, res, next) => {
+router.post('/api/auth/register', authRateLimit, (req, res, next) => {
   try {
     const body = bindBody(req, [
       { key: 'email', kind: 'string' },
@@ -138,7 +139,7 @@ router.put('/api/auth/me', requireAuth, (req, res, next) => {
   }
 });
 
-router.post('/api/auth/change-password', requireAuth, (req, res, next) => {
+router.post('/api/auth/change-password', requireAuth, authRateLimit, (req, res, next) => {
   try {
     const body = bindBody(req, [
       { key: 'currentPassword', kind: 'string' },
@@ -165,7 +166,7 @@ router.post('/api/auth/change-password', requireAuth, (req, res, next) => {
   }
 });
 
-router.post('/api/auth/forgot-password', (req, res, next) => {
+router.post('/api/auth/forgot-password', authRateLimit, (req, res, next) => {
   try {
     const body = bindBody(req, [{ key: 'email', kind: 'string' }]);
     forgotPassword((body['email'] as string | null) ?? null)
@@ -180,7 +181,7 @@ router.post('/api/auth/forgot-password', (req, res, next) => {
   }
 });
 
-router.post('/api/auth/reset-password', (req, res, next) => {
+router.post('/api/auth/reset-password', authRateLimit, (req, res, next) => {
   try {
     const body = bindBody(req, [
       { key: 'token', kind: 'string' },
