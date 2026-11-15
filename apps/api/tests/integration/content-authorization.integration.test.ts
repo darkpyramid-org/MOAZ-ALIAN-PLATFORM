@@ -194,6 +194,13 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('PostgreSQL integration: content
       .expect(200);
     expect(roleUpdate.body.roles).toContain('editor');
 
+    const roleRemoval = await request(app)
+      .post('/api/users/' + readerId + '/roles')
+      .set('Authorization', 'Bearer ' + adminToken)
+      .send({ role: 'editor', has: true })
+      .expect(200);
+    expect(roleRemoval.body.roles).not.toContain('editor');
+
     // The role-management endpoint revokes existing sessions. Refresh the
     // reader token so the following assertion exercises authorization (403),
     // rather than the stale-token authentication path (401).
