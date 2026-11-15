@@ -63,7 +63,15 @@ describe('public account role assignment', () => {
     mocks.hashPassword.mockResolvedValue('test-password-hash');
     mocks.issueToken.mockReturnValue('test-token');
     mocks.findUnique.mockResolvedValue(null);
-    mocks.create.mockImplementation(({ data }: { data: Record<string, unknown> }) => Promise.resolve(data));
+    mocks.create.mockImplementation(({ data }: { data: Record<string, unknown> }) => Promise.resolve({
+      id: 'created-user-id',
+      email: 'admin@example.com',
+      passwordHash: 'test-password-hash',
+      roles: [],
+      displayName: null,
+      avatarUrl: null,
+      ...data,
+    }));
     mocks.update.mockImplementation(({ where, data }: { where: { id?: string }; data?: Record<string, unknown> }) => Promise.resolve({
       id: where.id ?? 'created-user-id',
       email: 'admin@example.com',
