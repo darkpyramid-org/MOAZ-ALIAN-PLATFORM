@@ -33,6 +33,7 @@ Set these in the Vercel dashboard → Project → Settings → Environment Varia
 | `CORS_ALLOWED_ORIGINS` | e.g. `["https://your-vercel-app.vercel.app","https://your-domain.com"]` |
 | `CORS_ALLOW_VERCEL_ORIGINS` | set `true` temporarily to allow any `*.vercel.app` origin (e.g. for preview deployments) |
 | `FRONTEND_URL` | your public site origin (used by OAuth callback redirects) |
+| `TRUSTED_PROXY_CIDRS` | optional JSON array of exact reverse-proxy IPs/CIDRs. Only these peers may supply trusted `X-Forwarded-For` hops. Leave unset if the hosting ingress cannot be identified precisely. |
 | `AUTH_ADMIN_EMAILS` | JSON array, e.g. `["admin@example.com"]` |
 
 Optional:
@@ -40,14 +41,22 @@ Optional:
 | Variable | Notes |
 |----------|-------|
 | `AUTH_ISSUER`, `AUTH_AUDIENCE` | JWT issuer/audience claims (defaults are fine) |
-| `RATE_LIMIT_GLOBAL_PER_MINUTE`, `RATE_LIMIT_EDITORIAL_PER_MINUTE` | general API rate limits |
-| `AUTH_RATE_LIMIT_IP_PER_MINUTE` | public credential endpoint budget per direct client IP (default 30/min) |
-| `AUTH_RATE_LIMIT_ACCOUNT_PER_MINUTE` | public credential endpoint budget per IP + normalized account identifier (default 5/min) |
+| `RATE_LIMIT_GLOBAL_PER_MINUTE`, `RATE_LIMIT_EDITORIAL_PER_MINUTE` | shared global/editorial quotas |
+| `RATE_LIMIT_STORE` | `upstash` in production; `memory` only for local/test |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST credentials; required when store is `upstash` |
 | `SWAGGER_ENABLED` | set `true` to enable OpenAPI UI in production |
 | `AUTH_REGISTER_ROLES` | JSON array to restrict self-registration roles (defaults to editor) |
 | `CONTENT_CACHE_*`, `RATE_LIMIT_*` | cache and rate limit tuning |
 | `OAUTH_GOOGLE_*`, `OAUTH_FACEBOOK_*` | OAuth providers (all three per provider required) |
 | `AI_API_KEY`, `OPENAI_API_KEY` | if `/api/chat` is used |
+
+## Shared rate-limit storage
+
+Production requires `RATE_LIMIT_STORE=upstash` and the Upstash Redis REST URL/token. The API increments fixed-window counters with a single atomic Redis Lua EVAL (INCR + PEXPIRE), keyed by a SHA-256 partition digest and a global/editorial scope. Redis TTL expires counters automatically. Local in-memory mode is retained only for development and tests; it is not a multi-instance security boundary. On a shared-store outage, the global read/API budget fails open to preserve availability, while editorial writes fail closed with HTTP 503. Both paths emit token/PII-free operational logs.
+
+## Reverse-proxy and rate-limit trust boundary
+
+The API ignores raw `X-Forwarded-For` values unless the immediate TCP peer matches an entry in `TRUSTED_PROXY_CIDRS`. Express then walks the forwarded chain from the nearest proxy outward and stops at the first untrusted address. Configure exact ingress proxy addresses/CIDRs (JSON array or indexed `TRUSTED_PROXY_CIDRS_0`, `TRUSTED_PROXY_CIDRS_1`, …); do not use `*`, `0.0.0.0/0`, or a numeric hop count. When unset, no proxy is trusted and rate limiting uses the socket peer address. If the hosting provider does not publish a stable, verifiable ingress range for the API, keep this setting empty and enforce client-facing rate limits at the provider edge/WAF rather than trusting a spoofable forwarding header.
 
 ## OAuth identity and account-linking policy
 
@@ -89,7 +98,6 @@ Set in the Vercel dashboard for the frontend services:
 - **`ERR_PNPM_IGNORED_BUILDS`** — `allowBuilds` in `pnpm-workspace.yaml` (and `strictDepBuilds: false`) controls which postinstall scripts are allowed (Prisma engines, esbuild).
 - **`EXIT_CODE: 1` in install** — check that `pnpm-lock.yaml` is committed and consistent with `package.json` (`pnpm install --frozen-lockfile` must pass).
 - **API responds 404 on `/api/auth/*` or `/api/content/*`** — the `/api/(.*)` rewrite hits the internal `api` service; ensure `DATABASE_URL` is reachable from Vercel.
-
 
 ## Authentication resource controls
 

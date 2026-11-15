@@ -45,6 +45,8 @@ export function createApp(): express.Express {
   // gzipped bytes differ from the response it would validate).
   app.disable('x-powered-by');
   app.set('etag', false);
+  // Honor forwarded client IPs only from explicitly trusted ingress peers.
+  app.set('trust proxy', env.trustedProxyCidrs);
 
   app.use(trace);
   app.use(

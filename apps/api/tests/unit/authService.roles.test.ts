@@ -8,13 +8,10 @@ const mocks = vi.hoisted(() => ({
   hashPassword: vi.fn(),
   verifyPassword: vi.fn(),
   issueToken: vi.fn(),
-  transaction: vi.fn(),
-  oauthCreate: vi.fn(),
 }));
 
 vi.mock('../../src/lib/db.js', () => ({
   db: {
-    $transaction: mocks.transaction,
     user: {
       findUnique: mocks.findUnique,
       create: mocks.create,
@@ -52,21 +49,6 @@ describe('public account role assignment', () => {
     vi.clearAllMocks();
     mocks.hashPassword.mockResolvedValue('test-password-hash');
     mocks.issueToken.mockReturnValue('test-token');
-    mocks.transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => callback({
-      oAuthIdentity: {
-        findUnique: vi.fn().mockResolvedValue(null),
-        create: vi.fn().mockResolvedValue({}),
-      },
-      user: {
-        findUnique: vi.fn().mockResolvedValue(null),
-        create: mocks.oauthCreate.mockImplementation(({ data }: { data: Record<string, unknown> }) => Promise.resolve({
-          ...data, displayName: null, avatarUrl: null,
-        })),
-        update: vi.fn().mockImplementation(({ where, data }: { where: { id: string }; data: Record<string, unknown> }) => Promise.resolve({
-          ...data, id: where.id, email: 'admin@example.com', roles: [], displayName: null, avatarUrl: null,
-        })),
-      },
-    }));
     mocks.findUnique.mockResolvedValue(null);
     mocks.create.mockImplementation(({ data }: { data: Record<string, unknown> }) => Promise.resolve(data));
     mocks.update.mockResolvedValue({});
@@ -97,9 +79,9 @@ describe('public account role assignment', () => {
   });
 
   it('does not grant editor or admin roles during OAuth account creation', async () => {
-    const result = await externalLogin('google', 'google-subject-1', 'admin@example.com', true, 'Admin', null);
+    const result = await externalLogin('admin@example.com', 'Admin', null, 'google');
 
-    expect(mocks.oauthCreate).toHaveBeenCalledWith(
+    expect(mocks.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           email: 'admin@example.com',
