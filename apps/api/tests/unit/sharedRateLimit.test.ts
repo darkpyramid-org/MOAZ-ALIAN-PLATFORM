@@ -48,7 +48,19 @@ describe('shared Upstash fixed-window counter', () => {
     await expect(incrementSharedRateLimit('editorial', 'user:123')).rejects.toThrow('HTTP 503');
   });
 
-  it('rejects malformed Redis responses instead of treating them as zero', async () => {
+  it.each([null, 0, -1, 1.5, '', true])(
+    'rejects invalid Redis counter values (%s)',
+    async (value) => {
+      mockedFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ result: [value, 54_000] }),
+      });
+      const { incrementSharedRateLimit } = await import('../../src/middleware/rateLimit.js');
+      await expect(incrementSharedRateLimit('global', 'user:123')).rejects.toThrow('invalid counter response');
+    },
+  );
+
+  it('rejects a non-array Redis result', async () => {
     mockedFetch.mockResolvedValue({
       ok: true,
       json: async () => ({ result: 'not-a-counter' }),
