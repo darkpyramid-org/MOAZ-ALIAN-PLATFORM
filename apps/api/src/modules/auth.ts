@@ -4,7 +4,6 @@ import { requireAuth } from '../middleware/auth.js';
 import { sendJson, sendNoContent, sendProblemFramework, sendStatusPage, traceOf } from '../lib/http.js';
 import { AuthSignal, getCurrentUser, changePassword, forgotPassword, login, register, resetPassword, updateProfile } from '../services/authService.js';
 import type { CurrentIdentity } from '../services/authService.js';
-import { clientIp } from '../middleware/rateLimit.js';
 
 /**
  * /api/auth — the port of AuthEndpoints.cs. Every response shape is the
@@ -169,7 +168,7 @@ router.post('/api/auth/change-password', requireAuth, (req, res, next) => {
 router.post('/api/auth/forgot-password', (req, res, next) => {
   try {
     const body = bindBody(req, [{ key: 'email', kind: 'string' }]);
-    forgotPassword((body['email'] as string | null) ?? null, clientIp(req))
+    forgotPassword((body['email'] as string | null) ?? null)
       .then(() =>
         // Identical for known and unknown addresses so the endpoint cannot
         // probe which emails are registered.

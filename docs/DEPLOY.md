@@ -50,10 +50,6 @@ Optional:
 | `OAUTH_GOOGLE_*`, `OAUTH_FACEBOOK_*` | OAuth providers (all three per provider required) |
 | `AI_API_KEY`, `OPENAI_API_KEY` | if `/api/chat` is used |
 
-## Password recovery email
-
-The API sends password-reset links through Resend. Configure `RESEND_API_KEY` and a verified `EMAIL_FROM` sender on the API service. Links target `/reset-password?token=...` on `FRONTEND_URL`; the public frontend route submits the token to `POST /api/auth/reset-password`. Requests are limited to five per normalized account and ten per trusted client IP per hour, using the shared Redis store in production. Local development/tests use the bounded in-memory adapter.
-
 ## Shared rate-limit storage
 
 Production requires `RATE_LIMIT_STORE=upstash` and the Upstash Redis REST URL/token. The API increments fixed-window counters with a single atomic Redis Lua EVAL (INCR + PEXPIRE), keyed by a SHA-256 partition digest and a global/editorial scope. Redis TTL expires counters automatically. Local in-memory mode is retained only for development and tests; it is not a multi-instance security boundary. On a shared-store outage, the global read/API budget fails open to preserve availability, while editorial writes fail closed with HTTP 503. Both paths emit token/PII-free operational logs.
