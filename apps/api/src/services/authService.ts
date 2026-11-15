@@ -2,6 +2,7 @@ import { db } from '../lib/db.js';
 import { env } from '../config/env.js';
 import { hashPassword, verifyPassword, VerificationResult, DUMMY_PASSWORD_HASH, isPasswordWithinLimit, MAX_PASSWORD_BYTES } from '../lib/password.js';
 import { issueToken } from '../lib/jwt.js';
+import { DomainError } from '../lib/errors.js';
 import { guardOptional } from '../lib/guard.js';
 import { utcNow } from '../lib/clock.js';
 import { randomBytes } from 'node:crypto';
@@ -85,15 +86,14 @@ export async function login(emailRaw: string | null, passwordRaw: string | null)
   return { token: issueToken(current), user: authUserJson(current) };
 }
 
-/** Admin allowlist, case-insensitive — the only path to the admin role. */
-function isAdminEmail(email: string): boolean {
-  return env.adminEmails.some((candidate) => candidate.toLowerCase() === email.toLowerCase());
-}
-
-function rolesForEmail(email: string): string[] {
-  return isAdminEmail(email)
-    ? [env.AUTH_ADMIN_ROLE, env.AUTH_EDITOR_ROLE]
-    : [env.AUTH_EDITOR_ROLE];
+/**
+ * Public registration and OAuth account creation are untrusted entry points.
+ * They must never assign privileged roles based on an email address or an
+ * allowlist: neither proves mailbox ownership. Privileged roles are provisioned
+ * only through a trusted operator-controlled process after identity verification.
+ */
+function rolesForPublicAccount(): string[] {
+  return [];
 }
 
 export async function register(emailRaw: string | null, passwordRaw: string | null): Promise<{ token: string; user: AuthUserJson }> {
@@ -119,7 +119,7 @@ export async function register(emailRaw: string | null, passwordRaw: string | nu
       id: cryptoRandomUuid(),
       email,
       passwordHash: await hashPassword(passwordRaw),
-      roles: rolesForEmail(email),
+      roles: rolesForPublicAccount(),
       createdAt: now,
       updatedAt: null,
     },
