@@ -151,12 +151,6 @@ export function loadEnv(): Env {
   ];
 
   const isProduction = parsed.NODE_ENV === 'production';
-  if (isProduction && parsed.RATE_LIMIT_STORE !== 'upstash') {
-    throw new Error('Production requires RATE_LIMIT_STORE=upstash so rate limits are shared across API instances.');
-  }
-  if (parsed.RATE_LIMIT_STORE === 'upstash' && (!parsed.UPSTASH_REDIS_REST_URL || !parsed.UPSTASH_REDIS_REST_TOKEN)) {
-    throw new Error('RATE_LIMIT_STORE=upstash requires UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.');
-  }
 
   // A development fallback must never become the production signing key.
   // Require an explicitly supplied, non-placeholder secret with sufficient
@@ -178,6 +172,12 @@ export function loadEnv(): Env {
         'AUTH_JWT_SECRET is weak or uses a development placeholder. Configure a unique random secret of at least 32 characters before starting the API in production.',
       );
     }
+  }
+  if (isProduction && parsed.RATE_LIMIT_STORE !== 'upstash') {
+    throw new Error('Production requires RATE_LIMIT_STORE=upstash so rate limits are shared across API instances.');
+  }
+  if (parsed.RATE_LIMIT_STORE === 'upstash' && (!parsed.UPSTASH_REDIS_REST_URL || !parsed.UPSTASH_REDIS_REST_TOKEN)) {
+    throw new Error('RATE_LIMIT_STORE=upstash requires UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.');
   }
   // Mirror of Program.cs: docs on in Development, off in Production unless
   // Swagger:Enabled is explicitly set.
