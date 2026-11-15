@@ -22,7 +22,7 @@ describe('shared Upstash fixed-window counter', () => {
       ok: true,
       json: async () => ({ result: [7, 54_000] }),
     });
-    const { incrementSharedRateLimit } = await import('../../src/middleware/rateLimit.js');
+    const { incrementSharedRateLimit } = await import('../../src/lib/rateLimitStore.js');
 
     const first = await incrementSharedRateLimit('global', 'ip:203.0.113.10');
     const second = await incrementSharedRateLimit('global', 'ip:203.0.113.10');
@@ -44,7 +44,7 @@ describe('shared Upstash fixed-window counter', () => {
 
   it('fails explicitly when the shared store rejects the command', async () => {
     mockedFetch.mockResolvedValue({ ok: false, status: 503 });
-    const { incrementSharedRateLimit } = await import('../../src/middleware/rateLimit.js');
+    const { incrementSharedRateLimit } = await import('../../src/lib/rateLimitStore.js');
     await expect(incrementSharedRateLimit('editorial', 'user:123')).rejects.toThrow('HTTP 503');
   });
 
@@ -55,7 +55,7 @@ describe('shared Upstash fixed-window counter', () => {
         ok: true,
         json: async () => ({ result: [value, 54_000] }),
       });
-      const { incrementSharedRateLimit } = await import('../../src/middleware/rateLimit.js');
+      const { incrementSharedRateLimit } = await import('../../src/lib/rateLimitStore.js');
       await expect(incrementSharedRateLimit('global', 'user:123')).rejects.toThrow('invalid counter response');
     },
   );
@@ -65,7 +65,7 @@ describe('shared Upstash fixed-window counter', () => {
       ok: true,
       json: async () => ({ result: 'not-a-counter' }),
     });
-    const { incrementSharedRateLimit } = await import('../../src/middleware/rateLimit.js');
+    const { incrementSharedRateLimit } = await import('../../src/lib/rateLimitStore.js');
     await expect(incrementSharedRateLimit('global', 'user:123')).rejects.toThrow('invalid counter response');
   });
 });
