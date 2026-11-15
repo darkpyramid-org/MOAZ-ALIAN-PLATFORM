@@ -44,8 +44,6 @@ Optional:
 | `RATE_LIMIT_GLOBAL_PER_MINUTE`, `RATE_LIMIT_EDITORIAL_PER_MINUTE` | shared global/editorial quotas |
 | `RATE_LIMIT_STORE` | `upstash` in production; `memory` only for local/test |
 | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST credentials; required when store is `upstash` |
-| `AUTH_RATE_LIMIT_IP_PER_MINUTE` | public credential endpoint budget per direct client IP (default 30/min) |
-| `AUTH_RATE_LIMIT_ACCOUNT_PER_MINUTE` | public credential endpoint budget per IP + normalized account identifier (default 5/min) |
 | `SWAGGER_ENABLED` | set `true` to enable OpenAPI UI in production |
 | `AUTH_REGISTER_ROLES` | JSON array to restrict self-registration roles (defaults to editor) |
 | `CONTENT_CACHE_*`, `RATE_LIMIT_*` | cache and rate limit tuning |
@@ -98,5 +96,5 @@ Set in the Vercel dashboard for the frontend services:
 - Password inputs are limited to 1,024 UTF-8 bytes before derivation. The existing ASP.NET Identity V2/V3 Base64 format, PRF, iteration count, salt and subkey encoding are preserved for .NET interoperability.
 - Login for an unknown email performs a verification against a fixed, non-secret dummy V3 hash before returning the same generic authentication failure as a wrong password. This reduces account-enumeration timing differences; it does not make network timing perfectly identical.
 - Login, registration, forgot-password, reset-password and change-password routes have additional fixed-window limits. Limits are keyed by the direct socket peer and a SHA-256 digest of the normalized account identifier (or reset token); raw email addresses and reset tokens are not retained in rate-limit keys.
-- Express proxy trust is intentionally constrained to explicitly configured `TRUSTED_PROXY_CIDRS`; do not trust arbitrary `X-Forwarded-For` input.
-- Production rate limits use shared Redis storage; process-local in-memory buckets are for development and tests only. Multi-instance deployments must use the shared store or equivalent edge/API-gateway enforcement.
+- Express proxy trust is intentionally not enabled by this middleware. If deployed behind a reverse proxy, configure a trusted proxy topology before changing the IP source; do not trust arbitrary `X-Forwarded-For` input.
+- Rate-limit buckets are process-local. Multi-instance deployments should additionally enforce equivalent limits at the edge/API gateway for a fleet-wide budget.

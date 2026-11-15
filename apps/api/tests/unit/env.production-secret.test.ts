@@ -11,6 +11,9 @@ async function loadEnvironment() {
 describe('production JWT secret validation', () => {
   beforeEach(() => {
     process.env.NODE_ENV = 'production';
+    process.env.RATE_LIMIT_STORE = 'upstash';
+    process.env.UPSTASH_REDIS_REST_URL = 'https://example.upstash.io';
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'test-upstash-token';
     delete process.env.AUTH_JWT_SECRET;
   });
 
