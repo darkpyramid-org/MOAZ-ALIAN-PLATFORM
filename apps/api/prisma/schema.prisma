@@ -119,6 +119,8 @@ model User {
   id                    String    @id @map("Id") @db.Uuid
   email                 String    @unique(map: "IX_users_Email") @map("Email") @db.VarChar(255)
   passwordHash          String    @map("PasswordHash") @db.VarChar(1000)
+  /// Monotonic per-user session revocation counter; included in access tokens.
+  tokenVersion          Int       @map("TokenVersion") @default(0)
   /// Real text[] column — native Postgres array, unlike content tags.
   roles                 String[]  @map("Roles") @default([])
   displayName           String?   @map("DisplayName") @db.VarChar(80)

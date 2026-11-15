@@ -92,24 +92,28 @@ router.post('/api/users/:id/roles', requireAdmin, (req, res, next) => {
         throw new Error('Role must not be null.');
       }
 
-      const roles = [...found.roles];
+      let roles = [...found.roles];
       // The wire semantics are INVERTED relative to intuition: has=true means
-      // "remove" and has=false means "add" — the dashboard's toggle passes the
-      // CURRENT state, and the endpoint enforces the target state's negation.
-      // (Observed contract; the battery pins both directions.)
+      // "remove" and has=false means "add" — the dashboard passes CURRENT state.
       if (has) {
         const lowered = role.toLowerCase();
-        const kept = roles.filter((existing) => existing.toLowerCase() !== lowered);
-        return db.user
-          .update({ where: { id: routeId }, data: { roles: kept, updatedAt: new Date() } })
-          .then((updated) => sendJson(res, 200, { success: true, roles: updated.roles }));
+        roles = roles.filter((existing) => existing.toLowerCase() !== lowered);
+      } else {
+        const present = roles.some((existing) => existing.toLowerCase() === role.toLowerCase());
+        if (!present) roles.push(role.toLowerCase());
       }
-      const present = roles.some((existing) => existing.toLowerCase() === role.toLowerCase());
-      if (!present) {
-        roles.push(role.toLowerCase());
-      }
+
+      const changed = roles.length !== found.roles.length ||
+        roles.some((value, index) => value.toLowerCase() !== (found.roles[index] ?? '').toLowerCase());
       return db.user
-        .update({ where: { id: routeId }, data: { roles, updatedAt: new Date() } })
+        .update({
+          where: { id: routeId },
+          data: {
+            roles,
+            updatedAt: new Date(),
+            ...(changed ? { tokenVersion: { increment: 1 } } : {}),
+          },
+        })
         .then((updated) => sendJson(res, 200, { success: true, roles: updated.roles }));
     })
     .catch(next);

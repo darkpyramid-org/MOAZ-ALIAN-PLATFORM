@@ -24,6 +24,7 @@ const schema = z.object({
     .string()
     .min(32, 'Auth:JwtSecret must be at least 32 characters (256 bits of HMAC-SHA256 key material).')
     .default(process.env.AUTH_JWT_SECRET || DEVELOPMENT_JWT_SECRET),
+  AUTH_SERVICE_JWT_SECRET: z.string().min(32).optional(),
   AUTH_ISSUER: z.string().optional(),
   AUTH_AUDIENCE: z.string().default('authenticated'),
   AUTH_ADMIN_ROLE: z.string().default('admin'),
@@ -151,6 +152,9 @@ export function loadEnv(): Env {
   ];
 
   const isProduction = parsed.NODE_ENV === 'production';
+  if (parsed.AUTH_SERVICE_JWT_SECRET && parsed.AUTH_SERVICE_JWT_SECRET === parsed.AUTH_JWT_SECRET) {
+    throw new Error('AUTH_SERVICE_JWT_SECRET must differ from AUTH_JWT_SECRET.');
+  }
 
   // A development fallback must never become the production signing key.
   // Require an explicitly supplied, non-placeholder secret with sufficient

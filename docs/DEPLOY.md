@@ -65,6 +65,15 @@ The API ignores raw `X-Forwarded-For` values unless the immediate TCP peer match
 - Provider identities are stored by the unique `(provider, providerSubject)` pair. Email is linking metadata only and is accepted for first-time linking only after explicit provider verification.
 - Apply Prisma migrations before deploying the API: the OAuth identity table is additive and does not alter existing user rows.
 
+## User session revocation and service tokens
+
+- User access tokens carry a monotonically increasing `ver` claim. Existing tokens without `ver` are treated as version `0` during rollout.
+- The API re-reads the user row and current roles from PostgreSQL on every authenticated request. Deleted users are rejected; role claims embedded in JWTs are never the authorization source.
+- Role changes, password changes, and successful password resets increment `TokenVersion`, immediately invalidating all previously issued user tokens across every API instance. A role change also takes effect from the database role list on the next request.
+- This introduces one indexed user lookup per authenticated request. Keep the users table available and monitor database latency/connection pool utilization; do not replace this with per-instance memory caching if immediate cross-instance revocation is required.
+- Service tokens are a separate trust class: they require `AUTH_SERVICE_JWT_SECRET` (different from the user JWT secret), `token_use=service`, the configured `service_role`, and a maximum one-hour lifetime. They have no user ID and cannot access user-owned profile/chat resources. User records carrying `service_role` do not gain service privileges. If the secret is unset, service tokens are disabled.
+- There is currently no user-deletion endpoint in the Express API. Any future deletion path must delete the user row; the middleware will then reject that user's token immediately. Do not add a token-only fallback for unknown subjects.
+
 ## Frontend environment variables
 
 Both frontends work without env vars — they default to same-origin `/proxy-api` (or
