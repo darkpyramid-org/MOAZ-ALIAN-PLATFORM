@@ -14,6 +14,8 @@ vi.mock('../../src/lib/db.js', () => ({
 vi.mock('../../src/lib/password.js', () => ({
   hashPassword: mocks.hashPassword,
   verifyPassword: mocks.verifyPassword,
+  isPasswordWithinLimit: vi.fn(() => true),
+  MAX_PASSWORD_BYTES: 1024,
   VerificationResult: { Failed: 0, Success: 1, SuccessRehashNeeded: 2 },
 }));
 vi.mock('../../src/lib/jwt.js', () => ({ issueToken: vi.fn(() => 'token') }));
