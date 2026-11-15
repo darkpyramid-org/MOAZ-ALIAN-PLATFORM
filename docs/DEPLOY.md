@@ -41,12 +41,18 @@ Optional:
 | Variable | Notes |
 |----------|-------|
 | `AUTH_ISSUER`, `AUTH_AUDIENCE` | JWT issuer/audience claims (defaults are fine) |
-| `RATE_LIMIT_GLOBAL_PER_MINUTE`, `RATE_LIMIT_EDITORIAL_PER_MINUTE` | rate limits |
+| `RATE_LIMIT_GLOBAL_PER_MINUTE`, `RATE_LIMIT_EDITORIAL_PER_MINUTE` | shared global/editorial quotas |
+| `RATE_LIMIT_STORE` | `upstash` in production; `memory` only for local/test |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST credentials; required when store is `upstash` |
 | `SWAGGER_ENABLED` | set `true` to enable OpenAPI UI in production |
 | `AUTH_REGISTER_ROLES` | JSON array to restrict self-registration roles (defaults to editor) |
 | `CONTENT_CACHE_*`, `RATE_LIMIT_*` | cache and rate limit tuning |
 | `OAUTH_GOOGLE_*`, `OAUTH_FACEBOOK_*` | OAuth providers (all three per provider required) |
 | `AI_API_KEY`, `OPENAI_API_KEY` | if `/api/chat` is used |
+
+## Shared rate-limit storage
+
+Production requires `RATE_LIMIT_STORE=upstash` and the Upstash Redis REST URL/token. The API increments fixed-window counters with a single atomic Redis Lua EVAL (INCR + PEXPIRE), keyed by a SHA-256 partition digest and a global/editorial scope. Redis TTL expires counters automatically. Local in-memory mode is retained only for development and tests; it is not a multi-instance security boundary. On a shared-store outage, the global read/API budget fails open to preserve availability, while editorial writes fail closed with HTTP 503. Both paths emit token/PII-free operational logs.
 
 ## Reverse-proxy and rate-limit trust boundary
 

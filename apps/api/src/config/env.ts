@@ -54,6 +54,9 @@ const schema = z.object({
 
   RATE_LIMIT_GLOBAL_PER_MINUTE: z.coerce.number().int().positive().default(300),
   RATE_LIMIT_EDITORIAL_PER_MINUTE: z.coerce.number().int().positive().default(30),
+  RATE_LIMIT_STORE: z.enum(['memory', 'upstash']).default('memory'),
+  UPSTASH_REDIS_REST_URL: z.string().url().optional(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
 
   SWAGGER_ENABLED: z
     .string()
@@ -146,6 +149,12 @@ export function loadEnv(): Env {
   ];
 
   const isProduction = parsed.NODE_ENV === 'production';
+  if (isProduction && parsed.RATE_LIMIT_STORE !== 'upstash') {
+    throw new Error('Production requires RATE_LIMIT_STORE=upstash so rate limits are shared across API instances.');
+  }
+  if (parsed.RATE_LIMIT_STORE === 'upstash' && (!parsed.UPSTASH_REDIS_REST_URL || !parsed.UPSTASH_REDIS_REST_TOKEN)) {
+    throw new Error('RATE_LIMIT_STORE=upstash requires UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.');
+  }
   // Mirror of Program.cs: docs on in Development, off in Production unless
   // Swagger:Enabled is explicitly set.
   const docsEnabled =
