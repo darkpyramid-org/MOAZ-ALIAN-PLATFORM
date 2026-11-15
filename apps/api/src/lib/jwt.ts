@@ -86,6 +86,7 @@ export interface VerifiedServiceToken {
 export function issueServiceToken(subject: string): string {
   const secret = env.AUTH_SERVICE_JWT_SECRET;
   if (secret === undefined) throw new Error('AUTH_SERVICE_JWT_SECRET is not configured.');
+  if (secret === env.AUTH_JWT_SECRET) throw new Error('AUTH_SERVICE_JWT_SECRET must differ from AUTH_JWT_SECRET.');
   if (subject.trim() === '' || subject.length > 255) throw new Error('Service token subject is invalid.');
 
   return jwt.sign(
@@ -101,7 +102,7 @@ export function issueServiceToken(subject: string): string {
 
 export function verifyServiceToken(token: string): VerifiedServiceToken | null {
   const secret = env.AUTH_SERVICE_JWT_SECRET;
-  if (secret === undefined) return null;
+  if (secret === undefined || secret === env.AUTH_JWT_SECRET) return null;
 
   try {
     const payload = jwt.verify(token, secret, {

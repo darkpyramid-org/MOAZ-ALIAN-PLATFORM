@@ -6,6 +6,9 @@ import { z } from 'zod';
  * same reason: a misconfigured identity layer must not surface as a 500 on the
  * first login attempt.
  */
+const DEVELOPMENT_JWT_SECRET =
+  'fallback-secret-minimum-32-characters-for-preview-development';
+
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().int().positive().default(5199),
@@ -20,11 +23,7 @@ const schema = z.object({
   AUTH_JWT_SECRET: z
     .string()
     .min(32, 'Auth:JwtSecret must be at least 32 characters (256 bits of HMAC-SHA256 key material).')
-    .default(
-      process.env.AUTH_JWT_SECRET ||
-        'fallback-secret-minimum-32-characters-for-preview-development',
-    ),
-  // Optional, distinct signing key for explicitly typed short-lived service tokens.
+    .default(process.env.AUTH_JWT_SECRET || DEVELOPMENT_JWT_SECRET),
   AUTH_SERVICE_JWT_SECRET: z.string().min(32).optional(),
   AUTH_ISSUER: z.string().optional(),
   AUTH_AUDIENCE: z.string().default('authenticated'),
@@ -54,6 +53,8 @@ const schema = z.object({
 
   RATE_LIMIT_GLOBAL_PER_MINUTE: z.coerce.number().int().positive().default(300),
   RATE_LIMIT_EDITORIAL_PER_MINUTE: z.coerce.number().int().positive().default(30),
+  AUTH_RATE_LIMIT_IP_PER_MINUTE: z.coerce.number().int().positive().default(30),
+  AUTH_RATE_LIMIT_ACCOUNT_PER_MINUTE: z.coerce.number().int().positive().default(5),
 
   SWAGGER_ENABLED: z
     .string()
@@ -128,9 +129,6 @@ function parseStringArray(raw: string | undefined, name: string): string[] {
 export function loadEnv(): Env {
   const raw = { ...process.env } as Record<string, string | undefined>;
   const parsed = schema.parse(raw);
-  if (parsed.AUTH_SERVICE_JWT_SECRET !== undefined && parsed.AUTH_SERVICE_JWT_SECRET === parsed.AUTH_JWT_SECRET) {
-    throw new Error('AUTH_SERVICE_JWT_SECRET must be different from AUTH_JWT_SECRET.');
-  }
 
   const adminEmails = [
     ...parseStringArray(parsed.AUTH_ADMIN_EMAILS, 'AUTH_ADMIN_EMAILS'),
@@ -143,6 +141,31 @@ export function loadEnv(): Env {
   ];
 
   const isProduction = parsed.NODE_ENV === 'production';
+  if (parsed.AUTH_SERVICE_JWT_SECRET && parsed.AUTH_SERVICE_JWT_SECRET === parsed.AUTH_JWT_SECRET) {
+    throw new Error('AUTH_SERVICE_JWT_SECRET must differ from AUTH_JWT_SECRET.');
+  }
+
+  // A development fallback must never become the production signing key.
+  // Require an explicitly supplied, non-placeholder secret with sufficient
+  // length and character diversity before the API can start in production.
+  if (isProduction) {
+    const configuredSecret = raw.AUTH_JWT_SECRET;
+    if (!configuredSecret || configuredSecret.trim() === '') {
+      throw new Error(
+        'AUTH_JWT_SECRET must be explicitly configured in production. Generate a unique secret (for example: openssl rand -base64 48).',
+      );
+    }
+
+    if (
+      configuredSecret === DEVELOPMENT_JWT_SECRET ||
+      configuredSecret.length < 32 ||
+      new Set(configuredSecret).size < 8
+    ) {
+      throw new Error(
+        'AUTH_JWT_SECRET is weak or uses a development placeholder. Configure a unique random secret of at least 32 characters before starting the API in production.',
+      );
+    }
+  }
   // Mirror of Program.cs: docs on in Development, off in Production unless
   // Swagger:Enabled is explicitly set.
   const docsEnabled =

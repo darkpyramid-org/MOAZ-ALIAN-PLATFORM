@@ -1,6 +1,6 @@
 import { db } from '../lib/db.js';
 import { env } from '../config/env.js';
-import { hashPassword, verifyPassword, VerificationResult } from '../lib/password.js';
+import { hashPassword, verifyPassword, VerificationResult, DUMMY_PASSWORD_HASH, isPasswordWithinLimit, MAX_PASSWORD_BYTES } from '../lib/password.js';
 import { issueToken } from '../lib/jwt.js';
 import { DomainError } from '../lib/errors.js';
 import { guardOptional } from '../lib/guard.js';
@@ -58,13 +58,18 @@ export async function login(emailRaw: string | null, passwordRaw: string | null)
     throw new AuthSignal('unauthorized', 'البريد الإلكتروني أو كلمة المرور غير صحيحة.');
   }
 
-  const email = emailRaw.trim().toLowerCase();
-  const user = await db.user.findUnique({ where: { email } });
-  if (user === null) {
+  if (!isPasswordWithinLimit(passwordRaw)) {
     throw new AuthSignal('unauthorized', 'البريد الإلكتروني أو كلمة المرور غير صحيحة.');
   }
 
-  const result = verifyPassword(user.passwordHash, passwordRaw);
+  const email = emailRaw.trim().toLowerCase();
+  const user = await db.user.findUnique({ where: { email } });
+  if (user === null) {
+    await verifyPassword(DUMMY_PASSWORD_HASH, passwordRaw);
+    throw new AuthSignal('unauthorized', 'البريد الإلكتروني أو كلمة المرور غير صحيحة.');
+  }
+
+  const result = await verifyPassword(user.passwordHash, passwordRaw);
   if (result === VerificationResult.Failed) {
     throw new AuthSignal('unauthorized', 'البريد الإلكتروني أو كلمة المرور غير صحيحة.');
   }
@@ -73,7 +78,7 @@ export async function login(emailRaw: string | null, passwordRaw: string | null)
   if (result === VerificationResult.SuccessRehashNeeded) {
     // Legacy V2 hash: upgrade transparently so the stored format converges on
     // the current default without a user-visible flow.
-    const upgraded = hashPassword(passwordRaw);
+    const upgraded = await hashPassword(passwordRaw);
     await db.user.update({ where: { id: user.id }, data: { passwordHash: upgraded, updatedAt: utcNow() } });
     current = { ...user, passwordHash: upgraded };
   }
@@ -99,7 +104,7 @@ export async function register(emailRaw: string | null, passwordRaw: string | nu
     // 500 problem — an observed (and pinned) contract quirk.
     throw new Error('البريد الإلكتروني غير صالح.');
   }
-  if (passwordRaw === null || passwordRaw === undefined || passwordRaw.trim() === '' || passwordRaw.length < 8) {
+  if (passwordRaw === null || passwordRaw === undefined || passwordRaw.trim() === '' || passwordRaw.length < 8 || !isPasswordWithinLimit(passwordRaw)) {
     throw new Error('كلمة المرور يجب أن تكون 8 أحرف على الأقل.');
   }
 
@@ -114,7 +119,7 @@ export async function register(emailRaw: string | null, passwordRaw: string | nu
     data: {
       id: cryptoRandomUuid(),
       email,
-      passwordHash: hashPassword(passwordRaw),
+      passwordHash: await hashPassword(passwordRaw),
       roles: rolesForEmail(email),
       createdAt: now,
       updatedAt: null,
@@ -137,19 +142,10 @@ export interface CurrentIdentity {
 }
 
 export async function getCurrentUser(identity: CurrentIdentity): Promise<AuthUserJson | null> {
-  if (identity.userId === null || identity.userId.trim() === '') {
-    return null;
-  }
-
-  if (isUuid(identity.userId)) {
-    const user = await db.user.findUnique({ where: { id: identity.userId } });
-    if (user !== null) {
-      return authUserJson(user);
-    }
-  }
-
-  // Unknown/deleted subjects are never promoted to token-only user identities.
-  return null;
+  if (identity.userId === null || identity.userId.trim() === '') return null;
+  if (!isUuid(identity.userId)) return null;
+  const user = await db.user.findUnique({ where: { id: identity.userId } });
+  return user === null ? null : authUserJson(user);
 }
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -190,7 +186,7 @@ export async function updateProfile(
 export async function changePassword(identity: CurrentIdentity, currentPassword: string | null, newPassword: string | null): Promise<void> {
   if (
     currentPassword === null || currentPassword === undefined || currentPassword.trim() === '' ||
-    newPassword === null || newPassword === undefined || newPassword.trim() === '' || newPassword.length < 8
+    newPassword === null || newPassword === undefined || newPassword.trim() === '' || newPassword.length < 8 || !isPasswordWithinLimit(newPassword)
   ) {
     throw new AuthSignal('argument', 'كلمة المرور غير صالحة.');
   }
@@ -203,12 +199,13 @@ export async function changePassword(identity: CurrentIdentity, currentPassword:
     throw new AuthSignal('unauthorized', 'المستخدم غير موجود.');
   }
 
-  const result = verifyPassword(user.passwordHash, currentPassword);
+  if (!isPasswordWithinLimit(currentPassword)) throw new AuthSignal('argument', `كلمة المرور يجب ألا تتجاوز ${MAX_PASSWORD_BYTES} بايت.`);
+  const result = await verifyPassword(user.passwordHash, currentPassword);
   if (result === VerificationResult.Failed) {
     throw new AuthSignal('unauthorized', 'كلمة المرور الحالية غير صحيحة.');
   }
 
-  await db.user.update({ where: { id: user.id }, data: { passwordHash: hashPassword(newPassword), tokenVersion: { increment: 1 }, updatedAt: utcNow() } });
+  await db.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(newPassword), tokenVersion: { increment: 1 }, updatedAt: utcNow() } });
 }
 
 export async function forgotPassword(emailRaw: string | null): Promise<void> {
@@ -246,68 +243,107 @@ export async function resetPassword(token: string | null, newPassword: string | 
 
   await db.user.update({
     where: { id: user.id },
-    data: { passwordHash: hashPassword(newPassword), passwordResetToken: null, passwordResetExpiresAt: null, tokenVersion: { increment: 1 }, updatedAt: utcNow() },
+    data: { passwordHash: await hashPassword(newPassword), passwordResetToken: null, passwordResetExpiresAt: null, tokenVersion: { increment: 1 }, updatedAt: utcNow() },
   });
 }
 
+export type ExternalAuthProvider = 'google' | 'facebook';
+
+/**
+ * Provider subject is the stable identity key. Email is used only for first
+ * linking when the provider has explicitly proven ownership of that address.
+ * Facebook identities without a verified email can sign in only after a
+ * provider-subject binding has already been established.
+ */
 export async function externalLogin(
+  provider: ExternalAuthProvider,
+  providerSubject: string,
   emailRaw: string | null,
+  emailVerified: boolean,
   displayName: string | null,
   avatarUrl: string | null,
-  _provider: string,
 ): Promise<{ token: string; user: AuthUserJson }> {
-  if (emailRaw === null || emailRaw === undefined || emailRaw.trim() === '' || !emailRaw.includes('@')) {
-    throw new AuthSignal('argument', 'البريد الإلكتروني غير صالح.');
+  if (providerSubject.trim() === '' || providerSubject.length > 255) {
+    throw new AuthSignal('unauthorized', 'هوية مزود تسجيل الدخول غير صالحة.');
   }
 
-  const email = emailRaw.trim().toLowerCase();
-  const existing = await db.user.findUnique({ where: { email } });
+  return db.$transaction(async (tx) => {
+    const linkedIdentity = await tx.oAuthIdentity.findUnique({
+      where: { provider_providerSubject: { provider, providerSubject } },
+      include: { user: true },
+    });
 
-  if (existing === null) {
-    const now = utcNow();
-    const user = await db.user.create({
+    if (linkedIdentity !== null) {
+      const data = externalProfileData(linkedIdentity.user.displayName, linkedIdentity.user.avatarUrl, displayName, avatarUrl);
+      const user = await tx.user.update({ where: { id: linkedIdentity.userId }, data });
+      return { token: issueToken(user), user: authUserJson(user) };
+    }
+
+    // Never create or attach an account based on an email whose ownership was
+    // not explicitly verified by the provider's signed/validated response.
+    if (emailVerified !== true || emailRaw === null || emailRaw.trim() === '' || !emailRaw.includes('@')) {
+      throw new AuthSignal('unauthorized', 'تعذر إثبات ملكية البريد الإلكتروني من مزود تسجيل الدخول.');
+    }
+
+    const email = emailRaw.trim().toLowerCase();
+    if (email.length > 255) {
+      throw new AuthSignal('unauthorized', 'البريد الإلكتروني من مزود تسجيل الدخول غير صالح.');
+    }
+
+    let user = await tx.user.findUnique({ where: { email } });
+    if (user === null) {
+      const now = utcNow();
+      user = await tx.user.create({
+        data: {
+          id: cryptoRandomUuid(),
+          email,
+          passwordHash: await hashPassword(cryptoRandomUuid().replace(/-/g, '')),
+          // External identities never receive editor/admin roles at creation.
+          roles: [],
+          createdAt: now,
+          updatedAt: null,
+        },
+      });
+    }
+
+    const updatedUser = await tx.user.update({
+      where: { id: user.id },
+      data: externalProfileData(user.displayName, user.avatarUrl, displayName, avatarUrl),
+    });
+
+    await tx.oAuthIdentity.create({
       data: {
         id: cryptoRandomUuid(),
-        email,
-        passwordHash: hashPassword(cryptoRandomUuid().replace(/-/g, '')), // opaque secret the owner never uses
-        roles: rolesForEmail(email),
-        createdAt: now,
-        updatedAt: null,
+        provider,
+        providerSubject,
+        userId: updatedUser.id,
+        emailAtLink: email,
+        emailVerified: true,
+        createdAt: utcNow(),
       },
     });
-    await applyProfile(user.id, displayName, avatarUrl);
-    const fresh = await db.user.findUniqueOrThrow({ where: { id: user.id } });
-    return { token: issueToken(fresh), user: authUserJson(fresh) };
-  }
 
-  // Link profile fields only where missing — the local profile wins.
-  await applyProfile(existing.id, existing.displayName === null || existing.displayName.trim() === '' ? displayName : null,
-    existing.avatarUrl === null || existing.avatarUrl.trim() === '' ? avatarUrl : null);
-  const fresh = await db.user.findUniqueOrThrow({ where: { id: existing.id } });
-  return { token: issueToken(fresh), user: authUserJson(fresh) };
+    return { token: issueToken(updatedUser), user: authUserJson(updatedUser) };
+  });
 }
 
-async function applyProfile(userId: string, displayName: string | null, avatarUrl: string | null): Promise<void> {
-  const data: { displayName?: string | null; avatarUrl?: string | null; updatedAt: Date } = { updatedAt: utcNow() };
-  if (displayName !== null && displayName !== undefined) {
-    const trimmed = displayName.trim();
-    if (trimmed === '') {
-      data.displayName = null;
-    } else if (trimmed.length > 80) {
-      throw new DomainError('DisplayName must be at most 80 characters (got ' + trimmed.length + ').');
-    } else {
-      data.displayName = trimmed;
-    }
+function externalProfileData(
+  currentDisplayName: string | null,
+  currentAvatarUrl: string | null,
+  providerDisplayName: string | null,
+  providerAvatarUrl: string | null,
+): { displayName?: string; avatarUrl?: string; updatedAt: Date } {
+  const data: { displayName?: string; avatarUrl?: string; updatedAt: Date } = { updatedAt: utcNow() };
+  if ((currentDisplayName === null || currentDisplayName.trim() === '') && providerDisplayName !== null) {
+    const value = providerDisplayName.trim();
+    if (value.length > 80) throw new AuthSignal('argument', 'اسم المستخدم من مزود تسجيل الدخول طويل جدًا.');
+    if (value !== '') data.displayName = value;
   }
-  if (avatarUrl !== null && avatarUrl !== undefined) {
-    const trimmed = avatarUrl.trim();
-    if (trimmed === '') {
-      data.avatarUrl = null;
-    } else if (trimmed.length > 500_000) {
-      throw new DomainError('AvatarUrl must be at most 500000 characters (got ' + trimmed.length + ').');
-    } else {
-      data.avatarUrl = trimmed;
-    }
+  if ((currentAvatarUrl === null || currentAvatarUrl.trim() === '') && providerAvatarUrl !== null) {
+    const value = providerAvatarUrl.trim();
+    if (value.length > 500_000) throw new AuthSignal('argument', 'رابط الصورة من مزود تسجيل الدخول غير صالح.');
+    if (value !== '') data.avatarUrl = value;
   }
-  await db.user.update({ where: { id: userId }, data });
+  return data;
 }
+
