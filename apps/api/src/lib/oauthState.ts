@@ -89,6 +89,10 @@ function parseAndVerifyState(state: string): ParsedState | null {
  * The database stores hashes only, so a database read does not disclose either
  * raw value. The per-attempt cookie name permits concurrent OAuth attempts.
  */
+export function getOAuthStateNonce(state: string): string | null {
+  return parseAndVerifyState(state)?.nonce ?? null;
+}
+
 export async function createOAuthState(
   provider: OAuthProviderName,
   _req: Request,

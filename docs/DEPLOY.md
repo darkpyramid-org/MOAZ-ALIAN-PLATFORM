@@ -58,6 +58,13 @@ Production requires `RATE_LIMIT_STORE=upstash` and the Upstash Redis REST URL/to
 
 The API ignores raw `X-Forwarded-For` values unless the immediate TCP peer matches an entry in `TRUSTED_PROXY_CIDRS`. Express then walks the forwarded chain from the nearest proxy outward and stops at the first untrusted address. Configure exact ingress proxy addresses/CIDRs (JSON array or indexed `TRUSTED_PROXY_CIDRS_0`, `TRUSTED_PROXY_CIDRS_1`, …); do not use `*`, `0.0.0.0/0`, or a numeric hop count. When unset, no proxy is trusted and rate limiting uses the socket peer address. If the hosting provider does not publish a stable, verifiable ingress range for the API, keep this setting empty and enforce client-facing rate limits at the provider edge/WAF rather than trusting a spoofable forwarding header.
 
+## OAuth identity and account-linking policy
+
+- **Google:** request the `openid email profile` scopes. The API validates the ID-token RS256 signature against Google's JWKS and checks issuer, audience/authorized party, expiry, issue time, OIDC nonce, and `email_verified=true`. The ID-token `sub` is the stable provider identity; user-info email is not trusted for account linking.
+- **Facebook:** the API validates the access token through Graph `debug_token`, checks the configured app ID, validity, expiry, email permission when used, and requires the `/me` subject to match the token's `user_id`. Meta's Graph API does not generally provide a dependable `email_verified` claim. Therefore an unverified Facebook email is never used to link or create an account. A previously linked Facebook subject can still sign in without an email claim; first-time Facebook linking requires an explicit `email_verified=true` provider claim. Do not weaken this rule by treating the Graph `email` field or `verified` profile flag as proof of email ownership.
+- Provider identities are stored by the unique `(provider, providerSubject)` pair. Email is linking metadata only and is accepted for first-time linking only after explicit provider verification.
+- Apply Prisma migrations before deploying the API: the OAuth identity table is additive and does not alter existing user rows.
+
 ## Frontend environment variables
 
 Both frontends work without env vars — they default to same-origin `/proxy-api` (or
