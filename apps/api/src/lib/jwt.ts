@@ -87,6 +87,7 @@ export function issueServiceToken(subject: string): string {
   const secret = env.AUTH_SERVICE_JWT_SECRET;
   if (secret === undefined) throw new Error('AUTH_SERVICE_JWT_SECRET is not configured.');
   if (secret === env.AUTH_JWT_SECRET) throw new Error('AUTH_SERVICE_JWT_SECRET must differ from AUTH_JWT_SECRET.');
+  if (secret === env.AUTH_JWT_SECRET) throw new Error('AUTH_SERVICE_JWT_SECRET must differ from AUTH_JWT_SECRET.');
   if (subject.trim() === '' || subject.length > 255) throw new Error('Service token subject is invalid.');
 
   return jwt.sign(
