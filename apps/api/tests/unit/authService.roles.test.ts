@@ -5,6 +5,8 @@ const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   update: vi.fn(),
   findUniqueOrThrow: vi.fn(),
+  oauthFindUnique: vi.fn(),
+  oauthCreate: vi.fn(),
   hashPassword: vi.fn(),
   verifyPassword: vi.fn(),
   issueToken: vi.fn(),
@@ -12,6 +14,17 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('../../src/lib/db.js', () => ({
   db: {
+    $transaction: (callback: (tx: unknown) => unknown) => callback({
+      user: {
+        findUnique: mocks.findUnique,
+        create: mocks.create,
+        update: mocks.update,
+      },
+      oAuthIdentity: {
+        findUnique: mocks.oauthFindUnique,
+        create: mocks.oauthCreate,
+      },
+    }),
     user: {
       findUnique: mocks.findUnique,
       create: mocks.create,
@@ -51,7 +64,17 @@ describe('public account role assignment', () => {
     mocks.issueToken.mockReturnValue('test-token');
     mocks.findUnique.mockResolvedValue(null);
     mocks.create.mockImplementation(({ data }: { data: Record<string, unknown> }) => Promise.resolve(data));
-    mocks.update.mockResolvedValue({});
+    mocks.update.mockImplementation(({ where, data }: { where: { id?: string }; data?: Record<string, unknown> }) => Promise.resolve({
+      id: where.id ?? 'created-user-id',
+      email: 'admin@example.com',
+      passwordHash: 'test-password-hash',
+      roles: [],
+      displayName: null,
+      avatarUrl: null,
+      ...data,
+    }));
+    mocks.oauthFindUnique.mockResolvedValue(null);
+    mocks.oauthCreate.mockResolvedValue({});
     mocks.findUniqueOrThrow.mockImplementation(({ where }: { where: { id: string } }) =>
       Promise.resolve({
         id: where.id,
@@ -79,7 +102,7 @@ describe('public account role assignment', () => {
   });
 
   it('does not grant editor or admin roles during OAuth account creation', async () => {
-    const result = await externalLogin('admin@example.com', 'Admin', null, 'google');
+    const result = await externalLogin('google', 'provider-subject-123', 'admin@example.com', true, 'Admin', null);
 
     expect(mocks.create).toHaveBeenCalledWith(
       expect.objectContaining({
