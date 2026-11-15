@@ -96,10 +96,15 @@ export async function incrementSharedRateLimit(scope: string, partition: string)
 
   if (!response.ok) throw new Error('Shared rate-limit store returned HTTP ' + response.status + '.');
   const payload = (await response.json()) as { result?: unknown };
-  if (!Array.isArray(payload.result) || !Number.isSafeInteger(Number(payload.result[0]))) {
+  const rawCount = Array.isArray(payload.result) ? payload.result[0] : undefined;
+  const count =
+    typeof rawCount === 'number' || (typeof rawCount === 'string' && rawCount.trim() !== '')
+      ? Number(rawCount)
+      : Number.NaN;
+  if (!Number.isSafeInteger(count) || count < 1) {
     throw new Error('Shared rate-limit store returned an invalid counter response.');
   }
-  return Number(payload.result[0]);
+  return count;
 }
 
 async function isAllowed(
