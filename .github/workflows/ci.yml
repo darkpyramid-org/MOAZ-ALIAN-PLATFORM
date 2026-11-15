@@ -265,9 +265,24 @@ jobs:
           fi
           echo "Trivy scan completed without CRITICAL/HIGH findings."
 
+  automation:
+    name: Issue triage classifier tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Validate issue triage rules
+        run: node --test scripts/issue-triage.test.cjs
+
   ci-status:
     name: CI All Checks Status
-    needs: [backend, frontend-public, frontend-dashboard, packages, security]
+    needs: [backend, frontend-public, frontend-dashboard, packages, security, automation]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -277,7 +292,8 @@ jobs:
              [ "${{ needs.frontend-public.result }}" != "success" ] || \
              [ "${{ needs.frontend-dashboard.result }}" != "success" ] || \
              [ "${{ needs.packages.result }}" != "success" ] || \
-             [ "${{ needs.security.result }}" != "success" ]; then
+             [ "${{ needs.security.result }}" != "success" ] || \
+             [ "${{ needs.automation.result }}" != "success" ]; then
             echo "One or more required CI jobs failed."
             exit 1
           fi

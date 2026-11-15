@@ -1,7 +1,6 @@
 import { Router } from 'express';
-import { timingSafeEqual, randomBytes } from 'node:crypto';
 import { env } from '../config/env.js';
-import { hmacSha256Base64 } from '../lib/password.js';
+import { createOAuthState, consumeOAuthState } from '../lib/oauthState.js';
 import { sendProblemFramework, sendRedirect, sendJson, traceOf } from '../lib/http.js';
 import { AuthSignal, externalLogin } from '../services/authService.js';
 import type { OAuthProvider } from '../config/env.js';
@@ -43,61 +42,9 @@ function defaultUserInfoEndpoint(provider: ProviderName): string {
     : 'https://graph.facebook.com/me?fields=id,name,email,picture.type(large)';
 }
 
-/**
- * Signed state: "<unixSeconds>.<base64nonce>.<base64hmac>", outer-encoded as
- * base64url. The HMAC key is the JWT secret — one secret, one purpose served
- * twice (the original made the same trade). The 10-minute window bounds
- * replay without server-side state.
- */
-function createSignedState(): string {
-  const nonce = Buffer.from(random16()).toString('base64');
-  const ts = Math.floor(Date.now() / 1000).toString(10);
-  const payload = `${ts}.${nonce}`;
-  const sig = hmacSha256Base64(payload, env.AUTH_JWT_SECRET);
-  return Buffer.from(`${payload}.${sig}`, 'utf8')
-    .toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-}
-
-function verifySignedState(state: string): boolean {
-  try {
-    let padded = state.replace(/-/g, '+').replace(/_/g, '/');
-    const remainder = padded.length % 4;
-    if (remainder === 2) padded += '==';
-    if (remainder === 3) padded += '=';
-
-    const decoded = Buffer.from(padded, 'base64').toString('utf8');
-    const parts = decoded.split('.');
-    if (parts.length !== 3) return false;
-
-    const ts = Number(parts[0]);
-    if (!Number.isInteger(ts)) return false;
-    const age = Math.floor(Date.now() / 1000) - ts;
-    if (age < 0 || age > 600) return false;
-
-    const payload = `${parts[0]}.${parts[1]}`;
-    const expected = hmacSha256Base64(payload, env.AUTH_JWT_SECRET);
-    return fixedTimeEquals(expected, parts[2] ?? '');
-  } catch {
-    return false;
-  }
-}
-
-function random16(): Buffer {
-  return randomBytes(16);
-}
-
-function fixedTimeEquals(a: string, b: string): boolean {
-  const left = Buffer.from(a, 'utf8');
-  const right = Buffer.from(b, 'utf8');
-  if (left.length !== right.length) return false;
-  return timingSafeEqual(left, right);
-}
 
 for (const provider of PROVIDERS) {
-  router.get(`/api/auth/oauth/${provider}`, (req, res) => {
+  router.get(`/api/auth/oauth/${provider}`, async (req, res) => {
     const cfg = providerConfig(provider);
     if (cfg === undefined || !isConfigured(cfg)) {
       sendProblemFramework(
@@ -121,25 +68,17 @@ for (const provider of PROVIDERS) {
       `&redirect_uri=${encodeURIComponent(redirectUri)}` +
       `&response_type=code` +
       `&scope=${scope}` +
-      `&state=${encodeURIComponent(createSignedState())}`;
+      `&state=${encodeURIComponent(await createOAuthState(provider, req, res))}`;
 
     sendRedirect(res, url, 302);
   });
 
-  router.get(`/api/auth/oauth/${provider}/callback`, (req, res) => {
+  router.get(`/api/auth/oauth/${provider}/callback`, async (req, res) => {
     const query = req.query as Record<string, string | string[] | undefined>;
     const single = (name: string): string | undefined => {
       const value = query[name];
-      return Array.isArray(value) ? value[0] : value;
+      return Array.isArray(value) ? (value.length === 1 ? value[0] : undefined) : value;
     };
-
-    // A provider-reported error short-circuits EVERYTHING — even an
-    // unconfigured provider reports the error back to the frontend first.
-    const error = single('error');
-    if (error !== undefined && error !== '') {
-      sendRedirect(res, `${env.FRONTEND_URL}/auth?oauth_error=${encodeURIComponent(error)}`, 302);
-      return;
-    }
 
     const cfg = providerConfig(provider);
     if (cfg === undefined || !isConfigured(cfg)) {
@@ -147,9 +86,17 @@ for (const provider of PROVIDERS) {
       return;
     }
 
+    // Provider errors are still correlated to the initiating browser. A
+    // provider cannot force an unbound redirect into the local auth flow.
     const state = single('state');
-    if (state === undefined || state === '' || !verifySignedState(state)) {
+    if (state === undefined || state === '' || !(await consumeOAuthState(provider, state, req, res))) {
       sendJson(res, 400, { title: 'حالة OAuth غير صالحة', status: 400 });
+      return;
+    }
+
+    const error = single('error');
+    if (error !== undefined && error !== '') {
+      sendRedirect(res, `${env.FRONTEND_URL}/auth?oauth_error=${encodeURIComponent(error)}`, 302);
       return;
     }
 
