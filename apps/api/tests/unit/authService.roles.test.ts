@@ -25,6 +25,9 @@ vi.mock('../../src/lib/password.js', () => ({
   hashPassword: mocks.hashPassword,
   verifyPassword: mocks.verifyPassword,
   VerificationResult: { Failed: 0, Success: 1, SuccessRehashNeeded: 2 },
+  DUMMY_PASSWORD_HASH: 'dummy-hash',
+  isPasswordWithinLimit: () => true,
+  MAX_PASSWORD_BYTES: 1024,
 }));
 
 vi.mock('../../src/lib/jwt.js', () => ({ issueToken: mocks.issueToken }));
@@ -44,7 +47,7 @@ import { externalLogin, register } from '../../src/services/authService.js';
 describe('public account role assignment', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.hashPassword.mockReturnValue('test-password-hash');
+    mocks.hashPassword.mockResolvedValue('test-password-hash');
     mocks.issueToken.mockReturnValue('test-token');
     mocks.findUnique.mockResolvedValue(null);
     mocks.create.mockImplementation(({ data }: { data: Record<string, unknown> }) => Promise.resolve(data));

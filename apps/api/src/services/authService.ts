@@ -1,6 +1,6 @@
 import { db } from '../lib/db.js';
 import { env } from '../config/env.js';
-import { hashPassword, verifyPassword, VerificationResult } from '../lib/password.js';
+import { hashPassword, verifyPassword, VerificationResult, DUMMY_PASSWORD_HASH, isPasswordWithinLimit, MAX_PASSWORD_BYTES } from '../lib/password.js';
 import { issueToken } from '../lib/jwt.js';
 import { DomainError } from '../lib/errors.js';
 import { guardOptional } from '../lib/guard.js';
@@ -58,13 +58,18 @@ export async function login(emailRaw: string | null, passwordRaw: string | null)
     throw new AuthSignal('unauthorized', 'البريد الإلكتروني أو كلمة المرور غير صحيحة.');
   }
 
-  const email = emailRaw.trim().toLowerCase();
-  const user = await db.user.findUnique({ where: { email } });
-  if (user === null) {
+  if (!isPasswordWithinLimit(passwordRaw)) {
     throw new AuthSignal('unauthorized', 'البريد الإلكتروني أو كلمة المرور غير صحيحة.');
   }
 
-  const result = verifyPassword(user.passwordHash, passwordRaw);
+  const email = emailRaw.trim().toLowerCase();
+  const user = await db.user.findUnique({ where: { email } });
+  if (user === null) {
+    await verifyPassword(DUMMY_PASSWORD_HASH, passwordRaw);
+    throw new AuthSignal('unauthorized', 'البريد الإلكتروني أو كلمة المرور غير صحيحة.');
+  }
+
+  const result = await verifyPassword(user.passwordHash, passwordRaw);
   if (result === VerificationResult.Failed) {
     throw new AuthSignal('unauthorized', 'البريد الإلكتروني أو كلمة المرور غير صحيحة.');
   }
@@ -73,7 +78,7 @@ export async function login(emailRaw: string | null, passwordRaw: string | null)
   if (result === VerificationResult.SuccessRehashNeeded) {
     // Legacy V2 hash: upgrade transparently so the stored format converges on
     // the current default without a user-visible flow.
-    const upgraded = hashPassword(passwordRaw);
+    const upgraded = await hashPassword(passwordRaw);
     await db.user.update({ where: { id: user.id }, data: { passwordHash: upgraded, updatedAt: utcNow() } });
     current = { ...user, passwordHash: upgraded };
   }
@@ -81,7 +86,6 @@ export async function login(emailRaw: string | null, passwordRaw: string | null)
   return { token: issueToken(current), user: authUserJson(current) };
 }
 
-/** Admin allowlist, case-insensitive — the only path to the admin role. */
 /**
  * Public registration and OAuth account creation are untrusted entry points.
  * They must never assign privileged roles based on an email address or an
@@ -91,6 +95,7 @@ export async function login(emailRaw: string | null, passwordRaw: string | null)
 function rolesForPublicAccount(): string[] {
   return [];
 }
+
 export async function register(emailRaw: string | null, passwordRaw: string | null): Promise<{ token: string; user: AuthUserJson }> {
   if (emailRaw === null || emailRaw === undefined || emailRaw.trim() === '' || !emailRaw.includes('@')) {
     // Deliberately mirrors the original's ArgumentException: the register
@@ -98,7 +103,7 @@ export async function register(emailRaw: string | null, passwordRaw: string | nu
     // 500 problem — an observed (and pinned) contract quirk.
     throw new Error('البريد الإلكتروني غير صالح.');
   }
-  if (passwordRaw === null || passwordRaw === undefined || passwordRaw.trim() === '' || passwordRaw.length < 8) {
+  if (passwordRaw === null || passwordRaw === undefined || passwordRaw.trim() === '' || passwordRaw.length < 8 || !isPasswordWithinLimit(passwordRaw)) {
     throw new Error('كلمة المرور يجب أن تكون 8 أحرف على الأقل.');
   }
 
@@ -113,7 +118,7 @@ export async function register(emailRaw: string | null, passwordRaw: string | nu
     data: {
       id: cryptoRandomUuid(),
       email,
-      passwordHash: hashPassword(passwordRaw),
+      passwordHash: await hashPassword(passwordRaw),
       roles: rolesForPublicAccount(),
       createdAt: now,
       updatedAt: null,
@@ -198,7 +203,7 @@ export async function updateProfile(
 export async function changePassword(identity: CurrentIdentity, currentPassword: string | null, newPassword: string | null): Promise<void> {
   if (
     currentPassword === null || currentPassword === undefined || currentPassword.trim() === '' ||
-    newPassword === null || newPassword === undefined || newPassword.trim() === '' || newPassword.length < 8
+    newPassword === null || newPassword === undefined || newPassword.trim() === '' || newPassword.length < 8 || !isPasswordWithinLimit(newPassword)
   ) {
     throw new AuthSignal('argument', 'كلمة المرور غير صالحة.');
   }
@@ -211,12 +216,13 @@ export async function changePassword(identity: CurrentIdentity, currentPassword:
     throw new AuthSignal('unauthorized', 'المستخدم غير موجود.');
   }
 
-  const result = verifyPassword(user.passwordHash, currentPassword);
+  if (!isPasswordWithinLimit(currentPassword)) throw new AuthSignal('argument', `كلمة المرور يجب ألا تتجاوز ${MAX_PASSWORD_BYTES} بايت.`);
+  const result = await verifyPassword(user.passwordHash, currentPassword);
   if (result === VerificationResult.Failed) {
     throw new AuthSignal('unauthorized', 'كلمة المرور الحالية غير صحيحة.');
   }
 
-  await db.user.update({ where: { id: user.id }, data: { passwordHash: hashPassword(newPassword), updatedAt: utcNow() } });
+  await db.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(newPassword), updatedAt: utcNow() } });
 }
 
 export async function forgotPassword(emailRaw: string | null): Promise<void> {
@@ -254,7 +260,7 @@ export async function resetPassword(token: string | null, newPassword: string | 
 
   await db.user.update({
     where: { id: user.id },
-    data: { passwordHash: hashPassword(newPassword), passwordResetToken: null, passwordResetExpiresAt: null, updatedAt: utcNow() },
+    data: { passwordHash: await hashPassword(newPassword), passwordResetToken: null, passwordResetExpiresAt: null, updatedAt: utcNow() },
   });
 }
 
@@ -277,7 +283,7 @@ export async function externalLogin(
       data: {
         id: cryptoRandomUuid(),
         email,
-        passwordHash: hashPassword(cryptoRandomUuid().replace(/-/g, '')), // opaque secret the owner never uses
+        passwordHash: await hashPassword(cryptoRandomUuid().replace(/-/g, '')), // opaque secret the owner never uses
         roles: rolesForPublicAccount(),
         createdAt: now,
         updatedAt: null,
