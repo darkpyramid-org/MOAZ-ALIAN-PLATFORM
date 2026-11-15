@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   verifyPassword: vi.fn(),
   issueToken: vi.fn(),
   transaction: vi.fn(),
+  oauthCreate: vi.fn(),
 }));
 
 vi.mock('../../src/lib/db.js', () => ({
@@ -58,7 +59,7 @@ describe('public account role assignment', () => {
       },
       user: {
         findUnique: vi.fn().mockResolvedValue(null),
-        create: vi.fn().mockImplementation(({ data }: { data: Record<string, unknown> }) => Promise.resolve({
+        create: mocks.oauthCreate.mockImplementation(({ data }: { data: Record<string, unknown> }) => Promise.resolve({
           ...data, displayName: null, avatarUrl: null,
         })),
         update: vi.fn().mockImplementation(({ where, data }: { where: { id: string }; data: Record<string, unknown> }) => Promise.resolve({
@@ -98,7 +99,7 @@ describe('public account role assignment', () => {
   it('does not grant editor or admin roles during OAuth account creation', async () => {
     const result = await externalLogin('google', 'google-subject-1', 'admin@example.com', true, 'Admin', null);
 
-    expect(mocks.create).toHaveBeenCalledWith(
+    expect(mocks.oauthCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           email: 'admin@example.com',
